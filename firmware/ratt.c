@@ -11,7 +11,7 @@
 #include "ratt.h"
 #include "ks0108.h"
 #include "glcd.h"
-
+#include "deathclock.h"
 
 volatile uint8_t time_s, time_m, time_h;
 volatile uint8_t old_h, old_m;
@@ -69,6 +69,35 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
+volatile int32_t minutes_left=0;
+volatile uint8_t dc_mode;
+
+void load_etd(void)
+{
+  dc_mode = eeprom_read_byte((uint8_t *)EE_DC_MODE);
+  uint32_t result = ETD(  eeprom_read_byte((uint8_t *)EE_DOB_MONTH),
+                              eeprom_read_byte((uint8_t *)EE_DOB_DAY),
+                              eeprom_read_byte((uint8_t *)EE_DOB_YEAR)+1900,
+                              eeprom_read_byte((uint8_t *)EE_SET_MONTH),
+                              eeprom_read_byte((uint8_t *)EE_SET_DAY),
+                              eeprom_read_byte((uint8_t *)EE_SET_YEAR)+2000,
+                              eeprom_read_byte((uint8_t *)EE_GENDER),
+                              dc_mode,
+                              BodyMassIndex( eeprom_read_byte((uint8_t *)EE_BMI_UNIT), eeprom_read_word((uint16_t *)EE_BMI_HEIGHT), eeprom_read_word((uint16_t *)EE_BMI_WEIGHT)),
+                              eeprom_read_byte((uint8_t *)EE_SMOKER),
+                              eeprom_read_byte((uint8_t *)EE_SET_HOUR),
+                              eeprom_read_byte((uint8_t *)EE_SET_MIN),
+                              eeprom_read_byte((uint8_t *)EE_SET_SEC));
+      //result /= 60;
+      result -= date_diff( eeprom_read_byte((uint8_t *)EE_SET_MONTH),
+                           eeprom_read_byte((uint8_t *)EE_SET_DAY),
+                           eeprom_read_byte((uint8_t *)EE_SET_YEAR)+2000,
+                           date_m,date_d,date_y+2000) * 1440 * ((dc_mode == DC_mode_sadistic)?4:1);
+  result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
+  result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
+  minutes_left = (int32_t)result;
+}
+
 void init_eeprom(void) {	//Set eeprom to a default state.
   if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
     eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, 8);
@@ -78,6 +107,24 @@ void init_eeprom(void) {	//Set eeprom to a default state.
     eeprom_write_byte((uint8_t *)EE_REGION, REGION_US);
     eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, TIME_12H);
     eeprom_write_byte((uint8_t *)EE_SNOOZE, 10);
+    
+    //Death Clock Variables - Initial state being set to CaitSith2's specific stats :)
+    eeprom_write_byte((uint8_t *)EE_DOB_MONTH, 11);
+    eeprom_write_byte((uint8_t *)EE_DOB_DAY, 14);
+    eeprom_write_byte((uint8_t *)EE_DOB_YEAR, 80);
+    eeprom_write_byte((uint8_t *)EE_SET_MONTH, 7);
+    eeprom_write_byte((uint8_t *)EE_SET_DAY, 28);
+    eeprom_write_byte((uint8_t *)EE_SET_YEAR, 10);
+    eeprom_write_byte((uint8_t *)EE_SET_HOUR, 20);
+    eeprom_write_byte((uint8_t *)EE_SET_MIN, 05);
+    eeprom_write_byte((uint8_t *)EE_SET_SEC, 25);
+    eeprom_write_byte((uint8_t *)EE_GENDER, DC_gender_male);
+    eeprom_write_byte((uint8_t *)EE_DC_MODE, DC_mode_normal);
+    eeprom_write_byte((uint8_t *)EE_BMI_UNIT, BMI_Imperial);
+    eeprom_write_word((uint16_t *)EE_BMI_WEIGHT, 400);
+    eeprom_write_word((uint16_t *)EE_BMI_HEIGHT, 78); // 6 foot 6.
+    eeprom_write_byte((uint8_t *)EE_SMOKER, DC_non_smoker);
+    
     eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
   }
 }

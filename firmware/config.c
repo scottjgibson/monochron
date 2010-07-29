@@ -8,6 +8,7 @@
 #include "ratt.h"
 #include "ks0108.h"
 #include "glcd.h"
+#include "deathclock.h"
 
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t date_m, date_d, date_y;

@@ -143,7 +143,7 @@
 
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased.
-#define EE_INITIALIZED 0xC3
+#define EE_INITIALIZED 0xC4
 #define EE_INIT 0
 #define EE_ALARM_HOUR 1
 #define EE_ALARM_MIN 2
@@ -152,6 +152,22 @@
 #define EE_REGION 5
 #define EE_TIME_FORMAT 6
 #define EE_SNOOZE 7
+#define EE_DEATHCLOCK_ON 8
+#define EE_DOB_MONTH 9 //Death Clock variables are preserved in the event of an extended power outage.
+#define EE_DOB_DAY 10
+#define EE_DOB_YEAR 11
+#define EE_SET_MONTH 12
+#define EE_SET_DAY 13
+#define EE_SET_YEAR 14
+#define EE_GENDER 15
+#define EE_DC_MODE 16
+#define EE_BMI_UNIT 17
+#define EE_BMI_WEIGHT 18
+#define EE_BMI_HEIGHT 20
+#define EE_SMOKER 22
+#define EE_SET_HOUR 23
+#define EE_SET_MIN 24
+#define EE_SET_SEC 25
 
 /*************************** FUNCTION PROTOTYPES */
 
