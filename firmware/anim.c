@@ -11,16 +11,21 @@
 #include "ratt.h"
 #include "ks0108.h"
 #include "glcd.h"
+#include "deathclock.h"
 
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t old_m, old_h;
 extern volatile uint8_t date_m, date_d, date_y;
+extern volatile uint8_t death_m, death_d, death_y;
 extern volatile uint8_t alarming, alarm_h, alarm_m;
 extern volatile uint8_t time_format;
 extern volatile uint8_t region;
 extern volatile uint8_t score_mode;
 
-uint8_t left_score, right_score;
+extern volatile int32_t minutes_left, old_minutes_left;
+extern volatile uint8_t dc_mode;
+
+uint32_t left_score, right_score, results;
 
 float ball_x, ball_y;
 float oldball_x, oldball_y;
@@ -32,13 +37,19 @@ int8_t rightpaddle_dy, leftpaddle_dy;
 
 extern volatile uint8_t minute_changed, hour_changed;
 
-uint8_t redraw_time = 0;
-uint8_t last_score_mode = 0;
+volatile uint8_t redraw_time = 0;
+volatile uint8_t last_score_mode = 0;
 
 void setscore(void)
 {
   if(score_mode != last_score_mode) {
-    redraw_time = 1;
+  	//Death Clock and Death Alarm requires 8 digits to be drawn, while the remaining modes, only require 4 digits.
+  	if(((score_mode == SCORE_MODE_DEATH_TIME) || (score_mode == SCORE_MODE_DEATH_ALARM)) && ((last_score_mode != SCORE_MODE_DEATH_TIME) && (last_score_mode != SCORE_MODE_DEATH_ALARM)))
+  	  redraw_time = 2;
+  	else if(((last_score_mode == SCORE_MODE_DEATH_TIME) || (last_score_mode == SCORE_MODE_DEATH_ALARM)) && ((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)))
+  	  redraw_time = 2;
+  	else
+      redraw_time = 1;
     last_score_mode = score_mode;
   }
   switch(score_mode) {
@@ -68,9 +79,44 @@ void setscore(void)
       left_score = 20;
       right_score = date_y;
       break;
+    case SCORE_MODE_DEATH_TIME:
+      if(alarming && (minute_changed || hour_changed)) {
+      	if(hour_changed) {
+	      left_score = old_minutes_left/10000;
+	      right_score = old_minutes_left%10000;
+	    } else if (minute_changed) {
+	      right_score = old_minutes_left%10000;
+	    }
+      } else {
+        left_score = minutes_left/10000;
+        right_score = minutes_left%10000;
+      }
+      break;
+    case SCORE_MODE_DEATH_DATE:
+      if(region == REGION_US) {
+        left_score = death_m;
+        right_score = death_d;
+      } else {
+        left_score = death_d;
+        right_score = death_m;
+      }
+      break;
+    case SCORE_MODE_DEATH_YEAR:
+      left_score = 20;
+      right_score = death_y;
+      break;
     case SCORE_MODE_ALARM:
       left_score = alarm_h;
       right_score = alarm_m;
+      break;
+    case SCORE_MODE_DEATH_ALARM:
+      results = minutes_left;
+      if((time_h > alarm_h) || ((time_h == alarm_h) && (time_m > alarm_m)))
+        results -= (((((alarm_h * 60) + alarm_m) + 1440) - ((time_h * 60) + time_m)) * ((dc_mode == DC_mode_sadistic)?4:1));
+      else
+        results -= ((((alarm_h * 60) + alarm_m) - ((time_h * 60) + time_m)) * ((dc_mode == DC_mode_sadistic)?4:1));
+      left_score = results / 10000;
+      right_score = results % 10000;
       break;
   }
 }
@@ -111,18 +157,49 @@ void initdisplay(uint8_t inverted) {
 	setscore();
 
   // time
+  if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
+  {
 	if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
 		drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)/10, inverted);
-  else 
-    drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, left_score/10, inverted);
+    else 
+      drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, left_score/10, inverted);
   
 	if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
 		drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)%10, inverted);
-  else
-    drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, left_score%10, inverted);
+    else
+      drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, left_score%10, inverted);
   
-  drawbigdigit(DISPLAY_M10_X, DISPLAY_TIME_Y, right_score/10, inverted);
-  drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y, right_score%10, inverted);
+    drawbigdigit(DISPLAY_M10_X, DISPLAY_TIME_Y, right_score/10, inverted);
+    drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y, right_score%10, inverted);
+  }
+  else
+  {
+  	/*results = minutes_left;
+  	drawbigdigit(DISPLAY_DR4_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DR3_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DR2_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DR1_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DL4_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DL3_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DL2_X, DISPLAY_TIME_Y, results % 10, inverted);
+  	results /= 10;
+  	drawbigdigit(DISPLAY_DL1_X, DISPLAY_TIME_Y, results % 10, inverted);*/
+    drawbigdigit(DISPLAY_DL1_X, DISPLAY_TIME_Y, left_score / 1000, inverted);
+    drawbigdigit(DISPLAY_DL2_X, DISPLAY_TIME_Y, (left_score % 1000) / 100, inverted);
+    drawbigdigit(DISPLAY_DL3_X, DISPLAY_TIME_Y, (left_score % 100) / 10, inverted);
+    drawbigdigit(DISPLAY_DL4_X, DISPLAY_TIME_Y, left_score % 10, inverted);
+    
+	drawbigdigit(DISPLAY_DR1_X, DISPLAY_TIME_Y, right_score / 1000, inverted);
+    drawbigdigit(DISPLAY_DR2_X, DISPLAY_TIME_Y, (right_score % 1000) / 100, inverted);
+    drawbigdigit(DISPLAY_DR3_X, DISPLAY_TIME_Y, (right_score % 100) / 10, inverted);
+    drawbigdigit(DISPLAY_DR4_X, DISPLAY_TIME_Y, right_score % 10, inverted);
+  }
 
   drawmidline(inverted);
 }
@@ -489,9 +566,6 @@ void draw(uint8_t inverted) {
     // erase old ball
     glcdFillRectangle(oldball_x, oldball_y, ball_radius*2, ball_radius*2, inverted);
 
-    // draw new ball
-    glcdFillRectangle(ball_x, ball_y, ball_radius*2, ball_radius*2, ! inverted);
-
     // draw middle lines around where the ball may have intersected it?
     if  (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
 		       SCREEN_W/2-MIDLINE_W, 0, MIDLINE_W, SCREEN_H)) {
@@ -520,16 +594,21 @@ void draw(uint8_t inverted) {
       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y, PADDLE_W, PADDLE_H, !inverted);
     }
    // draw time
-   uint8_t redraw_digits;
+   volatile uint8_t redraw_digits = 0;
    TIMSK2 = 0;	//Disable Timer 2 interrupt, to prevent a race condition.
    if(redraw_time)
    {
-   	   redraw_digits = 1;
+   	   if(redraw_time == 2)
+   	     initdisplay(inverted);
+   	   else
+   	     redraw_digits = 1;
    	   redraw_time = 0;
    }
    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
     
     // redraw 10's of hours
+  if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
+  {
     if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
 				      DISPLAY_H10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
       
@@ -556,24 +635,50 @@ void draw(uint8_t inverted) {
 				      DISPLAY_M1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
       drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y, right_score%10, inverted);
     }
-    
+  }
+  else
+  {
+  	
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                     DISPLAY_DL1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DL1_X, DISPLAY_TIME_Y, left_score / 1000, inverted);
+  	}
+  	
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DL2_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DL2_X, DISPLAY_TIME_Y, (left_score % 1000) / 100, inverted);
+  	}
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DL3_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DL3_X, DISPLAY_TIME_Y, (left_score % 100) / 10, inverted);
+  	}
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DL4_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DL4_X, DISPLAY_TIME_Y, left_score % 10, inverted);
+  	}
+  	
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DR1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DR1_X, DISPLAY_TIME_Y, right_score / 1000, inverted);
+  	}
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DR2_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DR2_X, DISPLAY_TIME_Y, (right_score % 1000) / 100, inverted);
+  	}
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DR3_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DR3_X, DISPLAY_TIME_Y, (right_score % 100) / 10, inverted);
+  	}
+  	if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
+  	                    DISPLAY_DR4_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+  		drawbigdigit(DISPLAY_DR4_X, DISPLAY_TIME_Y, right_score % 10, inverted);
+  	}
+  }
     redraw_digits = 0;
-    // print 'alarm'
-    /*
-    if (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
-		      ALARMBOX_X, ALARMBOX_Y, ALARMBOX_W, ALARMBOX_H)) {
-      
-      glcdFillRectangle(ALARMBOX_X+2, ALARMBOX_Y+2, ALARMBOX_W-4, ALARMBOX_H-4, OFF);
-
-      glcdFillRectangle(ALARMBOX_X, ALARMBOX_Y, 2, ALARMBOX_H, ON);
-      glcdFillRectangle(ALARMBOX_X+ALARMBOX_W, ALARMBOX_Y, 2, ALARMBOX_H, ON);
-    }
-
-    if (!intersectrect(ball_x, ball_y, ball_radius*2, ball_radius*2,
-		      ALARMBOX_X, ALARMBOX_Y, ALARMBOX_W, ALARMBOX_H)) {
-    */
-
-      //}
+    
+    // draw new ball - Moved here, so that the Ball is NEVER erased by any digit redrawing.
+    glcdFillRectangle(ball_x, ball_y, ball_radius*2, ball_radius*2, ! inverted);
+    
 }
 
 uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,

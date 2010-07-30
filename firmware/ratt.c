@@ -17,6 +17,7 @@ volatile uint8_t time_s, time_m, time_h;
 volatile uint8_t old_h, old_m;
 volatile uint8_t timeunknown = 1;
 volatile uint8_t date_m, date_d, date_y;
+volatile uint8_t death_m, death_d, death_y;
 volatile uint8_t alarming, alarm_on, alarm_tripped, alarm_h, alarm_m;
 volatile uint8_t displaymode;
 volatile uint8_t volume;
@@ -27,6 +28,10 @@ extern volatile uint8_t screenmutex;
 volatile uint8_t minute_changed = 0, hour_changed = 0;
 volatile uint8_t score_mode_timeout = 0;
 volatile uint8_t score_mode = SCORE_MODE_TIME;
+
+volatile int32_t minutes_left=0;
+volatile int32_t old_minutes_left;
+volatile uint8_t dc_mode;
 
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
@@ -69,9 +74,6 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
-volatile int32_t minutes_left=0;
-volatile uint8_t dc_mode;
-
 void load_etd(void)
 {
   dc_mode = eeprom_read_byte((uint8_t *)EE_DC_MODE);
@@ -96,6 +98,31 @@ void load_etd(void)
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
   minutes_left = (int32_t)result;
+}
+
+void calc_death_date(void)
+{
+	uint32_t timeleft = minutes_left;
+	death_d = date_d;
+	death_m = date_m;
+	death_y = date_y;
+	while (timeleft >= 1440)
+      {
+        timeleft -= 1440;
+        death_d++;  
+        if ((death_d > 31) ||
+               ((death_d == 31) && ((death_m == 4)||(death_m == 6)||(death_m == 9)||(death_m == 11))) ||
+               ((death_d == 30) && (death_m == 2)) ||
+               ((death_d == 29) && (death_m == 2) && !leapyear(2000+death_y))) {
+                 death_d = 1;
+                 death_m++;
+            }
+            if(death_m > 12)
+            {
+              death_m=1;
+              death_y++;
+            } 
+      }
 }
 
 void init_eeprom(void) {	//Set eeprom to a default state.
@@ -133,6 +160,7 @@ int main(void) {
   uint8_t inverted = 0;
   uint8_t mcustate;
   uint8_t display_date = 0;
+  uint8_t display_death_date = 0;
 
   // check if we were reset
   mcustate = MCUSR;
@@ -195,6 +223,7 @@ int main(void) {
 
   initanim();
   initdisplay(0);
+  load_etd();	//Only need to do this once at power on, and once if Death Clock settings are changed.
 
   while (1) {
     animticker = ANIMTICK_MS;
@@ -212,15 +241,42 @@ int main(void) {
 	  setscore();
 	  display_date = 0;
 	}
+	
+	if(display_death_date && !score_mode_timeout)
+	{
+	  score_mode = SCORE_MODE_DEATH_YEAR;
+	  score_mode_timeout = 3;
+	  setscore();
+	  display_death_date = 0;
+	}
 
     //Was formally set for just the + button.  However, because the Set button was never
     //accounted for, If the alarm was turned on, and ONLY the set button was pushed since then,
     //the alarm would not sound at alarm time, but go into a snooze immediately after going off.
     //This could potentially make you late for work, and had to be fixed.
-	if (just_pressed & 0x6) {
+	if (just_pressed & 0x2) {
 	  just_pressed = 0;
-	  display_date = 1;
-	  score_mode = SCORE_MODE_DATE;
+	  if(score_mode < SCORE_MODE_DEATH_TIME)
+	  {
+	    display_date = 1;
+	    score_mode = SCORE_MODE_DATE;
+	  }
+	  else
+	  {
+	  	display_death_date = 1;
+	    calc_death_date();
+	    score_mode = SCORE_MODE_DEATH_DATE;
+	  }
+	  score_mode_timeout = 3;
+	  setscore();
+	}
+	
+	if (just_pressed & 0x4) {
+	  just_pressed = 0;
+	  if(score_mode < SCORE_MODE_DEATH_TIME)
+	    score_mode = SCORE_MODE_DEATH_TIME;
+	  else
+	  	score_mode = SCORE_MODE_TIME;
 	  score_mode_timeout = 3;
 	  setscore();
 	}
@@ -330,7 +386,10 @@ void setalarmstate(void) {
       alarm_on = 1;
       // reset snoozing
       snoozetimer = 0;
-	  score_mode = SCORE_MODE_ALARM;
+      if(score_mode < SCORE_MODE_DEATH_TIME)
+	  	score_mode = SCORE_MODE_ALARM;
+	  else
+	  	score_mode = SCORE_MODE_DEATH_ALARM;
 	  score_mode_timeout = 3;
 	  setscore();
       DEBUGP("alarm on");
@@ -454,9 +513,13 @@ SIGNAL (TIMER2_OVF_vect) {
     hour_changed = 1; 
     old_h = last_h;
     old_m = last_m;
+    old_minutes_left = minutes_left;
+    minutes_left--;
   } else if (time_m != last_m) {
     minute_changed = 1;
     old_m = last_m;
+    old_minutes_left = minutes_left;
+    minutes_left--;
   }
 
   if (time_s != last_s) {
@@ -466,7 +529,10 @@ SIGNAL (TIMER2_OVF_vect) {
     if(score_mode_timeout) {
 	  score_mode_timeout--;
 	  if(!score_mode_timeout) {
-	    score_mode = SCORE_MODE_TIME;
+	  	if(score_mode >= SCORE_MODE_DEATH_TIME)
+	  	  score_mode = SCORE_MODE_DEATH_TIME;
+	  	else
+	      score_mode = SCORE_MODE_TIME;
 	    if(hour_changed) {
 	      time_h = old_h;
 	      time_m = old_m;

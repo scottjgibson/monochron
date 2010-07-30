@@ -36,10 +36,23 @@
 
 // Where the HOUR10 HOUR1 MINUTE10 and MINUTE1 digits are
 // in pixels
+
 #define DISPLAY_H10_X 30
 #define DISPLAY_H1_X 45
 #define DISPLAY_M10_X 70
 #define DISPLAY_M1_X 85
+
+#define DISPLAY_DL1_X 14
+#define DISPLAY_DL2_X 27
+#define DISPLAY_DL3_X 40
+#define DISPLAY_DL4_X 53
+
+#define DISPLAY_DR1_X 66
+#define DISPLAY_DR2_X 79
+#define DISPLAY_DR3_X 92
+#define DISPLAY_DR4_X 105
+
+
 
 // buffer space from the top
 #define DISPLAY_TIME_Y 4
@@ -49,7 +62,7 @@
 #define DISPLAY_DIGITH 16
 
 #define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
-#define LEFTPADDLE_X 10
+#define LEFTPADDLE_X 9
 
 // Paddle size (in pixels) and max speed for AI
 #define PADDLE_H 12
@@ -99,6 +112,10 @@
 #define SCORE_MODE_DATE 1
 #define SCORE_MODE_YEAR 2
 #define SCORE_MODE_ALARM 3
+#define SCORE_MODE_DEATH_TIME 4
+#define SCORE_MODE_DEATH_DATE 5
+#define SCORE_MODE_DEATH_YEAR 6
+#define SCORE_MODE_DEATH_ALARM 7
 
 // Constants for how to display time & date
 #define REGION_US 0
