@@ -219,6 +219,9 @@ uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, fl
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void drawmidline(uint8_t inverted);
 
+void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
+void render_image (uint8_t image, uint8_t x);
+
 float random_angle_rads(void);
 
 uint8_t i2bcd(uint8_t x);
@@ -227,3 +230,7 @@ uint8_t readi2ctime(void);
 
 void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
 		  uint8_t date, uint8_t mon, uint8_t yr);
+
+#define SKULL 0
+#define REAPER 1
+#define RIP 2

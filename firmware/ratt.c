@@ -220,6 +220,10 @@ int main(void) {
   wdt_enable(WDTO_2S);
   glcdInit();
   glcdClearScreen();
+  
+  render_image (SKULL,27);
+  _delay_ms(3000);
+  
 
   initanim();
   initdisplay(0);
