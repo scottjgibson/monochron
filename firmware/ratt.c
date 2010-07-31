@@ -161,6 +161,7 @@ int main(void) {
   uint8_t mcustate;
   uint8_t display_date = 0;
   uint8_t display_death_date = 0;
+  int16_t scroller;
 
   // check if we were reset
   mcustate = MCUSR;
@@ -221,8 +222,14 @@ int main(void) {
   glcdInit();
   glcdClearScreen();
   
-  render_image (SKULL,27);
-  _delay_ms(3000);
+  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+  for(scroller=-84;scroller<212;scroller++)
+  {
+    render_image (SKULL,scroller,1);
+    _delay_ms(16);
+    if(scroller==28)
+    	_delay_ms(2000);
+  }
   
 
   initanim();

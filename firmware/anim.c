@@ -60,23 +60,30 @@ PGM_P rip1_p PROGMEM = rip_1;
 
 
 //void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted)
-void render_image (uint8_t image, uint8_t x)
+void render_image (uint8_t image, int16_t x, uint8_t inverted)
 {
 	switch(image)
 	{
 		default:
 		case 0:
-		  blitsegs_rom(x+0,0,skull0_p, 64, 0);
-		  blitsegs_rom(x+28,0,skull1_p, 64, 0);
-		  blitsegs_rom(x+56,0,skull2_p, 64, 0);
+		  if((x > -28) && (x < 156))
+		    blitsegs_rom(x+0,0,skull0_p, 64, inverted);
+		  if((x > -56) && (x < 184))
+		    blitsegs_rom(x+28,0,skull1_p, 64, inverted);
+		  if((x > -84) && (x < 212))
+		    blitsegs_rom(x+56,0,skull2_p, 64, inverted);
 		  break;
 		case 1:
-		  blitsegs_rom(x+0,0,reaper0_p, 64, 0);
-		  blitsegs_rom(x+28,0,reaper1_p, 64, 0);
+		  if((x > -28) && (x < 156))
+		    blitsegs_rom(x+0,0,reaper0_p, 64, inverted);
+		  if((x > -56) && (x < 184))
+		    blitsegs_rom(x+28,0,reaper1_p, 64, inverted);
 		  break;
 		case 2:
-		  blitsegs_rom(x+0,0,rip0_p, 64, 0);
-		  blitsegs_rom(x+28,0,rip1_p, 64, 0);
+		  if((x > -28) && (x < 156))
+		    blitsegs_rom(x+0,0,rip0_p, 64, inverted);
+		  if((x > -56) && (x < 184))
+		    blitsegs_rom(x+28,0,rip1_p, 64, inverted);
 		  break;
 	}
 }
@@ -169,7 +176,6 @@ void initanim(void) {
 void initdisplay(uint8_t inverted) {
 
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
-  
 	setscore();
 
   // time
@@ -206,11 +212,31 @@ void initdisplay(uint8_t inverted) {
 
 
 void step(void) {
-	if(minute_changed || hour_changed)
+	int16_t scroller;
+	if(minute_changed)
 	{
 	  redraw_time = 1;
       minute_changed = hour_changed = 0;
 	  setscore();
+    }
+    if(hour_changed)
+    {
+    	glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+    	for(scroller=-56;scroller<184;scroller++)
+        {
+          redraw_time = 1;
+          draw(1);
+          render_image (REAPER,scroller,1);
+          _delay_ms(16);
+          if(scroller==28) {
+    	     _delay_ms(1000);
+    	     hour_changed = 0;
+    	     setscore();
+    	  }
+        }
+        glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
+        redraw_time = 1;
+        draw(0);
     }
 }
 
@@ -340,30 +366,55 @@ void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
 #define DIGIT_WIDTH 28
 #define DIGIT_HEIGHT 64
 
-void bitblit_ram(uint8_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t size, uint8_t inverted) {
-  uint8_t x, y, p;
+void bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t size, uint8_t inverted) {
+  uint8_t xx,y, p;
+  int16_t x;
 
+  if((x_origin+DIGIT_WIDTH+1)<0)
+  	  return;
   for (uint8_t i = 0; i<size; i++) {
     p = bitmap_p[i];
 
     x = i % DIGIT_WIDTH;
     if (x == 0) {
-      y = i / DIGIT_WIDTH;
-      glcdSetAddress(x+x_origin, (y_origin/8)+y);
+       while((x+x_origin)<0)
+       {
+     	 i++;
+     	 p = bitmap_p[i];
+     	 x = i % DIGIT_WIDTH;
+       }
+       xx = x+x_origin;
+       y = i / DIGIT_WIDTH;
+       //if(((x+x_origin)>=0) && ((x+x_origin)<128))
+          glcdSetAddress(xx, (y_origin/8)+y);
+       //else
+      // 	  continue;
     }
-    if (inverted) 
-      glcdDataWrite(~p);  
-    else 
-      glcdDataWrite(p);  
+    if((x+x_origin)<128)
+    {
+      if (inverted) 
+        glcdDataWrite(~p);  
+      else 
+        glcdDataWrite(p);  
+    }
   }
 }
 
 // number of segments to expect
 #define SEGMENTS 2
 
-void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
+void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
   uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0}, i,j;
 
+  if((x_origin + DIGIT_WIDTH) < 0)
+  	  return;
+  if(x_origin >= 128)
+  	  return;
+  if((y_origin + DIGIT_HEIGHT) < 0)
+  	  return;
+  if(y_origin >= 64)
+  	  return;
+  
   uint16_t pointer=0;
   for (uint8_t line = 0; line<height; line++) {
     uint8_t count = pgm_read_byte(bitmap_p+pointer);

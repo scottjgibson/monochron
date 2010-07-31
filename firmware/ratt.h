@@ -219,8 +219,8 @@ uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, fl
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void drawmidline(uint8_t inverted);
 
-void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
-void render_image (uint8_t image, uint8_t x);
+//void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
+void render_image (uint8_t image, int16_t x, uint8_t inverted);
 
 float random_angle_rads(void);
 
