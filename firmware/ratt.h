@@ -37,29 +37,35 @@
 // Where the HOUR10 HOUR1 MINUTE10 and MINUTE1 digits are
 // in pixels
 
-#define DISPLAY_H10_X 30
-#define DISPLAY_H1_X 45
-#define DISPLAY_M10_X 70
-#define DISPLAY_M1_X 85
+#define DIGIT_PIXEL_SIZE_X 3
+#define DIGIT_PIXEL_SIZE_Y 5
 
-#define DISPLAY_DL1_X 14
-#define DISPLAY_DL2_X 27
-#define DISPLAY_DL3_X 40
-#define DISPLAY_DL4_X 53
+#define DISPLAY_H10_X 0 + 5
+#define DISPLAY_H1_X 15 + 5
+#define DISPLAY_HM_X 30 + 5
+#define DISPLAY_M10_X 45 + 5
+#define DISPLAY_M1_X 60 + 5
+#define DISPLAY_MS_X 75 + 5
+#define DISPLAY_S10_X 90 + 5
+#define DISPLAY_S1_X 105 + 5
 
-#define DISPLAY_DR1_X 66
-#define DISPLAY_DR2_X 79
-#define DISPLAY_DR3_X 92
-#define DISPLAY_DR4_X 105
+#define DISPLAY_DL1_X 0 + 5
+#define DISPLAY_DL2_X 15 + 5
+#define DISPLAY_DL3_X 30 + 5
+#define DISPLAY_DL4_X 45 + 5
+#define DISPLAY_DR1_X 60 + 5
+#define DISPLAY_DR2_X 75 + 5
+#define DISPLAY_DR3_X 90 + 5
+#define DISPLAY_DR4_X 105 + 5
 
 
 
 // buffer space from the top
-#define DISPLAY_TIME_Y 4
+#define DISPLAY_TIME_Y 12
 
 // how big are the pixels (for math purposes)
-#define DISPLAY_DIGITW 10
-#define DISPLAY_DIGITH 16
+#define DISPLAY_DIGITW 16
+#define DISPLAY_DIGITH 40
 
 #define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
 #define LEFTPADDLE_X 9
@@ -211,7 +217,7 @@ void drawArrow(uint8_t x, uint8_t y, uint8_t l);
 void setalarmstate(void);
 void beep(uint16_t freq, uint8_t duration);
 void printnumber(uint8_t n, uint8_t inverted);
-uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
+uint8_t intersectrect(int16_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
 					  uint8_t x2, uint8_t y2, uint8_t w2, uint8_t h2);
 
 uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, float theball_dy, uint8_t *keepout1, uint8_t *keepout2);
@@ -221,6 +227,7 @@ void drawmidline(uint8_t inverted);
 
 //void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
 void render_image (uint8_t image, int16_t x, uint8_t inverted);
+void calc_death_date(void);
 
 float random_angle_rads(void);
 
@@ -234,3 +241,4 @@ void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
 #define SKULL 0
 #define REAPER 1
 #define RIP 2
+#define REAPER_TOW_RIP 3

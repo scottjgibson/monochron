@@ -74,10 +74,10 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
-void load_etd(void)
+uint32_t load_raw_etd(void)
 {
   dc_mode = eeprom_read_byte((uint8_t *)EE_DC_MODE);
-  uint32_t result = ETD(  eeprom_read_byte((uint8_t *)EE_DOB_MONTH),
+  return ETD(  eeprom_read_byte((uint8_t *)EE_DOB_MONTH),
                               eeprom_read_byte((uint8_t *)EE_DOB_DAY),
                               eeprom_read_byte((uint8_t *)EE_DOB_YEAR)+1900,
                               eeprom_read_byte((uint8_t *)EE_SET_MONTH),
@@ -90,6 +90,11 @@ void load_etd(void)
                               eeprom_read_byte((uint8_t *)EE_SET_HOUR),
                               eeprom_read_byte((uint8_t *)EE_SET_MIN),
                               eeprom_read_byte((uint8_t *)EE_SET_SEC));
+}
+
+void load_etd(void)
+{
+  uint32_t result = load_raw_etd();
       //result /= 60;
       result -= date_diff( eeprom_read_byte((uint8_t *)EE_SET_MONTH),
                            eeprom_read_byte((uint8_t *)EE_SET_DAY),
@@ -102,10 +107,12 @@ void load_etd(void)
 
 void calc_death_date(void)
 {
-	uint32_t timeleft = minutes_left;
-	death_d = date_d;
-	death_m = date_m;
-	death_y = date_y;
+	uint32_t timeleft;
+	death_d = eeprom_read_byte((uint8_t *)EE_SET_MONTH);
+	death_m = eeprom_read_byte((uint8_t *)EE_SET_DAY);
+	death_y = eeprom_read_byte((uint8_t *)EE_SET_YEAR);
+	timeleft = load_raw_etd();
+	
 	while (timeleft >= 1440)
       {
         timeleft -= 1440;
@@ -225,10 +232,10 @@ int main(void) {
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
   for(scroller=-84;scroller<212;scroller++)
   {
-    render_image (SKULL,scroller,1);
-    _delay_ms(16);
-    if(scroller==28)
-    	_delay_ms(2000);
+    //render_image (SKULL,scroller,1);
+    //_delay_ms(16);
+    //if(scroller==28)
+    //	_delay_ms(2000);
   }
   
 
@@ -302,6 +309,7 @@ int main(void) {
       case (SET_ALARM):
 	displaymode = SET_TIME;
 	set_time();
+	if(hour_changed) hour_changed = 0;
 	timeunknown = 0;
 	break;
       case SET_TIME:
@@ -329,9 +337,9 @@ int main(void) {
 	initdisplay(0);
       }
     }
-
     step();
-    if (displaymode == SHOW_TIME) {
+    if ((displaymode == SHOW_TIME)) {
+    	
       if (! inverted && alarming && (time_s & 0x1)) {
 	inverted = 1;
 	initdisplay(inverted);
@@ -497,6 +505,7 @@ void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
 
 }
 
+volatile uint8_t border_tick;
 // runs at about 30 hz
 uint8_t t2divider1 = 0, t2divider2 = 0;
 SIGNAL (TIMER2_OVF_vect) {
@@ -511,12 +520,13 @@ SIGNAL (TIMER2_OVF_vect) {
     t2divider1++;
     return;
   }
-
+  border_tick++;
   //This occurs at 6 Hz
 
   uint8_t last_s = time_s;
   uint8_t last_m = time_m;
   uint8_t last_h = time_h;
+  uint8_t last_dc_sadistic_s = ((dc_mode == DC_mode_sadistic)?(time_s/15):0);
 
   readi2ctime();
   
@@ -525,12 +535,20 @@ SIGNAL (TIMER2_OVF_vect) {
     old_h = last_h;
     old_m = last_m;
     old_minutes_left = minutes_left;
-    minutes_left--;
+    if(minutes_left>0)
+      minutes_left-=((dc_mode==DC_mode_sadistic)?4:1);
   } else if (time_m != last_m) {
     minute_changed = 1;
     old_m = last_m;
     old_minutes_left = minutes_left;
-    minutes_left--;
+    if(minutes_left>0)
+      minutes_left-=((dc_mode==DC_mode_sadistic)?4:1);
+  } else if ((dc_mode == DC_mode_sadistic) && (minutes_left != 0)) {
+  	if (((dc_mode == DC_mode_sadistic)?(time_s/15):0) != last_dc_sadistic_s) {
+  	  minute_changed = 1;
+  	  old_m = last_m;
+      old_minutes_left = minutes_left;
+  	}
   }
 
   if (time_s != last_s) {
