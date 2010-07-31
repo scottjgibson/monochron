@@ -25,6 +25,29 @@ volatile uint8_t timeoutcounter = 0;
 
 volatile uint8_t screenmutex = 0;
 
+//Setting the Death Clock needs its own screen.
+void display_death_menu(void) {
+  screenmutex++;
+  glcdClearScreen();
+  
+  glcdSetAddress(0, 0);
+  glcdPutStr("Death Clock Menu", NORMAL);
+  
+  glcdSetAddress(MENU_INDENT, 1);
+  
+  //Not finished yet.
+  glcdPutStr("Not Finished Yet",NORMAL);
+  glcdSetAddress(MENU_INDENT, 2);
+  glcdPutStr("Press Menu to Exit",NORMAL);
+  
+  
+  screenmutex--;
+}
+
+void set_deathclock(void) {
+  display_death_menu();
+}
+
 void display_menu(void) {
   DEBUGP("display menu");
   
@@ -305,8 +328,8 @@ void set_backlight(void) {
   display_menu();
   
   screenmutex++;
-  glcdSetAddress(0, 6);
-  glcdPutStr("Press MENU to exit   ", NORMAL);
+  //glcdSetAddress(0, 6);
+  //glcdPutStr("Press MENU to exit   ", NORMAL);
 
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 43, MENU_INDENT -1);
@@ -351,7 +374,7 @@ void set_backlight(void) {
 	printnumber(OCR2B>>OCR2B_BITSHIFT,NORMAL);
 
 	glcdSetAddress(0, 6);
-	glcdPutStr("Press MENU to exit", NORMAL);
+	glcdPutStr("Press MENU to advance", NORMAL);
 	glcdSetAddress(0, 7);
 	glcdPutStr("Press SET to set   ", NORMAL);
       }
@@ -392,11 +415,6 @@ void set_region(void) {
   display_menu();
   
   screenmutex++;
-  
-#ifndef BACKLIGHT_ADJUST
-  glcdSetAddress(0, 6);
-  glcdPutStr("Press MENU to exit   ", NORMAL);
-#endif
 
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 35, MENU_INDENT -1);
@@ -456,11 +474,7 @@ void set_region(void) {
 	}
 
 	glcdSetAddress(0, 6);
-#ifdef BACKLIGHT_ADJUST
 	glcdPutStr("Press MENU to advance", NORMAL);
-#else
-	glcdPutStr("Press MENU to exit   ", NORMAL);
-#endif
 	glcdSetAddress(0, 7);
 	glcdPutStr("Press SET to set     ", NORMAL);
       }

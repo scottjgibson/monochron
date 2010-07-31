@@ -8,13 +8,6 @@
 //BACKLIGHT_ADJUST - Allows software control of backlight, assuming you mounted your 100ohm resistor in R2'.
 #define BACKLIGHT_ADJUST 1
 
-// This is a tradeoff between sluggish and too fast to see
-#define MAX_BALL_SPEED 5 // note this is in vector arith.
-#define ball_radius 2 // in pixels
-
-// If the angle is too shallow or too narrow, the game is boring
-#define MIN_BALL_ANGLE 20
-
 // how fast to proceed the animation, note that the redrawing
 // takes some time too so you dont want this too small or itll
 // 'hiccup' and appear jittery
@@ -67,33 +60,10 @@
 #define DISPLAY_DIGITW 16
 #define DISPLAY_DIGITH 40
 
-#define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
-#define LEFTPADDLE_X 9
-
-// Paddle size (in pixels) and max speed for AI
-#define PADDLE_H 12
-#define PADDLE_W 3
-#define MAX_PADDLE_SPEED 5
-
 // How big our screen is in pixels
 #define SCREEN_W 128
 #define SCREEN_H 64
 
-// How thick the top and bottom lines are in pixels
-#define BOTBAR_H 2
-#define TOPBAR_H 2
-
-// Specs of the middle line
-#define MIDLINE_W 1
-#define MIDLINE_H (SCREEN_H / 16) // how many 'stipples'
-
-
-/* not used
-#define ALARMBOX_X 20
-#define ALARMBOX_Y 24
-#define ALARMBOX_W 80
-#define ALARMBOX_H 20
-*/
 
 /*************************** PIN DEFINITIONS */
 // there's more in KS0108.h for the display
@@ -151,10 +121,11 @@
 #define SET_REGION 8
 #define SHOW_SNOOZE 9
 #define SET_SNOOZE 10
+#define SET_DEATHCLOCK 11
 
-#define SET_MONTH 11
-#define SET_DAY 12
-#define SET_YEAR 13
+#define SET_MONTH 12
+#define SET_DAY 13
+#define SET_YEAR 14
 
 #define SET_HOUR 101
 #define SET_MIN 102
@@ -165,7 +136,7 @@
 #define SET_BRT 105
 
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
-//the state the eeprom will be in, when totally erased.
+//the state the eeprom will be in, when totally erased
 #define EE_INITIALIZED 0xC4
 #define EE_INIT 0
 #define EE_ALARM_HOUR 1
@@ -194,17 +165,8 @@
 
 /*************************** FUNCTION PROTOTYPES */
 
-uint8_t leapyear(uint16_t y);
-void clock_init(void);
-void initbuttons(void);
-void tick(void);
-void setsnooze(void);
-void initanim(void);
-void initdisplay(uint8_t inverted);
-void step(void);
-void setscore(void);
-void draw(uint8_t inverted);
-
+/******* config.c ********/
+void set_deathclock(void);
 void set_alarm(void);
 void set_time(void);
 void set_region(void);
@@ -213,30 +175,41 @@ void set_backlight(void);
 void print_timehour(uint8_t h, uint8_t inverted);
 void print_alarmhour(uint8_t h, uint8_t inverted);
 void display_menu(void);
+
+/******* ratt.c ********/
+uint8_t leapyear(uint16_t y);
+void clock_init(void);
+void initbuttons(void);
+void tick(void);
+void setsnooze(void);
 void drawArrow(uint8_t x, uint8_t y, uint8_t l);
 void setalarmstate(void);
 void beep(uint16_t freq, uint8_t duration);
 void printnumber(uint8_t n, uint8_t inverted);
+void calc_death_date(void);
+uint8_t i2bcd(uint8_t x);
+uint8_t readi2ctime(void);
+void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
+		  uint8_t date, uint8_t mon, uint8_t yr);
+
+
+/******* anim.c ********/
+void initanim(void);
+void initdisplay(uint8_t inverted);
+void step(void);
+void setscore(void);
+void draw(uint8_t inverted);
+void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
+void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
+void render_image (uint8_t image, int16_t x, uint8_t inverted);
 uint8_t intersectrect(int16_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
 					  uint8_t x2, uint8_t y2, uint8_t w2, uint8_t h2);
 
-uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, float theball_dy, uint8_t *keepout1, uint8_t *keepout2);
 
-void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
-void drawmidline(uint8_t inverted);
 
-//void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
-void render_image (uint8_t image, int16_t x, uint8_t inverted);
-void calc_death_date(void);
 
-float random_angle_rads(void);
 
-uint8_t i2bcd(uint8_t x);
 
-uint8_t readi2ctime(void);
-
-void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
-		  uint8_t date, uint8_t mon, uint8_t yr);
 
 #define SKULL 0
 #define REAPER 1

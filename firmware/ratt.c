@@ -95,11 +95,10 @@ uint32_t load_raw_etd(void)
 void load_etd(void)
 {
   uint32_t result = load_raw_etd();
-      //result /= 60;
       result -= date_diff( eeprom_read_byte((uint8_t *)EE_SET_MONTH),
                            eeprom_read_byte((uint8_t *)EE_SET_DAY),
                            eeprom_read_byte((uint8_t *)EE_SET_YEAR)+2000,
-                           date_m,date_d,date_y+2000) * 1440 * ((dc_mode == DC_mode_sadistic)?4:1);
+                           date_m,date_d,date_y+2000) * 1440l * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
   minutes_left = (int32_t)result;
@@ -108,8 +107,8 @@ void load_etd(void)
 void calc_death_date(void)
 {
 	uint32_t timeleft;
-	death_d = eeprom_read_byte((uint8_t *)EE_SET_MONTH);
-	death_m = eeprom_read_byte((uint8_t *)EE_SET_DAY);
+	death_m = eeprom_read_byte((uint8_t *)EE_SET_MONTH);
+	death_d = eeprom_read_byte((uint8_t *)EE_SET_DAY);
 	death_y = eeprom_read_byte((uint8_t *)EE_SET_YEAR);
 	timeleft = load_raw_etd();
 	
@@ -317,15 +316,20 @@ int main(void) {
 	set_date();
 	break;
       case SET_DATE:
+    load_etd();	//So that the calculated time of death is fresh, after changing the date/time. :)
 	displaymode = SET_REGION;
 	set_region();
 	break;
-#ifdef BACKLIGHT_ADJUST
 	  case SET_REGION:
+#ifdef BACKLIGHT_ADJUST
 	displaymode = SET_BRIGHTNESS;
 	set_backlight();
 	break;
+	  case SET_BRIGHTNESS:
 #endif
+	displaymode = SET_DEATHCLOCK;
+	set_deathclock();
+	break;
       default:
 	displaymode = SHOW_TIME;
 	glcdClearScreen();

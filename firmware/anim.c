@@ -271,8 +271,6 @@ int16_t reaper_x;
 #define reaper_w 56
 #define reaper_h 64
 void step(void) {
-	uint16_t max_x;
-	uint8_t image;
 	if((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_DEATH_TIME))
 	{
 		if(minute_changed)
@@ -577,7 +575,7 @@ void bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t 
 #define SEGMENTS 2
 
 void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
-  uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0}, i,j;
+  uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
 
   if((x_origin + DIGIT_WIDTH) < 0)
   	  return;
