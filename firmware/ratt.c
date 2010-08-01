@@ -429,9 +429,18 @@ void drawArrow(uint8_t x, uint8_t y, uint8_t l) {
   glcdSetDot(x+l-3,y+2);
 }
 
+void printnumber_1d(uint8_t n, uint8_t inverted) {
+  glcdWriteChar(n%10+'0', inverted);
+}
 
-void printnumber(uint8_t n, uint8_t inverted) {
+void printnumber_2d(uint16_t n, uint8_t inverted) {
   glcdWriteChar(n/10+'0', inverted);
+  glcdWriteChar(n%10+'0', inverted);
+}
+
+void printnumber_3d(uint16_t n, uint8_t inverted) {
+  glcdWriteChar(n/100+'0', inverted);
+  glcdWriteChar((n%100)/10+'0', inverted);
   glcdWriteChar(n%10+'0', inverted);
 }
 
@@ -598,9 +607,9 @@ SIGNAL (TIMER2_OVF_vect) {
       glcdSetAddress(MENU_INDENT + 10*6, 2);
       print_timehour(time_h, NORMAL);
       glcdWriteChar(':', NORMAL);
-      printnumber(time_m, NORMAL);
+      printnumber_2d(time_m, NORMAL);
       glcdWriteChar(':', NORMAL);
-      printnumber(time_s, NORMAL);
+      printnumber_2d(time_s, NORMAL);
 
       if (time_format == TIME_12H) {
 	glcdWriteChar(' ', NORMAL);
