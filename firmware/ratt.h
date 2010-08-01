@@ -121,19 +121,30 @@
 #define SET_REGION 8
 #define SHOW_SNOOZE 9
 #define SET_SNOOZE 10
-#define SET_DEATHCLOCK 11
+#define SET_DEATHCLOCK_DOB 11
+#define SET_DEATHCLOCK_GENDER 12
+#define SET_DEATHCLOCK_MODE 13
+#define SET_DEATHCLOCK_BMI 14
+#define SET_DEATHCLOCK_SMOKER 15
 
-#define SET_MONTH 12
-#define SET_DAY 13
-#define SET_YEAR 14
+#define SET_MONTH 101
+#define SET_DAY 102
+#define SET_YEAR 103
 
-#define SET_HOUR 101
-#define SET_MIN 102
-#define SET_SEC 103
+#define SET_HOUR 104
+#define SET_MIN 105
+#define SET_SEC 106
 
-#define SET_REG 104
+#define SET_REG 107
 
-#define SET_BRT 105
+#define SET_BRT 108
+
+#define SET_DCGENDER 109
+#define SET_DCMODE 110
+#define SET_BMI_UNIT 111
+#define SET_BMI_WT 112
+#define SET_BMI_HT 113
+#define SET_DCSMOKER 114
 
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased
@@ -166,7 +177,9 @@
 /*************************** FUNCTION PROTOTYPES */
 
 /******* config.c ********/
-void set_deathclock(void);
+void set_deathclock_dob(void);
+void set_deathclock_gender(void);
+void set_deathclock_mode(void);
 void set_alarm(void);
 void set_time(void);
 void set_region(void);
@@ -193,6 +206,7 @@ uint8_t i2bcd(uint8_t x);
 uint8_t readi2ctime(void);
 void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
 		  uint8_t date, uint8_t mon, uint8_t yr);
+void load_etd(void);
 
 
 /******* anim.c ********/

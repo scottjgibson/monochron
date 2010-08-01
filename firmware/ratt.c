@@ -327,8 +327,24 @@ int main(void) {
 	break;
 	  case SET_BRIGHTNESS:
 #endif
-	displaymode = SET_DEATHCLOCK;
-	set_deathclock();
+	displaymode = SET_DEATHCLOCK_DOB;
+	set_deathclock_dob();
+	break;
+	  case SET_DEATHCLOCK_DOB:
+	displaymode = SET_DEATHCLOCK_GENDER;
+	set_deathclock_gender();
+	break;
+	  case SET_DEATHCLOCK_GENDER:
+	displaymode = SET_DEATHCLOCK_MODE;
+	set_deathclock_mode();
+	break;
+	  case SET_DEATHCLOCK_MODE:
+	displaymode = SET_DEATHCLOCK_BMI;
+	
+	break;
+	  case SET_DEATHCLOCK_BMI:
+	displaymode = SET_DEATHCLOCK_SMOKER;
+	
 	break;
       default:
 	displaymode = SHOW_TIME;
