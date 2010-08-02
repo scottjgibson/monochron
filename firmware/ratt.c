@@ -103,6 +103,13 @@ void load_etd(void)
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
   minutes_left = (int32_t)result;
+  calc_death_date();
+  if(death_y < date_y)	//Bug fix for the rare cases where Minutes left is inadvertantly positive, when it should not be.
+  	  minutes_left = 0;
+  else if((death_y == date_y) && (death_m < date_m))
+  	  minutes_left = 0;
+  else if ((death_y == date_y) && (death_m == date_m) && (death_d < date_d))
+  	  minutes_left = 0;
   if(minutes_left <= 0)
   	  reaper_tow_rip=1;
   else
