@@ -362,9 +362,9 @@ int main(void) {
 	initdisplay(0);
       }
     }
-    step();
+    
     if ((displaymode == SHOW_TIME)) {
-    	
+      step();
       if (! inverted && alarming && (time_s & 0x1)) {
 	inverted = 1;
 	initdisplay(inverted);

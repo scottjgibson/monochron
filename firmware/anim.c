@@ -390,14 +390,14 @@ void draw(uint8_t inverted) {
     }
 	  if(score_mode == SCORE_MODE_TIME)
 	  {
-	  	  if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-	  	      DISPLAY_S10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s/10)!=(old_seconds/10)) {
+	  	  //if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
+	  	  //    DISPLAY_S10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s/10)!=(old_seconds/10)) {
 	  	        drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, time_s / 10, inverted);
-	  	  }
-	  	  if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-	  	       DISPLAY_S1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s%10)!=(old_seconds%10)) {
+	  	  //}
+	  	  //if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
+	  	  //     DISPLAY_S1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s%10)!=(old_seconds%10)) {
 	  	        drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, time_s % 10, inverted);
-	  	  }
+	  	  //}
 	      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
 	  	       DISPLAY_HM_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
 	  	        drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
