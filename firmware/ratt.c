@@ -231,10 +231,10 @@ int main(void) {
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
   for(scroller=-84;scroller<212;scroller++)
   {
-    //render_image (SKULL,scroller,1);
-    //_delay_ms(16);
-    //if(scroller==28)
-    //	_delay_ms(2000);
+    render_image (SKULL,scroller,1);
+    _delay_ms(16);
+    if(scroller==28)
+    	_delay_ms(2000);
   }
   
 
@@ -340,8 +340,8 @@ int main(void) {
 	break;
 	  case SET_DEATHCLOCK_MODE:
 	displaymode = SET_DEATHCLOCK_BMI;
-	
-	//break;
+	set_deathclock_bmi();
+	break;
 	  case SET_DEATHCLOCK_BMI:
 	displaymode = SET_DEATHCLOCK_SMOKER;
 	set_deathclock_smoker();

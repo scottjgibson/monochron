@@ -67,6 +67,46 @@ void plus_to_change_default(void)
 }
 
 
+void display_bmi_set(uint8_t inverted1, uint8_t inverted2, uint8_t inverted3)
+{
+  glcdSetAddress(MENU_INDENT, 4);
+  glcdPutStr("Set ", NORMAL);
+  if(cfg_bmi_unit == BMI_Imperial)
+  {
+  	  glcdPutStr("Imp:", inverted1);
+  	  printnumber_3d(cfg_bmi_weight, inverted2);
+  	  glcdPutStr("lb ", inverted2);
+  	  printnumber_2d(cfg_bmi_height / 12, inverted3);
+  	  glcdPutStr("ft", inverted3);
+  	  printnumber_2d(cfg_bmi_height % 12, inverted3);
+  	  
+  }
+  else if (cfg_bmi_unit == BMI_Metric)
+  {
+  	  glcdPutStr("Met:", inverted1);
+  	  glcdWriteChar(' ', NORMAL);
+  	  printnumber_3d(cfg_bmi_weight, inverted2);
+  	  glcdPutStr("kg ", inverted2);
+  	  printnumber_3d(cfg_bmi_height, inverted3);
+  	  glcdPutStr("cm", inverted3);
+  }
+  else
+  {
+  	  glcdPutStr("BMI:", inverted1);
+  	  glcdPutStr("         ",NORMAL);
+  	  printnumber_3d(cfg_bmi_weight, inverted2);
+  }
+}
+
+void display_gender(uint8_t inverted)
+{
+	glcdSetAddress(MENU_INDENT, 2);
+  glcdPutStr("Set Gender:   ",NORMAL);
+  if(cfg_gender==DC_gender_male)
+  	  glcdPutStr("  Male", inverted);
+  else
+  	  glcdPutStr("Female", inverted);
+}
 
 //Setting the Death Clock needs its own screen.
 void display_death_menu(void) {
@@ -104,12 +144,7 @@ void display_death_menu(void) {
   printnumber_2d((cfg_dob_y+1900)%100, NORMAL);
  
   //Gender, Male, Female
-  glcdSetAddress(MENU_INDENT, 2);
-  glcdPutStr("Set Gender:   ",NORMAL);
-  if(cfg_gender==DC_gender_male)
-  	  glcdPutStr("  Male", NORMAL);
-  else
-  	  glcdPutStr("Female", NORMAL);
+  display_gender(NORMAL);
   
   //Mode, Normal, Optimistic, Pessimistic, Sadistic
   glcdSetAddress(MENU_INDENT, 3);
@@ -126,31 +161,7 @@ void display_death_menu(void) {
   //BMI Entry Method, Imperial (Weight in pounds, height in X foot Y inches), 
   //Metric (Weight in Kilograms, Height in Centimeters), 
   //Direct (Direct BMI value from 0-255, (actual range for calculation is less then 25, 25-44, and greater then or equal to 45.))
-  glcdSetAddress(MENU_INDENT, 4);
-  glcdPutStr("Set ", NORMAL);
-  if(cfg_bmi_unit == BMI_Imperial)
-  {
-  	  glcdPutStr("Imp:", NORMAL);
-  	  printnumber_3d(cfg_bmi_weight, NORMAL);
-  	  glcdPutStr("lb ", NORMAL);
-  	  printnumber_2d(cfg_bmi_height / 12, NORMAL);
-  	  glcdPutStr("ft", NORMAL);
-  	  printnumber_2d(cfg_bmi_height % 12, NORMAL);
-  	  
-  }
-  else if (cfg_bmi_unit == BMI_Metric)
-  {
-  	  glcdPutStr("Met: ", NORMAL);
-  	  printnumber_3d(cfg_bmi_weight, NORMAL);
-  	  glcdPutStr("kg ", NORMAL);
-  	  printnumber_3d(cfg_bmi_height, NORMAL);
-  	  glcdPutStr("cm", NORMAL);
-  }
-  else
-  {
-  	  glcdPutStr("BMI:         ", NORMAL);
-  	  printnumber_3d(cfg_bmi_weight, NORMAL);
-  }
+  display_bmi_set(NORMAL,NORMAL,NORMAL);
   
   //Smoking Status.
   glcdSetAddress(MENU_INDENT, 5);
@@ -354,6 +365,8 @@ void set_deathclock_dob(void) {
   }
 }
 
+
+
 void set_deathclock_gender(void) {
   uint8_t mode = SET_DEATHCLOCK_GENDER;
 
@@ -389,21 +402,13 @@ void set_deathclock_gender(void) {
 	// ok now its selected
 	mode = SET_DCGENDER;
 	// print the region 
-	glcdSetAddress(MENU_INDENT + 14*6, 2);
-	if(cfg_gender == DC_gender_male)
-	  glcdPutStr("  Male", INVERTED);
-	else
-	  glcdPutStr("Female", INVERTED);
+	display_gender(INVERTED);
 	// display instructions below
 	plus_to_change_default();
       } else {
 	mode = SET_DEATHCLOCK_GENDER;
 	// print the region normal
-	glcdSetAddress(MENU_INDENT + 14*6, 2);
-	if(cfg_gender == DC_gender_male)
-	  glcdPutStr("  Male", NORMAL);
-	else
-	  glcdPutStr("Female", NORMAL);
+	display_gender(NORMAL);
 
 	menu_advance_set_exit(0);
       }
@@ -421,11 +426,7 @@ void set_deathclock_gender(void) {
 	// put a small arrow next to 'set 12h/24h'
 	drawArrow(0, 19, MENU_INDENT -1);
 
-	glcdSetAddress(MENU_INDENT + 14*6, 2);
-	if(cfg_gender == DC_gender_male)
-	  glcdPutStr("  Male", INVERTED);
-	else
-	  glcdPutStr("Female", INVERTED);
+	display_gender(INVERTED);
 	screenmutex--;
 
 	eeprom_write_byte((uint8_t *)EE_GENDER, cfg_gender);
@@ -523,7 +524,116 @@ void set_deathclock_mode(void) {
   }
 }
 
+void set_deathclock_bmi(void) {
+  uint8_t mode = SET_DEATHCLOCK_BMI;
 
+  display_death_menu();
+  screenmutex++;
+  // put a small arrow next to 'set alarm'
+  drawArrow(0, 35, MENU_INDENT -1);
+  screenmutex--;
+  timeoutcounter = INACTIVITYTIMEOUT;  
+
+  while (1) {
+    if (just_pressed & 0x1) { // mode change
+      return;
+    }
+    if (just_pressed || pressed) {
+      timeoutcounter = INACTIVITYTIMEOUT;  
+      // timeout w/no buttons pressed after 3 seconds?
+    } else if (!timeoutcounter) {
+      //timed out!
+      displaymode = SHOW_TIME;     
+      return;
+    }
+    if (just_pressed & 0x2) {
+      just_pressed = 0;
+      screenmutex++;
+
+      if (mode == SET_DEATHCLOCK_BMI) {
+	DEBUG(putstring("Set BMI Unit"));
+	// ok now its selected
+	mode = SET_BMI_UNIT;
+
+	//Set BMI Unit
+	display_bmi_set(INVERTED,NORMAL,NORMAL);
+	// display instructions below
+	PLUS_TO_CHANGE(" ut."," set unit");
+      } else if (mode == SET_BMI_UNIT) {
+	DEBUG(putstring("Set bmi weight / bmi direct"));
+	mode = SET_BMI_WT;
+	display_bmi_set(NORMAL,INVERTED,NORMAL);
+	// display instructions below
+	if(cfg_bmi_unit != BMI_Direct)
+	  PLUS_TO_CHANGE(" wt."," set wt. ");
+	else
+	  PLUS_TO_CHANGE(" bmi"," set bmi ");
+	  } else if ((mode == SET_BMI_WT) && (cfg_bmi_unit != BMI_Direct)) {
+	mode = SET_BMI_HT;
+    display_bmi_set(NORMAL,NORMAL,INVERTED);
+    PLUS_TO_CHANGE(" ht."," set ht. ");
+      } else {
+	mode = SET_DEATHCLOCK_BMI;
+	display_bmi_set(NORMAL,NORMAL,NORMAL);
+	// display instructions below
+	menu_advance_set_exit(0);
+      }
+      screenmutex--;
+    }
+    if ((just_pressed & 0x4) || (pressed & 0x4)) {
+      just_pressed = 0;
+      screenmutex++;
+
+      if (mode == SET_BMI_UNIT) { 
+      	  cfg_bmi_unit = (cfg_bmi_unit + 1) % 3;
+      	  if(cfg_bmi_unit == BMI_Imperial) {
+      	  	  cfg_bmi_weight = 35;
+      	  	  cfg_bmi_height = 36;
+      	  } else if (cfg_bmi_unit == BMI_Metric) {
+      	  	  cfg_bmi_weight = 15;
+      	  	  cfg_bmi_height = 92;
+      	  } else {
+      	  	  cfg_bmi_weight = 0;
+      	  }
+      	  display_bmi_set(INVERTED,NORMAL,NORMAL);
+      } 
+      if (mode == SET_BMI_WT) {
+      	  if(cfg_bmi_unit == BMI_Imperial) {
+      	  	  //cfg_bmi_weight = (cfg_bmi_weight + 5) % 660;
+      	  	  cfg_bmi_weight += 5;
+      	  	  if ( cfg_bmi_weight > 660 )
+      	  	  	  cfg_bmi_weight = 35;
+      	  } else if (cfg_bmi_unit == BMI_Metric) {
+      	  	  cfg_bmi_weight += 5;
+      	  	  if ( cfg_bmi_weight > 300 )
+      	  	  	  cfg_bmi_weight = 15;
+      	  } else {
+      	  	  cfg_bmi_weight = (cfg_bmi_weight + 1) % 256;
+      	  }
+      	  display_bmi_set(NORMAL,INVERTED,NORMAL);
+      }
+      if (mode == SET_BMI_HT) {
+      	  if(cfg_bmi_unit == BMI_Imperial) {
+      	  	  cfg_bmi_height++;
+      	  	  if ( cfg_bmi_height > 120 )
+      	  	  	  cfg_bmi_height = 36;
+      	  } else if (cfg_bmi_unit == BMI_Metric) {
+      	  	  cfg_bmi_height++;
+      	  	  if ( cfg_bmi_height > 305 )
+      	  	  	  cfg_bmi_height = 92;
+      	  }
+      	  display_bmi_set(NORMAL,NORMAL,INVERTED);
+      }
+      eeprom_write_byte((uint8_t *)EE_BMI_UNIT,cfg_bmi_unit);
+      eeprom_write_word((uint16_t *)EE_BMI_WEIGHT,cfg_bmi_weight);
+      eeprom_write_word((uint16_t *)EE_BMI_HEIGHT,cfg_bmi_height);
+      deathclock_changed();
+      screenmutex--;
+      if (pressed & 0x4)
+	_delay_ms(200);
+    }
+  }
+}
 
 void set_deathclock_smoker(void) {
   uint8_t mode = SET_DEATHCLOCK_SMOKER;

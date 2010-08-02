@@ -180,7 +180,7 @@
 void set_deathclock_dob(void);
 void set_deathclock_gender(void);
 void set_deathclock_mode(void);
-
+void set_deathclock_bmi(void);
 void set_deathclock_smoker(void);
 void set_alarm(void);
 void set_time(void);
