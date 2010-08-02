@@ -50,14 +50,6 @@ void menu_advance_set_exit(uint8_t exit)
   glcdPutStr("Press SET to set     ", NORMAL);
 }
 
-void plus_to_change_default(void)
-{
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change    ", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to save    ", NORMAL);
-}
-
 #define PLUS_TO_CHANGE(x,y) plus_to_change(PSTR(x),PSTR(y))
 void plus_to_change(const char *str1, const char *str2)
 {
@@ -68,6 +60,13 @@ void plus_to_change(const char *str1, const char *str2)
 	glcdPutStr("Press SET to", NORMAL);
 	glcdPutStr_rom(str2,NORMAL);
 }
+
+void plus_to_change_default(void)
+{
+	PLUS_TO_CHANGE("    "," save    ");
+}
+
+
 
 //Setting the Death Clock needs its own screen.
 void display_death_menu(void) {
@@ -518,6 +517,85 @@ void set_deathclock_mode(void) {
 	screenmutex--;
 
 	eeprom_write_byte((uint8_t *)EE_DC_MODE, cfg_dc_mode);
+	deathclock_changed();   
+      }
+    }
+  }
+}
+
+
+
+void set_deathclock_smoker(void) {
+  uint8_t mode = SET_DEATHCLOCK_SMOKER;
+
+  display_death_menu();
+  menu_advance_set_exit(1);
+  
+  screenmutex++;
+
+  // put a small arrow next to 'set 12h/24h'
+  drawArrow(0, 43, MENU_INDENT -1);
+  screenmutex--;
+  
+  timeoutcounter = INACTIVITYTIMEOUT;  
+
+  while (1) {
+    if (just_pressed & 0x1) { // mode change
+      return;
+    }
+    if (just_pressed || pressed) {
+      timeoutcounter = INACTIVITYTIMEOUT;  
+      // timeout w/no buttons pressed after 3 seconds?
+    } else if (!timeoutcounter) {
+      //timed out!
+      displaymode = SHOW_TIME;     
+      return;
+    }
+  
+    if (just_pressed & 0x2) {
+      just_pressed = 0;
+      screenmutex++;
+
+      if (mode == SET_DEATHCLOCK_SMOKER) {
+	DEBUG(putstring("Setting deathclock smoker status"));
+	// ok now its selected
+	mode = SET_DCSMOKER;
+	// print the region 
+	glcdSetAddress(MENU_INDENT + 17*6, 5);
+	if(cfg_smoker == DC_non_smoker)
+	  glcdPutStr(" No", INVERTED);
+	else
+	  glcdPutStr("Yes", INVERTED);
+	// display instructions below
+	plus_to_change_default();
+      } else {
+	mode = SET_DEATHCLOCK_SMOKER;
+	// print the region normal
+	glcdSetAddress(MENU_INDENT + 17*6, 5);
+	if(cfg_smoker == DC_non_smoker)
+	  glcdPutStr(" No", NORMAL);
+	else
+	  glcdPutStr("Yes", NORMAL);
+
+	menu_advance_set_exit(1);
+      }
+      screenmutex--;
+    }
+    if ((just_pressed & 0x4) || (pressed & 0x4)) {
+      just_pressed = 0;
+      
+      if (mode == SET_DCSMOKER) {
+	    cfg_smoker = !cfg_smoker;
+	screenmutex++;
+
+	glcdSetAddress(MENU_INDENT + 17*6, 5);
+	if(cfg_smoker == DC_non_smoker)
+	  glcdPutStr(" No", INVERTED);
+	else
+	  glcdPutStr("Yes", INVERTED);
+	screenmutex--;
+
+	eeprom_write_byte((uint8_t *)EE_SMOKER, cfg_smoker);
 	deathclock_changed();   
       }
     }
@@ -1092,10 +1170,7 @@ void set_time(void) {
 	}
 
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change hr.", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set hour", NORMAL);
+	PLUS_TO_CHANGE(" hr."," set hour");
       } else if (mode == SET_HOUR) {
 	DEBUG(putstring("Set time min"));
 	mode = SET_MIN;
@@ -1106,10 +1181,7 @@ void set_time(void) {
 	glcdWriteChar(':', NORMAL);
 	printnumber_2d(min, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change min", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set mins", NORMAL);
+	PLUS_TO_CHANGE(" min"," set mins");
 
 	glcdSetAddress(MENU_INDENT + 18*6, 2);
 	if (time_format == TIME_12H) {
@@ -1134,10 +1206,7 @@ void set_time(void) {
 	// and the seconds inverted
 	printnumber_2d(sec, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change sec", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set secs", NORMAL);
+	PLUS_TO_CHANGE(" sec"," set secs");
       } else {
 	// done!
 	DEBUG(putstring("done setting time"));

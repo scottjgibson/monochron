@@ -341,10 +341,10 @@ int main(void) {
 	  case SET_DEATHCLOCK_MODE:
 	displaymode = SET_DEATHCLOCK_BMI;
 	
-	break;
+	//break;
 	  case SET_DEATHCLOCK_BMI:
 	displaymode = SET_DEATHCLOCK_SMOKER;
-	
+	set_deathclock_smoker();
 	break;
       default:
 	displaymode = SHOW_TIME;
