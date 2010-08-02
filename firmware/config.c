@@ -30,9 +30,14 @@ volatile uint8_t screenmutex = 0;
 
 void deathclock_changed(void) //Any changes to the death clock neccesitates a recalculation of the death clock.
 {
+	uint8_t ee_set_year = date_y + 100;
+	uint8_t max_year_diff[4][2] = {{72,78},{57,63},{82,88},{35,38}};
+	
+	if(((date_y + 100)-cfg_dob_y)>max_year_diff[cfg_dc_mode][cfg_gender]) ee_set_year = cfg_dob_y + max_year_diff[cfg_dc_mode][cfg_gender];
+	
 	eeprom_write_byte((uint8_t *)EE_SET_MONTH,date_m);
 	eeprom_write_byte((uint8_t *)EE_SET_DAY,date_d);
-	eeprom_write_byte((uint8_t *)EE_SET_YEAR,date_y);
+	eeprom_write_byte((uint8_t *)EE_SET_YEAR,ee_set_year);
 	eeprom_write_byte((uint8_t *)EE_SET_HOUR,time_h);
 	eeprom_write_byte((uint8_t *)EE_SET_MIN,time_m);
 	eeprom_write_byte((uint8_t *)EE_SET_SEC,time_s);

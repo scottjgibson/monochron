@@ -104,24 +104,24 @@ void render_image (uint8_t image, int16_t x, uint8_t inverted)
 		  	glcdWriteChar((death_y%10)+'0', inverted);
 		  } else if ((x >= -24 ) && (x < -18)) {
 		  	glcdSetAddress(24+x,5);
-		  	glcdWriteChar((death_y/10)+'0', inverted);
+		  	glcdWriteChar(((death_y%100)/10)+'0', inverted);
 		    glcdWriteChar((death_y%10)+'0', inverted);
 		  } else if ((x >= -18 ) && (x < -12)) {
 		  	glcdSetAddress(18+x,5);
-		  	glcdWriteChar('0', inverted);
-		    glcdWriteChar((death_y/10)+'0', inverted);
+		  	glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+		    glcdWriteChar(((death_y%100)/10)+'0', inverted);
 		    glcdWriteChar((death_y%10)+'0', inverted);
 		  } else if ((x >= -12 ) && (x < 36)) {
 		  	glcdSetAddress(12+x,5);
-		  	glcdWriteChar('2', inverted);
-		    glcdWriteChar('0', inverted);
-		    glcdWriteChar((death_y/10)+'0', inverted);
+		  	glcdWriteChar(((19+(death_y/100))/10)+'0', inverted);
+		    glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+		    glcdWriteChar(((death_y%100)/10)+'0', inverted);
 		    glcdWriteChar((death_y%10)+'0', inverted);
 		  } else if (x >= 36) {
 		  	glcdSetAddress(48,5);
-		  	glcdWriteChar('2', inverted);
-		    glcdWriteChar('0', inverted);
-		    glcdWriteChar((death_y/10)+'0', inverted);
+		  	glcdWriteChar(((19+(death_y/100))/10)+'0', inverted);
+		    glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+		    glcdWriteChar(((death_y%100)/10)+'0', inverted);
 		    glcdWriteChar((death_y%10)+'0', inverted);
 		  }
 	}
@@ -193,8 +193,8 @@ void setscore(void)
       }
       break;
     case SCORE_MODE_DEATH_YEAR:
-      left_score = 20;
-      right_score = death_y;
+      left_score = 19 + (death_y / 100);
+      right_score = death_y % 100;
       break;
     case SCORE_MODE_ALARM:
       left_score = alarm_h;
@@ -294,9 +294,9 @@ void initdisplay(uint8_t inverted) {
 		
 		render_image(RIP,36,inverted);
 		glcdSetAddress(48, 5);
-		glcdWriteChar('2', NORMAL);
-		glcdWriteChar('0', NORMAL);
-		glcdWriteChar((death_y/10)+'0', NORMAL);
+		glcdWriteChar(((19+(death_y/100))/10)+'0', NORMAL);
+		glcdWriteChar(((19+(death_y/100))%10)+'0', NORMAL);
+		glcdWriteChar(((death_y%100)/10)+'0', NORMAL);
 		glcdWriteChar((death_y%10)+'0', NORMAL);
 	}
   }

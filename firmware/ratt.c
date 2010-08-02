@@ -83,7 +83,7 @@ uint32_t load_raw_etd(void)
                               eeprom_read_byte((uint8_t *)EE_DOB_YEAR)+1900,
                               eeprom_read_byte((uint8_t *)EE_SET_MONTH),
                               eeprom_read_byte((uint8_t *)EE_SET_DAY),
-                              eeprom_read_byte((uint8_t *)EE_SET_YEAR)+2000,
+                              eeprom_read_byte((uint8_t *)EE_SET_YEAR)+1900,
                               eeprom_read_byte((uint8_t *)EE_GENDER),
                               dc_mode,
                               BodyMassIndex( eeprom_read_byte((uint8_t *)EE_BMI_UNIT), eeprom_read_word((uint16_t *)EE_BMI_HEIGHT), eeprom_read_word((uint16_t *)EE_BMI_WEIGHT)),
@@ -98,17 +98,17 @@ void load_etd(void)
   uint32_t result = load_raw_etd();
       result -= date_diff( eeprom_read_byte((uint8_t *)EE_SET_MONTH),
                            eeprom_read_byte((uint8_t *)EE_SET_DAY),
-                           eeprom_read_byte((uint8_t *)EE_SET_YEAR)+2000,
+                           eeprom_read_byte((uint8_t *)EE_SET_YEAR)+1900,
                            date_m,date_d,date_y+2000) * 1440l * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
   minutes_left = (int32_t)result;
   calc_death_date();
-  if(death_y < date_y)	//Bug fix for the rare cases where Minutes left is inadvertantly positive, when it should not be.
+  if(death_y < (date_y + 100))	//Bug fix for the rare cases where Minutes left is inadvertantly positive, when it should not be.
   	  minutes_left = 0;
-  else if((death_y == date_y) && (death_m < date_m))
+  else if((death_y == (date_y + 100)) && (death_m < date_m))
   	  minutes_left = 0;
-  else if ((death_y == date_y) && (death_m == date_m) && (death_d < date_d))
+  else if ((death_y == (date_y + 100)) && (death_m == date_m) && (death_d < date_d))
   	  minutes_left = 0;
   if(minutes_left <= 0)
   	  reaper_tow_rip=1;
@@ -131,7 +131,7 @@ void calc_death_date(void)
         if ((death_d > 31) ||
                ((death_d == 31) && ((death_m == 4)||(death_m == 6)||(death_m == 9)||(death_m == 11))) ||
                ((death_d == 30) && (death_m == 2)) ||
-               ((death_d == 29) && (death_m == 2) && !leapyear(2000+death_y))) {
+               ((death_d == 29) && (death_m == 2) && !leapyear(1900+death_y))) {
                  death_d = 1;
                  death_m++;
             }
@@ -159,7 +159,7 @@ void init_eeprom(void) {	//Set eeprom to a default state.
     eeprom_write_byte((uint8_t *)EE_DOB_YEAR, 80);
     eeprom_write_byte((uint8_t *)EE_SET_MONTH, 7);
     eeprom_write_byte((uint8_t *)EE_SET_DAY, 28);
-    eeprom_write_byte((uint8_t *)EE_SET_YEAR, 10);
+    eeprom_write_byte((uint8_t *)EE_SET_YEAR, 110);
     eeprom_write_byte((uint8_t *)EE_SET_HOUR, 20);
     eeprom_write_byte((uint8_t *)EE_SET_MIN, 05);
     eeprom_write_byte((uint8_t *)EE_SET_SEC, 25);
