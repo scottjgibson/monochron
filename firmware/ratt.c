@@ -32,6 +32,7 @@ volatile uint8_t score_mode = SCORE_MODE_TIME;
 volatile int32_t minutes_left=0;
 volatile int32_t old_minutes_left;
 volatile uint8_t dc_mode;
+volatile uint8_t reaper_tow_rip;
 
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
@@ -102,6 +103,10 @@ void load_etd(void)
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
   minutes_left = (int32_t)result;
+  if(minutes_left <= 0)
+  	  reaper_tow_rip=1;
+  else
+  	  reaper_tow_rip=0;
 }
 
 void calc_death_date(void)
@@ -240,7 +245,7 @@ int main(void) {
 
   initanim();
   initdisplay(0);
-  load_etd();	//Only need to do this once at power on, and once if Death Clock settings are changed.
+  load_etd();	//Only need to do this once at power on, and once if Death Clock settings are changed, and refresh if date/time is changed.
 
   while (1) {
     animticker = ANIMTICK_MS;
