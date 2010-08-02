@@ -446,10 +446,12 @@ void draw(uint8_t inverted) {
 		  	}
 		  	if(border_tick != old_border_tick)
 		  	{
-		  		glcdFillRectangle(border_x, border_y, 2, 2, border_state ^ inverted);
+		  		glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
+		  		if(++border_state >= 4) border_state = 0;
 		  		if((border_x == 0) && (border_y == 0))
 		  		{
-		  			border_state = !border_state;
+		  			border_state += 2;
+		  			if(border_state >= 4) border_state = 0;
 		  			border_y+=2;
 		  		}
 		  		else if ((border_x == 0) && (border_y < 62))
