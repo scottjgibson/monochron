@@ -174,6 +174,18 @@ void init_eeprom(void) {	//Set eeprom to a default state.
   }
 }
 
+void credits(uint8_t state)
+{
+    while (pressed & 2)
+    {
+      if(state != alarm_on)
+      {
+        initdisplay(2);
+      }
+    }
+    
+}
+
 int main(void) {
   uint8_t inverted = 0;
   uint8_t mcustate;
@@ -278,7 +290,9 @@ int main(void) {
 	  setscore();
 	  display_death_date = 0;
 	}
-
+	
+	
+	credits(alarm_on);
     //Was formally set for just the + button.  However, because the Set button was never
     //accounted for, If the alarm was turned on, and ONLY the set button was pushed since then,
     //the alarm would not sound at alarm time, but go into a snooze immediately after going off.
@@ -385,7 +399,7 @@ int main(void) {
 	PORTB &= ~_BV(5);
     }
   }
-  
+
     while (animticker);
     //uart_getchar();  // you would uncomment this so you can manually 'step'
   }
@@ -455,10 +469,6 @@ void drawArrow(uint8_t x, uint8_t y, uint8_t l) {
   glcdSetDot(x+l-2,y+1);
   glcdSetDot(x+l-3,y-2);
   glcdSetDot(x+l-3,y+2);
-}
-
-void printnumber_1d(uint8_t n, uint8_t inverted) {
-  glcdWriteChar(n%10+'0', inverted);
 }
 
 void printnumber_2d(uint16_t n, uint8_t inverted) {
