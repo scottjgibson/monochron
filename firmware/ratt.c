@@ -143,35 +143,15 @@ void calc_death_date(void)
       }
 }
 
-void init_eeprom(void) {	//Set eeprom to a default state.
-  if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
-    eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, 8);
-    eeprom_write_byte((uint8_t *)EE_ALARM_MIN, 0);
-    eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2A_VALUE);
-    eeprom_write_byte((uint8_t *)EE_VOLUME, 1);
-    eeprom_write_byte((uint8_t *)EE_REGION, REGION_US);
-    eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, TIME_12H);
-    eeprom_write_byte((uint8_t *)EE_SNOOZE, 10);
-    
-    //Death Clock Variables - Initial state being set to CaitSith2's specific stats :)
-    eeprom_write_byte((uint8_t *)EE_DOB_MONTH, 11);
-    eeprom_write_byte((uint8_t *)EE_DOB_DAY, 14);
-    eeprom_write_byte((uint8_t *)EE_DOB_YEAR, 80);
-    eeprom_write_byte((uint8_t *)EE_SET_MONTH, 7);
-    eeprom_write_byte((uint8_t *)EE_SET_DAY, 28);
-    eeprom_write_byte((uint8_t *)EE_SET_YEAR, 110);
-    eeprom_write_byte((uint8_t *)EE_SET_HOUR, 20);
-    eeprom_write_byte((uint8_t *)EE_SET_MIN, 05);
-    eeprom_write_byte((uint8_t *)EE_SET_SEC, 25);
-    eeprom_write_byte((uint8_t *)EE_GENDER, DC_gender_male);
-    eeprom_write_byte((uint8_t *)EE_DC_MODE, DC_mode_normal);
-    eeprom_write_byte((uint8_t *)EE_BMI_UNIT, BMI_Imperial);
-    eeprom_write_word((uint16_t *)EE_BMI_WEIGHT, 400);
-    eeprom_write_word((uint16_t *)EE_BMI_HEIGHT, 78); // 6 foot 6.
-    eeprom_write_byte((uint8_t *)EE_SMOKER, DC_non_smoker);
-    
-    eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
-  }
+uint8_t ee_init_data[] PROGMEM = {11,0,OCR2A_VALUE,1,REGION_US,TIME_12H,10,0,11,14,80,7,28,110,
+           DC_gender_male,DC_mode_normal,BMI_Imperial,0x90,1,78,0,DC_non_smoker,20,05,25};
+
+void init_eeprom(void) {	
+    if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
+    	for(uint8_t i=1;i<=25;i++)
+    		eeprom_write_byte((uint8_t *)i,pgm_read_byte(&ee_init_data[i-1]));
+    	eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
+    }
 }
 
 void credits(uint8_t state)

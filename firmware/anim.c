@@ -34,14 +34,6 @@ extern volatile uint8_t last_buttonstate, just_pressed, pressed;
 uint32_t left_score, right_score;
 int32_t results;
 
-float ball_x, ball_y;
-float oldball_x, oldball_y;
-float ball_dx, ball_dy;
-
-int8_t rightpaddle_y, leftpaddle_y;
-uint8_t oldleftpaddle_y, oldrightpaddle_y;
-int8_t rightpaddle_dy, leftpaddle_dy;
-
 extern volatile uint8_t minute_changed, hour_changed;
 
 volatile uint8_t redraw_time = 0;
@@ -221,30 +213,118 @@ void setscore(void)
 void initanim(void) {
 }
 
+uint8_t display_digits[8];
+
+void prep_digits(void)
+{
+	uint8_t i;
+	uint16_t temp1=left_score, temp2=right_score;
+	if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
+    {
+		if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
+	      display_digits[0] = ((left_score + 23)%12 + 1)/10;
+	    else 
+	      display_digits[0] = left_score/10;
+	    
+	    if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
+	      display_digits[1] = ((left_score + 23)%12 + 1)%10;
+	    else
+	      display_digits[1] = left_score%10;
+	    
+	    display_digits[3] = right_score/10;
+	    display_digits[4] = right_score%10;
+	    
+	    if(score_mode == SCORE_MODE_TIME)
+	    {
+	      if(time_format == TIME_12H)
+	      {
+	      	  display_digits[2] = ((time_s & 1)?((time_s < 30)?17:16):10) | 0x80;
+	      	  display_digits[5] = 12;
+	      	  if(time_h < 12)
+		      	display_digits[6] = 13;
+		      else
+		      	display_digits[6] = 14;
+		      display_digits[7] = 15;
+	      }
+	      else
+	      {
+		      display_digits[2] = display_digits[5] = 10;
+		      display_digits[6] = (time_s/10) | 0x80;
+		      display_digits[7] = (time_s%10) | 0x80;
+		  }
+	    }
+	    else if (score_mode == SCORE_MODE_ALARM)
+	    {
+	      display_digits[2] = 10;
+	      display_digits[5] = 12;
+	      if(time_format == TIME_12H)
+	      {
+	      	  if(alarm_h < 12)
+		      	display_digits[6] = 13;
+		      else
+		      	display_digits[6] = 14;
+		      display_digits[7] = 15;
+		  }
+		  else
+		  {
+		  	  display_digits[6] = display_digits[7] = 12;
+		  }
+	    }
+	    else if ((score_mode == SCORE_MODE_DATE) || (score_mode == SCORE_MODE_DEATH_DATE))
+	    {
+	    	display_digits[6] = display_digits[4];
+	    	display_digits[5] = display_digits[3];
+	    	display_digits[4] = 11;
+	    	display_digits[3] = display_digits[1];
+	    	display_digits[2] = display_digits[0];
+	    	display_digits[0] = display_digits[1] = display_digits[7] = 12;
+	    }
+	    else if ((score_mode == SCORE_MODE_YEAR) || (score_mode == SCORE_MODE_DEATH_YEAR))
+	    {
+	    	display_digits[6] = display_digits[4];
+	    	display_digits[5] = display_digits[3];
+	    	display_digits[4] = display_digits[1];
+	    	display_digits[3] = display_digits[0];
+	    	display_digits[0] = display_digits[1] = display_digits[2] = display_digits[7] = 12;
+	    }
+	}
+	else
+    {
+	    if((left_score != 0) || (right_score != 0))
+	    {
+	    	for(i=0;i<4;i++,temp1/=10,temp2/=10)
+	    	{
+	    		//drawbigdigit(DISPLAY_DL4_X - i, DISPLAY_TIME_Y, temp1 % 10, inverted);
+	    		//drawbigdigit(DISPLAY_DR4_X - i, DISPLAY_TIME_Y, temp2 % 10, inverted);
+	    		display_digits[3-i] = temp1 % 10;
+	    		display_digits[7-i] = temp2 % 10;
+	    	}
+	    }
+    }
+}
+
 void initdisplay(uint8_t inverted) {
+  uint16_t i;
   if(inverted == 2)
   {
         glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
-    //glcdSetAddress(0,0);
-                      //0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK0123456789ABCDEFGHIJK
-        //glcdPutStr_ram(" Death Clock Firmware                      Monochron by Adafruit Tombstone, Reaper,   Skull drawn by        Phillip Torrone                           Mod by CaitSith2  ",0);
         glcdSetAddress(4,0);
-        glcdPutStr_ram("Death Clock Firmware",0);
+        glcdPutStr("Death Clock Firmware",0);
         glcdSetAddress(16,1);
-        glcdPutStr_ram("Mod by CaitSith2",0);
+        glcdPutStr("Mod by CaitSith2",0);
         glcdSetAddress(1,2);
                       //0123456789ABCDEFGHIJK
-        glcdPutStr_ram("Monochron by Adafruit",0);
+        glcdPutStr("Monochron by Adafruit",0);
         glcdSetAddress(34,3);
-        glcdPutStr_ram("Industries",0);
+        glcdPutStr("Industries",0);
         glcdSetAddress(10,4);
-        glcdPutStr_ram("Tombstone, Reaper,",0);
+        glcdPutStr("Tombstone, Reaper,",0);
         glcdSetAddress(22,5);
-        glcdPutStr_ram("Skull drawn by",0);
+        glcdPutStr("Skull drawn by",0);
         glcdSetAddress(19,6);
-        glcdPutStr_ram("Phillip Torrone",0);
+        glcdPutStr("Phillip Torrone",0);
         glcdSetAddress(19,7);
-        glcdPutStr_ram("www.adafuit.com",0);
+        glcdPutStr("www.adafuit.com",0);
         while (pressed & 2);
         initdisplay(0);
         just_pressed = 0;
@@ -252,64 +332,16 @@ void initdisplay(uint8_t inverted) {
   }
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
   setscore();
-  int16_t i;
-
+  prep_digits();
   // time
-  if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
-  {
-    if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-      drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)/10, inverted);
-    else 
-      drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, left_score/10, inverted);
-  
-    if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-      drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)%10, inverted);
-    else
-      drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, left_score%10, inverted);
-  
-    drawbigdigit(DISPLAY_M10_X, DISPLAY_TIME_Y, right_score/10, inverted);
-    drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y, right_score%10, inverted);
-    
-    
-    if(score_mode == SCORE_MODE_TIME)
-    {
-      drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
-      drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 10, inverted);
-      drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, time_s/10, inverted);
-      drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, time_s%10, inverted);
-    }
-    else if (score_mode == SCORE_MODE_ALARM)
-    {
-      drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
-      drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 10, inverted);
-      drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, 0, inverted);
-      drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, 0, inverted);
-    }
-    else if ((score_mode == SCORE_MODE_DATE) || (score_mode == SCORE_MODE_DEATH_DATE))
-    {
-      drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 11, inverted);
-      //drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 11, inverted);
-      //drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, date_y/10, inverted);
-      //drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, date_y%10, inverted);
-    }
-    
+  if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+  ((left_score != 0) || (right_score != 0))) {
+    for(i=0;i<8;i++)
+    	drawbigdigit(DISPLAY_H10_X + (i*15), DISPLAY_TIME_Y, display_digits[i], inverted);
   }
   else
   {
-    if((left_score != 0) || (right_score != 0))
-    {
-      drawbigdigit(DISPLAY_DL1_X, DISPLAY_TIME_Y, left_score / 1000, inverted);
-      drawbigdigit(DISPLAY_DL2_X, DISPLAY_TIME_Y, (left_score % 1000) / 100, inverted);
-      drawbigdigit(DISPLAY_DL3_X, DISPLAY_TIME_Y, (left_score % 100) / 10, inverted);
-      drawbigdigit(DISPLAY_DL4_X, DISPLAY_TIME_Y, left_score % 10, inverted);
-      
-      drawbigdigit(DISPLAY_DR1_X, DISPLAY_TIME_Y, right_score / 1000, inverted);
-      drawbigdigit(DISPLAY_DR2_X, DISPLAY_TIME_Y, (right_score % 1000) / 100, inverted);
-      drawbigdigit(DISPLAY_DR3_X, DISPLAY_TIME_Y, (right_score % 100) / 10, inverted);
-      drawbigdigit(DISPLAY_DR4_X, DISPLAY_TIME_Y, right_score % 10, inverted);
-    }
-    else
-    {
+    
       calc_death_date();
       if(!reaper_tow_rip)
       {
@@ -327,7 +359,6 @@ void initdisplay(uint8_t inverted) {
       glcdWriteChar(((19+(death_y/100))%10)+'0', NORMAL);
       glcdWriteChar(((death_y%100)/10)+'0', NORMAL);
       glcdWriteChar((death_y%10)+'0', NORMAL);
-    }
   }
 
   //drawmidline(inverted);
@@ -368,12 +399,39 @@ void step(void) {
   }
 }
 
+static uint8_t border_x=0, border_y=0, border_state=0;
+void next_border(void)
+{
+  
+  glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
+  if(++border_state >= 4) border_state = 0;
+  if((border_x == 0) && (border_y == 0))
+  {
+    border_state += 2;
+    if(border_state >= 4) border_state = 0;
+    border_y+=2;
+  }
+  else if ((border_x == 0) && (border_y < 62))
+    border_y+=2;
+  else if ((border_x == 0) && (border_y == 62))
+    border_x+=2;
+  else if ((border_x < 126) && (border_y == 62))
+    border_x+=2;
+  else if ((border_x == 126) && (border_y == 62))
+    border_y-=2;
+  else if ((border_x == 126) && (border_y > 0))
+    border_y-=2;
+  else if ((border_x == 126) && (border_y == 0))
+    border_x-=2;
+  else if ((border_x > 0) && (border_y == 0))
+    border_x-=2;
+}
 
 void draw(uint8_t inverted) {
    // draw time
    volatile uint8_t redraw_digits = 0;
-   static uint8_t border_x=0, border_y=0, border_state=0;
    static volatile uint8_t old_seconds, old_border_tick;
+   uint8_t i;
    TIMSK2 = 0;  //Disable Timer 2 interrupt, to prevent a race condition.
    if(redraw_time)
    {
@@ -386,164 +444,49 @@ void draw(uint8_t inverted) {
    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
     
     // redraw 10's of hours
-  if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
-  {
+  prep_digits();
+  if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+  	  (minutes_left > 0)) {
     if(reaper_x == 256) {
       reaper_x--;
       initdisplay(inverted);
     }
-    if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                  DISPLAY_H10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-      if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-        drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)/10, inverted);
-      else 
-        drawbigdigit(DISPLAY_H10_X, DISPLAY_TIME_Y, left_score/10, inverted);
+    
+    for(i=0;i<8;i++)
+    {
+    	if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
+    	DISPLAY_H10_X + (i*15), DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) ||
+    	(display_digits[i] & 0x80)) {
+    		drawbigdigit(DISPLAY_H10_X + (i*15), DISPLAY_TIME_Y, display_digits[i] & 0x7F, inverted);
+    	}
     }
     
-    // redraw 1's of hours
-    if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                  DISPLAY_H1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-      if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-        drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, ((left_score + 23)%12 + 1)%10, inverted);
-      else
-        drawbigdigit(DISPLAY_H1_X, DISPLAY_TIME_Y, left_score%10, inverted);
-    }
-    if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                  DISPLAY_M10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-      drawbigdigit(DISPLAY_M10_X, DISPLAY_TIME_Y, right_score/10, inverted);
-    }
-    if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                  DISPLAY_M1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-      drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y, right_score%10, inverted);
-    }
-    if(score_mode == SCORE_MODE_TIME)
+    if(score_mode >= SCORE_MODE_DEATH_TIME)
     {
-      //if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-      //    DISPLAY_S10_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s/10)!=(old_seconds/10)) {
-            drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, time_s / 10, inverted);
-      //}
-      //if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-      //     DISPLAY_S1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH) || (time_s%10)!=(old_seconds%10)) {
-            drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, time_s % 10, inverted);
-      //}
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-           DISPLAY_HM_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-            drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-          DISPLAY_MS_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-            drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 10, inverted);
-      }
-    }
-    
-    if(redraw_digits)
-    {
-      if(score_mode == SCORE_MODE_TIME)
-      {
-        drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
-        drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 10, inverted);
-        drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, time_s/10, inverted);
-        drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, time_s%10, inverted);
-      }
-      else if (score_mode == SCORE_MODE_ALARM)
-      {
-        drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 10, inverted);
-        drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 10, inverted);
-        drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, 0, inverted);
-        drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, 0, inverted);
-      }
-      else if ((score_mode == SCORE_MODE_DATE) || (score_mode == SCORE_MODE_DEATH_DATE))
-      {
-        drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 11, inverted);
-        drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 12, inverted);
-        drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, 12, inverted);
-        drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, 12, inverted);
-      }
-      else
-      {
-        drawbigdigit(DISPLAY_HM_X, DISPLAY_TIME_Y, 12, inverted);
-        drawbigdigit(DISPLAY_MS_X, DISPLAY_TIME_Y, 12, inverted);
-        drawbigdigit(DISPLAY_S10_X, DISPLAY_TIME_Y, 12, inverted);
-        drawbigdigit(DISPLAY_S1_X, DISPLAY_TIME_Y, 12, inverted);
-      }
-    }
-  }
-  else
-  {
-    if(minutes_left>0)
-    {
-      if(reaper_x == 256) 
-      {
-        reaper_x--;
-        initdisplay(inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DL1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DL1_X, DISPLAY_TIME_Y, left_score / 1000, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DL2_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DL2_X, DISPLAY_TIME_Y, (left_score % 1000) / 100, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DL3_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DL3_X, DISPLAY_TIME_Y, (left_score % 100) / 10, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DL4_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DL4_X, DISPLAY_TIME_Y, left_score % 10, inverted);
-      }
-      
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DR1_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DR1_X, DISPLAY_TIME_Y, right_score / 1000, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DR2_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DR2_X, DISPLAY_TIME_Y, (right_score % 1000) / 100, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DR3_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DR3_X, DISPLAY_TIME_Y, (right_score % 100) / 10, inverted);
-      }
-      if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
-                          DISPLAY_DR4_X, DISPLAY_TIME_Y, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-        drawbigdigit(DISPLAY_DR4_X, DISPLAY_TIME_Y, right_score % 10, inverted);
-      }
       if(border_tick != old_border_tick)
       {
-        glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
-        if(++border_state >= 4) border_state = 0;
-        if((border_x == 0) && (border_y == 0))
-        {
-          border_state += 2;
-          if(border_state >= 4) border_state = 0;
-          border_y+=2;
-        }
-        else if ((border_x == 0) && (border_y < 62))
-          border_y+=2;
-        else if ((border_x == 0) && (border_y == 62))
-          border_x+=2;
-        else if ((border_x < 126) && (border_y == 62))
-          border_x+=2;
-        else if ((border_x == 126) && (border_y == 62))
-          border_y-=2;
-        else if ((border_x == 126) && (border_y > 0))
-          border_y-=2;
-        else if ((border_x == 126) && (border_y == 0))
-          border_x-=2;
-        else if ((border_x > 0) && (border_y == 0))
-          border_x-=2;
+        next_border();
       }
     }
     else
     {
-      if(hour_changed)
-        hour_changed = 0;
-      if (redraw_digits || (reaper_x < 256)) {
-        reaper_x = 256; //Stop drawing the reaper, already dead. :)
-        initdisplay(inverted);
-      }
+    	if ((border_x != 0) || (border_y != 0))
+    	{
+    		border_x = border_y = 0;
+    		do {
+	    		border_state = 3;
+	    		next_border();
+    		} while((border_x != 0) || (border_y != 0));
+    	}
+    }
+  }
+  else
+  {
+    if(hour_changed)
+      hour_changed = 0;
+    if (redraw_digits || (reaper_x < 256)) {
+      reaper_x = 256; //Stop drawing the reaper, already dead. :)
+      initdisplay(inverted);
     }
   }
   old_border_tick = border_tick;
@@ -584,6 +527,11 @@ static unsigned char __attribute__ ((progmem)) BigFont[] = {
   0x00, 0x66, 0x66, 0x00,// :
   0x00, 0x18, 0x18, 0x00,// -
   0x00, 0x00, 0x00, 0x00,// space
+  0xFF, 0x90, 0x90, 0xFF,// A
+  0xFF, 0x90, 0x90, 0xF0,// P
+  0x9F, 0x90, 0x90, 0x9F,// M
+  0x00, 0x60, 0x60, 0x00,// High . of :
+  0x00, 0x06, 0x06, 0x00,// Low . of :
 };
 
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {

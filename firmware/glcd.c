@@ -232,6 +232,7 @@ void glcdFillRectangle(u08 x, u08 y, u08 a, u08 b, u08 color)
 
 
 // draw circle
+/*
 void glcdCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
 {
   int tswitch, y, x = 0;
@@ -259,7 +260,7 @@ void glcdCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
     }
     x++;
   }
-}
+}*/
 
 // text routines
 

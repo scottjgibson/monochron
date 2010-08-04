@@ -4,6 +4,7 @@
 #include <avr/pgmspace.h>
 #include "util.h"
 
+#ifdef DEBUGGING
 // Creates a 8N1 UART connect
 // remember that the BBR is #defined for each F_CPU in util.h
 void uart_init(uint16_t BRR) {
@@ -156,3 +157,4 @@ void uart_putdw_dec(uint32_t dw)
       num /= 10;
     }
 }
+#endif

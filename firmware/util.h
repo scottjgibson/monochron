@@ -10,6 +10,8 @@
 #define BRRL_192 26    
 #endif
 
+#define DEBUGGING 0
+
 // Debug printing functions - handy!
 #define uart_putc(c) uart_putchar(c)
 
@@ -29,8 +31,8 @@ void RAM_putstring(char *str);
 void ROM_putstring(const char *str, uint8_t nl);
 
 // by default we stick strings in ROM to save RAM
-#define putstring(x) ROM_putstring(PSTR(x), 0)
-#define putstring_nl(x) ROM_putstring(PSTR(x), 1)
+#define putstring(x) if(DEBUGGING) {ROM_putstring(PSTR(x), 0);}
+#define putstring_nl(x) if(DEBUGGING) {ROM_putstring(PSTR(x), 1);}
 #define nop asm volatile ("nop\n\t")
 
 // some timing functions
