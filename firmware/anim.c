@@ -136,7 +136,7 @@ void setscore(void)
   }
   switch(score_mode) {
     case SCORE_MODE_TIME:
-      if(alarming && (minute_changed || hour_changed)) {
+      if((minute_changed || hour_changed)) {
         if(hour_changed) {
           left_score = old_h;
           right_score = old_m;
@@ -162,13 +162,9 @@ void setscore(void)
       right_score = date_y;
       break;
     case SCORE_MODE_DEATH_TIME:
-      if(alarming && (minute_changed || hour_changed)) {
-        if(hour_changed) {
+      if((minute_changed || hour_changed)) {
           left_score = old_minutes_left/10000;
           right_score = old_minutes_left%10000;
-        } else if (minute_changed) {
-          right_score = old_minutes_left%10000;
-        }
       } else {
           //if((minutes_left - ((dc_mode == DC_mode_sadistic)?(time_s/15):0)) > 0)
         left_score = (minutes_left - ((dc_mode == DC_mode_sadistic)?(time_s/15):0))/10000;
@@ -369,6 +365,7 @@ int16_t reaper_x;
 #define reaper_w 56
 #define reaper_h 64
 void step(void) {
+  uint8_t i;
   if((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_DEATH_TIME))
   {
     if(minute_changed) 
@@ -383,17 +380,36 @@ void step(void) {
       for(reaper_x = -56;reaper_x<184;reaper_x++)
       {
         //redraw_time = 1;
-        if((reaper_x%8)==0)
-          draw(1);
+        //if((reaper_x%8)==0)
+        //  draw(1);
         render_image (REAPER,reaper_x+1,1);
         _delay_ms(16);
+        if(((reaper_x%15)==6)&&(reaper_x>6))
+        {
+        	prep_digits();
+        	for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+        	{
+        		display_digits[(reaper_x/15)+i] |= 0x40;
+        	}
+            redraw_time = 1;
+            draw(1);
+        }
         if(reaper_x==36) 
         {
-          _delay_ms(1000);
+          //render_image (REAPER,reaper_x+1,1);
+          _delay_ms(500);
           hour_changed = 0;
           setscore();
+          hour_changed = 1;
+          prep_digits();
+          for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+          	display_digits[(reaper_x/15)+i] |= 0x40;
+          redraw_time = 1;
+          draw(1);
+          _delay_ms(500);
         }
       }
+      hour_changed = 0;
       initdisplay(0);
     }
   }
@@ -444,7 +460,8 @@ void draw(uint8_t inverted) {
    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
     
     // redraw 10's of hours
-  prep_digits();
+  if(!hour_changed)
+  	prep_digits();
   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
   	  (minutes_left > 0)) {
     if(reaper_x == 256) {
@@ -536,6 +553,9 @@ static unsigned char __attribute__ ((progmem)) BigFont[] = {
 
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   uint8_t i, j;
+  
+  if(n & 0x40)
+  	  return;
   
   for (i = 0; i < 4; i++) {
     uint8_t d = pgm_read_byte(BigFont+(n*4)+i);

@@ -296,11 +296,12 @@ int main(void) {
 	
 	if (just_pressed & 0x4) {
 	  just_pressed = 0;
+	  display_date = display_death_date = 0;
 	  if(score_mode < SCORE_MODE_DEATH_TIME)
 	    score_mode = SCORE_MODE_DEATH_TIME;
 	  else
 	  	score_mode = SCORE_MODE_TIME;
-	  score_mode_timeout = 3;
+	  score_mode_timeout = 0;
 	  setscore();
 	}
 
