@@ -487,14 +487,11 @@ void draw(uint8_t inverted) {
     }
     else
     {
-    	if ((border_x != 0) || (border_y != 0))
-    	{
-    		border_x = border_y = 0;
-    		do {
-	    		border_state = 3;
-	    		next_border();
-    		} while((border_x != 0) || (border_y != 0));
-    	}
+    	uint8_t current_x = border_x, current_y = border_y;
+    	do {
+	    	border_state = 3;
+	    	next_border();
+    	} while((border_x != current_x) || (border_y != current_y));
     }
   }
   else
