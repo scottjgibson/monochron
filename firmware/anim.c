@@ -321,6 +321,8 @@ void initdisplay(uint8_t inverted) {
         glcdPutStr("Phillip Torrone",0);
         glcdSetAddress(19,7);
         glcdPutStr("www.adafuit.com",0);
+        i = (time_s + 20) % 60;
+        while(i != time_s);
         while (pressed & 2);
         initdisplay(0);
         just_pressed = 0;
@@ -415,10 +417,11 @@ void step(void) {
   }
 }
 
-static uint8_t border_x=0, border_y=0, border_state=0;
+static uint8_t border_x=0, border_y=0, border_state=0,border_on=0;
 void next_border(void)
 {
-  
+  if(!border_on)
+  	  return;
   glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
   if(++border_state >= 4) border_state = 0;
   if((border_x == 0) && (border_y == 0))
@@ -480,6 +483,7 @@ void draw(uint8_t inverted) {
     
     if(score_mode >= SCORE_MODE_DEATH_TIME)
     {
+      border_on = 1;
       if(border_tick != old_border_tick)
       {
         next_border();
@@ -492,6 +496,7 @@ void draw(uint8_t inverted) {
 	    	border_state = 3;
 	    	next_border();
     	} while((border_x != current_x) || (border_y != current_y));
+    	border_on = 0;
     }
   }
   else
