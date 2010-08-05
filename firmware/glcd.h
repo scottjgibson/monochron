@@ -83,6 +83,10 @@ void glcdCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color);
 // to the display at current position
 void glcdWriteChar(unsigned char c, uint8_t inverted);
 
+//! write part of a standard ascii charater (values 20-127)
+// to the display at current position
+void glcdWriteCharPart(unsigned char c, uint8_t offset, uint8_t count, uint8_t inverted);
+
 //! write a special graphic character/icon
 // to the display at current position
 void glcdWriteCharGr(u08 grCharIndex);
@@ -92,6 +96,9 @@ void glcdWriteCharGr(u08 grCharIndex);
 #define glcdPutStr(x,y) glcdPutStr_rom(PSTR(x), y)
 void glcdPutStr_ram(char *data, uint8_t inverted);
 void glcdPutStr_rom(const char *data, uint8_t inverted);
+
+//Write 1 full line of exactly 128 columns.  Great for text scrollers.
+void glcdPutStr_part_rom(const char *data, uint8_t pos, uint8_t offset, uint8_t inverted);
 
 /*
 	#define putstring(x) ROM_putstring(PSTR(x), 0)

@@ -17,6 +17,7 @@ extern volatile uint8_t last_buttonstate, just_pressed, pressed;
 extern volatile uint8_t buttonholdcounter;
 extern volatile uint8_t region;
 extern volatile uint8_t time_format;
+extern volatile uint8_t border_tick;
 
 volatile uint8_t cfg_dob_d, cfg_dob_m, cfg_dob_y, cfg_gender, cfg_dc_mode, cfg_bmi_unit, cfg_smoker;
 volatile uint16_t cfg_bmi_height, cfg_bmi_weight;
@@ -337,8 +338,6 @@ void set_deathclock_dob(void) {
     }
   }
 }
-
-
 
 void set_deathclock_gender(void) {
   uint8_t mode = SET_DEATHCLOCK_GENDER;
@@ -718,6 +717,21 @@ void display_backlight(uint8_t inverted)
 }
 #endif
 
+uint16_t position=0;
+uint8_t old_tick;
+void display_advance_next_page(void)
+{
+	glcdSetAddress(0,6);
+	glcdPutStr_part_rom(PSTR("Press MENU to advance to the next page. Press MENU to advance"),position / 2,(position % 2) * 3,0);
+	if(old_tick != border_tick)
+	{
+		old_tick = border_tick;
+		position++;
+	}
+	if((position/2)==40)
+		position=0;
+}
+
 void display_menu(void) {
   DEBUGP("display menu");
   
@@ -888,6 +902,7 @@ void set_backlight(void) {
   screenmutex++;
   //glcdSetAddress(0, 6);
   //glcdPutStr("Press MENU to exit   ", NORMAL);
+  
 
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 43, MENU_INDENT -1);
@@ -906,6 +921,13 @@ void set_backlight(void) {
       //timed out!
       displaymode = SHOW_TIME;     
       return;
+    }
+    
+    if(mode == SET_BRIGHTNESS)
+    {
+    	screenmutex++;
+    	display_advance_next_page();
+    	screenmutex--;
     }
   
     if (just_pressed & 0x2) {

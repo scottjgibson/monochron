@@ -20,7 +20,7 @@
 #define MAXSNOOZE 600 // 10 minutes
 
 // how many seconds we will wait before turning off menus
-#define INACTIVITYTIMEOUT 10 
+#define INACTIVITYTIMEOUT 30 
 
 /*************************** DISPLAY PARAMETERS */
 
