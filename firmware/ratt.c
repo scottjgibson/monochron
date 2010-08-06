@@ -233,11 +233,11 @@ int main(void) {
   glcdClearScreen();
   
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
-  for(scroller=-84;scroller<212;scroller++)
+  for(scroller=-84;scroller<138;scroller++)
   {
     render_image (SKULL,scroller,1);
     _delay_ms(16);
-    if(scroller==28)
+    if(scroller==26)
     	_delay_ms(2000);
   }
   

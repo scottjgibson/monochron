@@ -39,23 +39,15 @@ extern volatile uint8_t minute_changed, hour_changed;
 volatile uint8_t redraw_time = 0;
 volatile uint8_t last_score_mode = 0;
 
-extern const uint8_t skull_0[];
-extern const uint8_t skull_1[];
-extern const uint8_t skull_2[];
-extern const uint8_t reaper_0[];
-extern const uint8_t reaper_1[];
-extern const uint8_t rip_0[];
-extern const uint8_t rip_1[];
+extern const uint8_t skull_on_white[];
+extern const uint8_t reaper_on_white[];
+extern const uint8_t rip_on_white[];
 
 
 // special pointer for reading from ROM memory
-PGM_P skull0_p PROGMEM = skull_0;
-PGM_P skull1_p PROGMEM = skull_1;
-PGM_P skull2_p PROGMEM = skull_2;
-PGM_P reaper0_p PROGMEM = reaper_0;
-PGM_P reaper1_p PROGMEM = reaper_1;
-PGM_P rip0_p PROGMEM = rip_0;
-PGM_P rip1_p PROGMEM = rip_1;
+PGM_P skull0_p PROGMEM = skull_on_white;
+PGM_P reaper0_p PROGMEM = reaper_on_white;
+PGM_P rip0_p PROGMEM = rip_on_white;
 
 
 //void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted)
@@ -65,34 +57,22 @@ void render_image (uint8_t image, int16_t x, uint8_t inverted)
   {
     default:
     case SKULL:
-      if((x > -28) && (x < 156))
-        blitsegs_rom(x+0,0,skull0_p, 64, inverted);
-      if((x > -56) && (x < 184))
-        blitsegs_rom(x+28,0,skull1_p, 64, inverted);
-      if((x > -84) && (x < 212))
-        blitsegs_rom(x+56,0,skull2_p, 64, inverted);
+      if((x > -76) && (x < 128))
+        blitsegs_rom(x+0,0,skull0_p, 76, 64, inverted);
       break;
     case REAPER:
-      if((x > -28) && (x < 156))
-        blitsegs_rom(x+0,0,reaper0_p, 64, inverted);
-      if((x > -56) && (x < 184))
-        blitsegs_rom(x+28,0,reaper1_p, 64, inverted);
+      if((x > -42) && (x < 128))
+        blitsegs_rom(x+0,0,reaper0_p, 42, 64, inverted);
       break;
     case RIP:
-      if((x > -28) && (x < 156))
-        blitsegs_rom(x+0,0,rip0_p, 64, inverted);
-      if((x > -56) && (x < 184))
-        blitsegs_rom(x+28,0,rip1_p, 64, inverted);
+      if((x > -56) && (x < 128))
+        blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
       break;
     case REAPER_TOW_RIP:
-      if((x > -28) && (x <= 36))
-        blitsegs_rom(x+0,0,rip0_p, 64, inverted);
       if((x > -56) && (x <= 36))
-        blitsegs_rom(x+28,0,rip1_p, 64, inverted);
-      if((x > -84) && (x < 212))
-        blitsegs_rom(x+56,0,reaper0_p, 64, inverted);
-      if((x > -112) && (x < 240))
-        blitsegs_rom(x+84,0,reaper1_p, 64, inverted);
+        blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
+      if((x > -98) && (x < 212))
+        blitsegs_rom(x+56,0,reaper0_p, 42, 64, inverted);
       if((x >= -30 ) && (x < -24)) {
         glcdSetAddress(30+x,5);
         glcdWriteChar((death_y%10)+'0', inverted);
@@ -300,7 +280,7 @@ void prep_digits(void)
 }
 
 void initdisplay(uint8_t inverted) {
-  uint16_t i;
+  int16_t i;
   if(inverted == 2)
   {
         glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
@@ -344,7 +324,7 @@ void initdisplay(uint8_t inverted) {
       if(!reaper_tow_rip)
       {
         reaper_tow_rip = 1;
-        for(i=-112;i<240;i++)
+        for(i=-108;i<82;i++)
         {
           render_image(REAPER_TOW_RIP,i,inverted);
           _delay_ms(16);
@@ -379,7 +359,7 @@ void step(void) {
     if(hour_changed) 
     {
       initdisplay(1);
-      for(reaper_x = -56;reaper_x<184;reaper_x++)
+      for(reaper_x = -52;reaper_x<138;reaper_x++)
       {
         //redraw_time = 1;
         //if((reaper_x%8)==0)
@@ -396,7 +376,7 @@ void step(void) {
             redraw_time = 1;
             draw(1);
         }
-        if(reaper_x==36) 
+        if(reaper_x==43) 
         {
           //render_image (REAPER,reaper_x+1,1);
           _delay_ms(500);
@@ -571,28 +551,28 @@ void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   }
 }
 
-#define DIGIT_WIDTH 28
+#define DIGIT_WIDTH 76
 #define DIGIT_HEIGHT 64
 
-void bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t size, uint8_t inverted) {
+void bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t width, uint8_t *bitmap_p, uint16_t size, uint8_t inverted) {
   uint8_t xx,y, p;
   int16_t x;
 
-  if((x_origin+DIGIT_WIDTH+1)<0)
+  if((x_origin+width+1)<0)
     return;
-  for (uint8_t i = 0; i<size; i++) {
+  for (uint16_t i = 0; i<size; i++) {
     p = bitmap_p[i];
     
-    x = i % DIGIT_WIDTH;
+    x = i % width;
     if (x == 0) {
       while((x+x_origin)<0)
       {
         i++;
         p = bitmap_p[i];
-        x = i % DIGIT_WIDTH;
+        x = i % width;
       }
       xx = x+x_origin;
-      y = i / DIGIT_WIDTH;
+      y = i / width;
       //if(((x+x_origin)>=0) && ((x+x_origin)<128))
       glcdSetAddress(xx, (y_origin/8)+y);
       //else
@@ -611,10 +591,12 @@ void bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t 
 // number of segments to expect
 #define SEGMENTS 2
 
-void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
+void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t height, uint8_t inverted) {
   uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
-
-  if((x_origin + DIGIT_WIDTH) < 0)
+  
+  if(width > DIGIT_WIDTH)
+  	  return;
+  if((x_origin + width) < 0)
     return;
   if(x_origin >= 128)
     return;
@@ -632,11 +614,11 @@ void blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t he
       uint8_t stop = pgm_read_byte(bitmap_p+pointer);pointer++;
     
       while (start <= stop) {
-        bitmap[start + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
+        bitmap[start + (line/8)*width ] |= _BV(line%8);
         start++;
       }
     }
   }
-  bitblit_ram(x_origin, y_origin, bitmap, DIGIT_HEIGHT*DIGIT_WIDTH/8, inverted);
+  bitblit_ram(x_origin, y_origin, width, bitmap, DIGIT_HEIGHT*width/8, inverted);
 }
       
