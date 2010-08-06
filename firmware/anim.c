@@ -1,3 +1,10 @@
+/* ***************************************************************************
+// anim.c - the main animation and drawing code for MONOCHRON
+// This code is distributed under the GNU Public License
+//		which can be found at http://www.gnu.org/licenses/gpl.txt
+//
+**************************************************************************** */
+
 #include <avr/io.h>      // this contains all the IO port definitions
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -42,12 +49,14 @@ volatile uint8_t last_score_mode = 0;
 extern const uint8_t skull_on_white[];
 extern const uint8_t reaper_on_white[];
 extern const uint8_t rip_on_white[];
+extern const uint8_t adafruit[];
 
 
 // special pointer for reading from ROM memory
 PGM_P skull0_p PROGMEM = skull_on_white;
 PGM_P reaper0_p PROGMEM = reaper_on_white;
 PGM_P rip0_p PROGMEM = rip_on_white;
+PGM_P logo_p PROGMEM = adafruit;
 
 
 //void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted)
@@ -283,6 +292,10 @@ void initdisplay(uint8_t inverted) {
   int16_t i;
   if(inverted == 2)
   {
+        glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+        blitsegs_rom(36,0,logo_p, 57, 64, 1);
+        i = (time_s + 5) % 60;
+        while(i != time_s);
         glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
         glcdSetAddress(4,0);
         glcdPutStr("Death Clock Firmware",0);
@@ -301,7 +314,7 @@ void initdisplay(uint8_t inverted) {
         glcdPutStr("Phillip Torrone",0);
         glcdSetAddress(19,7);
         glcdPutStr("www.adafuit.com",0);
-        i = (time_s + 20) % 60;
+        i = (time_s + 10) % 60;
         while(i != time_s);
         while (pressed & 2);
         initdisplay(0);
