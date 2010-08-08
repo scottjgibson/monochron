@@ -179,7 +179,11 @@ void display_death_menu(void) {
   glcdClearScreen();
   
   glcdSetAddress(0, 0);
-  glcdPutStr("Death Clock Menu", NORMAL);
+  glcdPutStr("DeathChron", NORMAL);
+  glcdSetAddress(64, 0);	//Not enough space in the 128 bits to put "DeathChron Config Menu"
+  glcdPutStr("Config", NORMAL);
+  glcdSetAddress(104, 0);  //So these two lines are making up for that. :)
+  glcdPutStr("Menu", NORMAL);
   
   //DOB , render based on region setting, in mm/dd/yyyy or dd/mm/yyyy, range is 1900 - 2099.
   display_dob(NORMAL);
