@@ -297,8 +297,8 @@ void initdisplay(uint8_t inverted) {
         i = (time_s + 5) % 60;
         while(i != time_s);
         glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
-        glcdSetAddress(4,0);
-        glcdPutStr("Death Clock Firmware",0);
+        glcdSetAddress(7,0);
+        glcdPutStr("DeathChron Firmware",0);
         glcdSetAddress(16,1);
         glcdPutStr("Mod by CaitSith2",0);
         glcdSetAddress(1,2);
@@ -308,8 +308,8 @@ void initdisplay(uint8_t inverted) {
         glcdPutStr("Industries",0);
         glcdSetAddress(10,4);
         glcdPutStr("Tombstone, Reaper,",0);
-        glcdSetAddress(22,5);
-        glcdPutStr("Skull drawn by",0);
+        glcdSetAddress(4,5);
+        glcdPutStr("Skull, Logo drawn by",0);
         glcdSetAddress(19,6);
         glcdPutStr("Phillip Torrone",0);
         glcdSetAddress(19,7);
