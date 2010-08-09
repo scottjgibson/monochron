@@ -8,6 +8,10 @@
 //BACKLIGHT_ADJUST - Allows software control of backlight, assuming you mounted your 100ohm resistor in R2'.
 #define BACKLIGHT_ADJUST 1
 
+//OPTION_DOW_DATELONG - Allows showing Day of Week, and Longer format Dates, 
+//Like " sat","0807","2010", or " aug","  07","2010" or " sat"," aug","  07","2010".
+//#define OPTION_DOW_DATELONG 1
+
 // This is a tradeoff between sluggish and too fast to see
 #define MAX_BALL_SPEED 5 // note this is in vector arith.
 #define ball_radius 2 // in pixels
@@ -34,50 +38,19 @@
 // how many pixels to indent the menu items
 #define MENU_INDENT 8
 
-// Where the HOUR10 HOUR1 MINUTE10 and MINUTE1 digits are
-// in pixels
-#define DISPLAY_H10_X 30
-#define DISPLAY_H1_X 45
-#define DISPLAY_M10_X 70
-#define DISPLAY_M1_X 85
+#define DIGIT_W 32
+#define HSEGMENT_H 6
+#define HSEGMENT_W 18
+#define VSEGMENT_H 25
+#define VSEGMENT_W 6
+#define DIGITSPACING 4
+#define DOTRADIUS 4
 
-#define DISPLAY_DOW1_X 35
-#define DISPLAY_DOW2_X 50
-#define DISPLAY_DOW3_X 70
-
-#define DISPLAY_MON1_X 20
-#define DISPLAY_MON2_X 35
-#define DISPLAY_MON3_X 50
-
-#define DISPLAY_DAY10_X 70
-#define DISPLAY_DAY1_X 85
-
-// buffer space from the top
-#define DISPLAY_TIME_Y 4
-
-// how big are the pixels (for math purposes)
-#define DISPLAY_DIGITW 10
-#define DISPLAY_DIGITH 16
-
-#define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
-#define LEFTPADDLE_X 10
-
-// Paddle size (in pixels) and max speed for AI
-#define PADDLE_H 12
-#define PADDLE_W 3
-#define MAX_PADDLE_SPEED 5
-
-// How big our screen is in pixels
-#define SCREEN_W 128
-#define SCREEN_H 64
-
-// How thick the top and bottom lines are in pixels
-#define BOTBAR_H 2
-#define TOPBAR_H 2
-
-// Specs of the middle line
-#define MIDLINE_W 1
-#define MIDLINE_H (SCREEN_H / 16) // how many 'stipples'
+#define DISPLAY_H10_X  0
+#define DISPLAY_H1_X  VSEGMENT_W + HSEGMENT_W + 2 + DIGITSPACING
+#define DISPLAY_M10_X  GLCD_XPIXELS - 2*VSEGMENT_W - 2*HSEGMENT_W - 4 - DIGITSPACING
+#define DISPLAY_M1_X  GLCD_XPIXELS - VSEGMENT_W - HSEGMENT_W - 2
+#define DISPLAY_TIME_Y 0
 
 
 /* not used
@@ -111,7 +84,8 @@
 #define SCORE_MODE_YEAR 2
 #define SCORE_MODE_ALARM 3
 #define SCORE_MODE_DOW 4
-#define SCORE_MODE_DATELONG 5
+#define SCORE_MODE_DATELONG_MON 5
+#define SCORE_MODE_DATELONG_DAY 6
 
 // Constants for how to display time & date
 #define REGION_US 0
@@ -158,6 +132,13 @@
 
 #define SET_BRT 105
 
+#define SET_STYLE 200
+#define SET_STL   201
+#define STYLE_INT 210
+#define STYLE_SEV 211
+#define STYLE_RAT 212
+#define STYLE_XDA 213
+
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased.
 #define EE_INITIALIZED 0xC3
@@ -183,6 +164,7 @@ void step(void);
 void setscore(void);
 void draw(uint8_t inverted);
 
+void set_style(void);
 void set_alarm(void);
 void set_time(void);
 void set_region(void);
@@ -195,17 +177,12 @@ void drawArrow(uint8_t x, uint8_t y, uint8_t l);
 void setalarmstate(void);
 void beep(uint16_t freq, uint8_t duration);
 void printnumber(uint8_t n, uint8_t inverted);
-uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
-					  uint8_t x2, uint8_t y2, uint8_t w2, uint8_t h2);
+void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode);
 
-uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, float theball_dy, uint8_t *keepout1, uint8_t *keepout2);
-
-void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
-void drawmidline(uint8_t inverted);
 
 float random_angle_rads(void);
 
-void init_crand();
+void init_crand(void);
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
 
 uint8_t i2bcd(uint8_t x);
@@ -214,3 +191,66 @@ uint8_t readi2ctime(void);
 
 void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
 		  uint8_t date, uint8_t mon, uint8_t yr);
+
+void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode);
+
+void draw7seg(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted);
+void drawsegment(uint8_t s, uint8_t x, uint8_t y, uint8_t inverted);
+void drawdigit(uint8_t d, uint8_t x, uint8_t y, uint8_t inverted);
+void drawvseg(uint8_t x, uint8_t y, uint8_t inverted);
+void drawhseg(uint8_t x, uint8_t y, uint8_t inverted);
+void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
+
+
+// RATT SPECIFIC
+
+// How big our screen is in pixels
+#define SCREEN_W 128
+#define SCREEN_H 64
+
+#define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
+#define LEFTPADDLE_X 10
+
+// Paddle size (in pixels) and max speed for AI
+#define PADDLE_H 12
+#define PADDLE_W 3
+
+// How thick the top and bottom lines are in pixels
+#define BOTBAR_H 2
+#define TOPBAR_H 2
+
+// Specs of the middle line
+#define MIDLINE_W 1
+#define MIDLINE_H (SCREEN_H / 16) // how many 'stipples'
+
+// Max speed for AI
+#define MAX_PADDLE_SPEED 5
+
+#define DISPLAY_DOW1_X 35
+#define DISPLAY_DOW2_X 50
+#define DISPLAY_DOW3_X 70
+
+#define DISPLAY_MON1_X 20
+#define DISPLAY_MON2_X 35
+#define DISPLAY_MON3_X 50
+
+// how big are the pixels (for math purposes)
+#define DISPLAY_DIGITW 10
+#define DISPLAY_DIGITH 16
+
+#define DISPLAY_DAY10_X 70
+#define DISPLAY_DAY1_X 85
+
+//THIS IS A GUESS!!!! - IS DATELONG_MON BACKWARDS COMPAT?
+#define SCORE_MODE_DATELONG 5
+
+// ====================
+// XDALICHRON SPECIFIC
+
+#define DIGIT_WIDTH 28
+#define DIGIT_HEIGHT 64
+#define MAX_STEPS 32
+
+
+
+

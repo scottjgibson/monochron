@@ -1,10 +1,3 @@
-/* ***************************************************************************
-// ratt.c - the time, init and main loop
-// This code is distributed under the GNU Public License
-//		which can be found at http://www.gnu.org/licenses/gpl.txt
-//
-**************************************************************************** */
-
 #include <avr/io.h>      // this contains all the IO port definitions
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -18,10 +11,11 @@
 #include "ratt.h"
 #include "ks0108.h"
 #include "glcd.h"
+#include "dispatch.h"
 
 
 volatile uint8_t time_s, time_m, time_h;
-volatile uint8_t old_h, old_m;
+volatile uint8_t old_h, old_m, old_s;
 volatile uint8_t timeunknown = 1;
 volatile uint8_t date_m, date_d, date_y;
 volatile uint8_t alarming, alarm_on, alarm_tripped, alarm_h, alarm_m;
@@ -31,10 +25,11 @@ volatile uint8_t sleepmode = 0;
 volatile uint8_t region;
 volatile uint8_t time_format;
 extern volatile uint8_t screenmutex;
-volatile uint8_t minute_changed = 0, hour_changed = 0;
+volatile uint8_t minute_changed = 0, hour_changed = 0, second_changed = 0;
 volatile uint8_t score_mode_timeout = 0;
 volatile uint8_t score_mode = SCORE_MODE_TIME;
 volatile uint8_t last_score_mode;
+volatile uint8_t displaystyle; //dataman - add access to displaystyle, enables MultiChron
 
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
@@ -78,7 +73,11 @@ SIGNAL(TIMER0_COMPA_vect) {
 }
 
 void init_eeprom(void) {	//Set eeprom to a default state.
+#ifndef OPTION_DOW_DATELONG
   if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
+#else
+  if(eeprom_read_byte((uint8_t *)EE_INIT) != (EE_INITIALIZED-1)) {
+#endif
     eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, 8);
     eeprom_write_byte((uint8_t *)EE_ALARM_MIN, 0);
     eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2A_VALUE);
@@ -86,7 +85,11 @@ void init_eeprom(void) {	//Set eeprom to a default state.
     eeprom_write_byte((uint8_t *)EE_REGION, REGION_US);
     eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, TIME_12H);
     eeprom_write_byte((uint8_t *)EE_SNOOZE, 10);
+#ifndef OPTION_DOW_DATELONG
     eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
+#else
+    eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED-1);
+#endif
   }
 }
 
@@ -114,7 +117,6 @@ int main(void) {
 
   DEBUGP("clock!");
   clock_init();
-  init_crand();	//Initialize the seed based upon current time.  Very first value discarded.
   //beep(4000, 100);
 
   init_eeprom();
@@ -154,9 +156,12 @@ int main(void) {
   glcdInit();
   glcdClearScreen();
 
+  
+  //Dataman - InitiAmin now init displays(0) as well.
+  //initdisplay(0);
+  displaystyle = STYLE_INT;
   initanim();
-  initdisplay(0);
-
+  
   while (1) {
     animticker = ANIMTICK_MS;
 
@@ -166,27 +171,37 @@ int main(void) {
 	  just_pressed = 0;
 	  setsnooze();
 	}
-	if(display_date==1 && !score_mode_timeout)
+
+	if(display_date==3 && !score_mode_timeout)
 	{
-		display_date=3;
-		score_mode = SCORE_MODE_DATELONG;
+		display_date=0;
+		score_mode = SCORE_MODE_YEAR;
 	    score_mode_timeout = 3;
-	    setscore();
+	    //drawdisplay();
 	}
+#ifdef OPTION_DOW_DATELONG
 	else if(display_date==2 && !score_mode_timeout)
 	{
 		display_date=3;
 		score_mode = SCORE_MODE_DATE;
 	    score_mode_timeout = 3;
-	    setscore();
+	    //drawdisplay();
 	}
-	else if(display_date==3 && !score_mode_timeout)
+	else if(display_date==1 && !score_mode_timeout)
 	{
-		display_date=0;
-		score_mode = SCORE_MODE_YEAR;
+		display_date=4;
+		score_mode = SCORE_MODE_DATELONG_MON;
 	    score_mode_timeout = 3;
-	    setscore();
+	    //drawdisplay();
 	}
+	else if(display_date==4 && !score_mode_timeout)
+	{
+		display_date=3;
+		score_mode = SCORE_MODE_DATELONG_DAY;
+		score_mode_timeout = 3;
+	}
+#endif
+	
 	/*if(display_date && !score_mode_timeout)
 	{
 	  if(last_score_mode == SCORE_MODE_DATELONG)
@@ -225,24 +240,28 @@ int main(void) {
     //This could potentially make you late for work, and had to be fixed.
 	if (just_pressed & 0x6) {
 	  just_pressed = 0;
+#ifdef OPTION_DOW_DATELONG
 	  if((region == REGION_US) || (region == REGION_EU)) {
+#endif
 	  	display_date = 3;
 	  	score_mode = SCORE_MODE_DATE;
+#ifdef OPTION_DOW_DATELONG
 	  }
 	  else if ((region == DOW_REGION_US) || (region == DOW_REGION_EU)) {
 	  	display_date = 2;
 	  	score_mode = SCORE_MODE_DOW;
 	  }
 	  else if (region == DATELONG) {
-	  	display_date = 3;
-	  	score_mode = SCORE_MODE_DATELONG;
+	  	display_date = 4;
+	  	score_mode = SCORE_MODE_DATELONG_MON;
 	  }
 	  else {
 	  	display_date = 1;
 	  	score_mode = SCORE_MODE_DOW;
 	  }
+#endif
 	  score_mode_timeout = 3;
-	  setscore();
+	  //drawdisplay();
 	}
 
     if (just_pressed & 0x1) {
@@ -250,9 +269,15 @@ int main(void) {
       display_date = 0;
       score_mode = SCORE_MODE_TIME;
       score_mode_timeout = 0;
-      setscore();
+      //drawdisplay();
       switch(displaymode) {
       case (SHOW_TIME):
+	// DATAMAN - ADD STYLE MENU
+	displaymode = SET_STYLE;
+	set_style();
+	break; 
+	case SET_STYLE:
+	// END ADD STYLE MENU
 	displaymode = SET_ALARM;
 	set_alarm();
 	break;
@@ -278,12 +303,16 @@ int main(void) {
       default:
 	displaymode = SHOW_TIME;
 	glcdClearScreen();
-	initdisplay(0);
+	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
+	//initdisplay(0);
+	initanim();
       }
 
       if (displaymode == SHOW_TIME) {
 	glcdClearScreen();
-	initdisplay(0);
+	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
+	//initdisplay(0);
+	initanim();
       }
     }
 
@@ -298,10 +327,10 @@ int main(void) {
 	initdisplay(0);
       } else {
 	PORTB |= _BV(5);
-	draw(inverted);
+	drawdisplay(inverted);
 	PORTB &= ~_BV(5);
+      }
     }
-  }
   
     while (animticker);
     //uart_getchar();  // you would uncomment this so you can manually 'step'
@@ -356,7 +385,7 @@ void setalarmstate(void) {
       snoozetimer = 0;
 	  score_mode = SCORE_MODE_ALARM;
 	  score_mode_timeout = 3;
-	  setscore();
+	  //drawdisplay();
       DEBUGP("alarm on");
     }   
   }
@@ -485,7 +514,11 @@ SIGNAL (TIMER2_OVF_vect) {
   } else if (time_m != last_m) {
     minute_changed = 1;
     old_m = last_m;
+  } else if (time_s != last_s) {
+    second_changed = 1;
+    old_s = last_s;
   }
+
 
   if (time_s != last_s) {
     if(alarming && snoozetimer)
@@ -502,7 +535,6 @@ SIGNAL (TIMER2_OVF_vect) {
 	    } else if (minute_changed) {
 	      time_m = old_m;
 	    }
-	    setscore();
 	    if(hour_changed || minute_changed) {
 	      time_h = last_h;
 	      time_m = last_m;
@@ -525,7 +557,7 @@ SIGNAL (TIMER2_OVF_vect) {
        (displaymode == SET_REGION) ||
        (displaymode == SET_BRIGHTNESS)) &&
       (!screenmutex) ) {
-      glcdSetAddress(MENU_INDENT + 10*6, 2);
+      /*glcdSetAddress(MENU_INDENT + 10*6, 2);
       print_timehour(time_h, NORMAL);
       glcdWriteChar(':', NORMAL);
       printnumber(time_m, NORMAL);
@@ -539,7 +571,8 @@ SIGNAL (TIMER2_OVF_vect) {
 	} else {
 	  glcdWriteChar('A', NORMAL);
 	}
-      }
+      }*/
+      print_time(time_h, time_m, time_s, SET_TIME);
   }
 
   // check if we have an alarm set

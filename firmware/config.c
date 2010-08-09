@@ -1,10 +1,3 @@
-/* ***************************************************************************
-// config.c - the configuration menu handling
-// This code is distributed under the GNU Public License
-//		which can be found at http://www.gnu.org/licenses/gpl.txt
-//
-**************************************************************************** */
-
 #include <avr/io.h>      // this contains all the IO port definitions
 #include <avr/interrupt.h>
 #include <util/delay.h>
@@ -24,12 +17,54 @@ extern volatile uint8_t buttonholdcounter;
 extern volatile uint8_t region;
 extern volatile uint8_t time_format;
 
+//dataman - add access to display style
+extern volatile uint8_t displaystyle;
+
 extern volatile uint8_t displaymode;
 // This variable keeps track of whether we have not pressed any
 // buttons in a few seconds, and turns off the menu display
 volatile uint8_t timeoutcounter = 0;
 
 volatile uint8_t screenmutex = 0;
+
+//Prototypes
+void print_style_setting(uint8_t inverted);
+void print_region_setting(uint8_t inverted);
+void print_menu_advance(void);
+void print_menu_change(void);
+void print_menu_exit(void);
+void print_menu_opts(char *Opt1, char *Opt2);
+void print_menu(char*, char*, char*, char*);
+void print_menu_line(uint8_t line, char *Button, char *Opt);
+//
+
+void print_alarmline(uint8_t mode)
+{
+  glcdSetAddress(MENU_INDENT, 1);
+  glcdPutStr("Set Alarm:  ", NORMAL);
+  print_alarmhour(alarm_h, ((mode==SET_HOUR)?INVERTED:NORMAL));
+  glcdWriteChar(':', NORMAL);
+  printnumber(alarm_m, ((mode==SET_MIN)?INVERTED:NORMAL));
+}
+
+void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode)
+{
+  glcdSetAddress(MENU_INDENT, 2);
+  glcdPutStr("Set Time: ", NORMAL);
+  print_timehour(hour, ((mode==SET_HOUR)?INVERTED:NORMAL));
+  glcdWriteChar(':', NORMAL);
+  printnumber(time_m, ((mode==SET_MIN)?INVERTED:NORMAL));
+  glcdWriteChar(':', NORMAL);
+  printnumber(time_s, ((mode==SET_SEC)?INVERTED:NORMAL));
+  if (time_format == TIME_12H) {
+    glcdWriteChar(' ', NORMAL);
+    if (time_h >= 12) {
+      glcdWriteChar('P', ((mode==SET_HOUR)?INVERTED:NORMAL));
+    } else {
+      glcdWriteChar('A', ((mode==SET_HOUR)?INVERTED:NORMAL));
+    }
+  }
+}
 
 void display_menu(void) {
   DEBUGP("display menu");
@@ -38,31 +73,16 @@ void display_menu(void) {
 
   glcdClearScreen();
   
-  glcdSetAddress(0, 0);
-  glcdPutStr("Configuration Menu", NORMAL);
+  //Dataman - Mode Menu Option
+  //glcdSetAddress(0, 0);
+  //glcdPutStr("Configuration Menu", NORMAL);
+  glcdSetAddress(MENU_INDENT, 0);
+  glcdPutStr("Mode:", NORMAL);
+  print_style_setting(NORMAL);
+ 
+  print_alarmline(SET_ALARM);
   
-  glcdSetAddress(MENU_INDENT, 1);
-  glcdPutStr("Set Alarm:  ", NORMAL);
-  print_alarmhour(alarm_h, NORMAL);
-  glcdWriteChar(':', NORMAL);
-  printnumber(alarm_m, NORMAL);
-  
-  glcdSetAddress(MENU_INDENT, 2);
-  glcdPutStr("Set Time: ", NORMAL);
-  print_timehour(time_h, NORMAL);
-  glcdWriteChar(':', NORMAL);
-  printnumber(time_m, NORMAL);
-  glcdWriteChar(':', NORMAL);
-  printnumber(time_s, NORMAL);
-  if (time_format == TIME_12H) {
-    glcdWriteChar(' ', NORMAL);
-    if (time_h >= 12) {
-      glcdWriteChar('P', NORMAL);
-    } else {
-      glcdWriteChar('A', NORMAL);
-    }
-  }
-  
+  print_time(time_h,time_m,time_s,SET_TIME);
   print_date(date_m,date_d,date_y,SET_DATE);
   print_region_setting(NORMAL);
   
@@ -72,82 +92,98 @@ void display_menu(void) {
   printnumber(OCR2B>>OCR2B_BITSHIFT,NORMAL);
 #endif
   
-  glcdSetAddress(0, 6);
-  glcdPutStr("Press MENU to advance", NORMAL);
-  glcdSetAddress(0, 7);
-  glcdPutStr("Press SET to set", NORMAL);
+  print_menu_advance();
 
   screenmutex--;
 }
 
+//Dataman - Handle setting style
+void set_style(void) {
+  uint8_t mode = SET_STYLE;
+
+  display_menu();
+  
+  screenmutex++;
+  print_menu_advance();
+ 
+  // put a small arrow next to 'set 12h/24h'
+  drawArrow(0, 3, MENU_INDENT -1);
+  screenmutex--;
+  
+  timeoutcounter = INACTIVITYTIMEOUT;  
+
+  while (1) {
+    if (just_pressed & 0x1) { // mode change
+      return;
+    }
+    if (just_pressed || pressed) {
+      timeoutcounter = INACTIVITYTIMEOUT;  
+      // timeout w/no buttons pressed after 3 seconds?
+    } else if (!timeoutcounter) {
+      //timed out!
+      displaymode = SHOW_TIME;     
+      return;
+    }
+  
+    if (just_pressed & 0x2) {
+      just_pressed = 0;
+      screenmutex++;
+
+      if (mode == SET_STYLE) {
+	DEBUG(putstring("Setting mode"));
+	// ok now its selected
+	mode = SET_STL;
+	// print the region 
+	print_style_setting(INVERTED);
+ 	
+	// display instructions below
+	print_menu_change();
+      } else {
+	mode = SET_STYLE;
+	// print the region normal
+	print_style_setting(NORMAL);
+
+	print_menu_advance();
+      }
+      screenmutex--;
+    }
+    if ((just_pressed & 0x4) || (pressed & 0x4)) {
+      just_pressed = 0;
+      
+      if (mode == SET_STL) {
+	    displaystyle ++;
+	    if (displaystyle>STYLE_XDA) displaystyle=STYLE_INT;
+	screenmutex++;
+	display_menu();
+	print_menu_change();
+
+	// put a small arrow next to 'set 12h/24h'
+	drawArrow(0, 3, MENU_INDENT -1);
+	print_style_setting(INVERTED);
+ 	
+	screenmutex--;
+
+	//eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2B);
+      }
+    }
+  }
+}
+
+
+#ifdef OPTION_DOW_DATELONG
 void print_month(uint8_t inverted, uint8_t month) {
-  switch(month)
-  {
-  	case 1:
-  	  glcdPutStr("Jan", inverted);
-  	  break;
-  	case 2:
-  	  glcdPutStr("Feb", inverted);
-  	  break;
-  	case 3:
-  	  glcdPutStr("Mar", inverted);
-  	  break;
-  	case 4:
-  	  glcdPutStr("Apr", inverted);
-  	  break;
-  	case 5:
-  	  glcdPutStr("May", inverted);
-  	  break;
-  	case 6:
-  	  glcdPutStr("Jun", inverted);
-  	  break;
-  	case 7:
-  	  glcdPutStr("Jul", inverted);
-  	  break;
-  	case 8:
-  	  glcdPutStr("Aug", inverted);
-  	  break;
-  	case 9:
-  	  glcdPutStr("Sep", inverted);
-  	  break;
-  	case 10:
-  	  glcdPutStr("Oct", inverted);
-  	  break;
-  	case 11:
-  	  glcdPutStr("Nov", inverted);
-  	  break;
-  	case 12:
-  	  glcdPutStr("Dec", inverted);
-  	  break;
-  }
+  glcdPutCh(sMon(month),0);
+  glcdPutCh(sMon(month),1);
+  glcdPutCh(sMon(month),2);
 }
+
 void print_dow(uint8_t inverted, uint8_t mon, uint8_t day, uint8_t yr) {
-  switch(dotw(mon,day,yr))
-  {
-    case 0:
-      glcdPutStr("Sun ", inverted);
-      break;
-    case 1:
-      glcdPutStr("Mon ", inverted);
-      break;
-    case 2:
-      glcdPutStr("Tue ", inverted);
-      break;
-    case 3:
-      glcdPutStr("Wed ", inverted);
-      break;
-    case 4:
-      glcdPutStr("Thu ", inverted);
-      break;
-    case 5:
-      glcdPutStr("Fri ", inverted);
-      break;
-    case 6:
-      glcdPutStr("Sat ", inverted);
-      break;
-    
-  }
-}
+ uint8_t t = dotw(mon,day,yr);
+ glcdPutCh(smon(t,0),inverted);
+ glcdPutCh(smon(t,1),inverted);
+ glcdPutCh(smon(t,2),inverted);
+}  
+#endif
 
 void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
   glcdSetAddress(MENU_INDENT, 3);
@@ -164,7 +200,9 @@ void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
     glcdWriteChar('/', NORMAL);
     printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
     glcdWriteChar('/', NORMAL);
-  } else if ( region == DOW_REGION_US) {
+  }
+#ifdef OPTION_DOW_DATELONG 
+  else if ( region == DOW_REGION_US) {
   	glcdWriteChar(' ', NORMAL);
   	print_dow(NORMAL,month,day,year);
   	printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
@@ -192,6 +230,7 @@ void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
   	printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
   	glcdWriteChar(',', NORMAL);
   }
+#endif
   printnumber(20,(mode == SET_YEAR)?INVERTED:NORMAL);
   printnumber(year, (mode == SET_YEAR)?INVERTED:NORMAL);
 }
@@ -235,74 +274,50 @@ void set_date(void) {
 	mode = SET_MONTH;
 
 	// print the month inverted
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change mon", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set mon.", NORMAL);
+	print_menu_opts("change mon","set mon.");
       } else if ((mode == SET_DATE) && ((region == REGION_EU) || (region == DOW_REGION_EU))) {
 	DEBUG(putstring("Set date month"));
 	// ok now its selected
 	mode = SET_DAY;
 
 	// print the day inverted
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change day", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set date", NORMAL);
+	print_menu_opts("change day","set date");
       } else if ((mode == SET_MONTH) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) {
 	DEBUG(putstring("Set date day"));
 	mode = SET_DAY;
 
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change day", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set date", NORMAL);
+	print_menu_opts("change day","set date");
       }else if ((mode == SET_DAY) && ((region == REGION_EU) || (region == DOW_REGION_EU))) {
 	DEBUG(putstring("Set date month"));
 	mode = SET_MONTH;
 
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change mon", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set mon.", NORMAL);
+	print_menu_opts("change mon","set mon.");
       } else if ( ((mode == SET_DAY) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) ||
 		  ((mode == SET_MONTH) && ((region == REGION_EU) || (region == DOW_REGION_EU))) )  {
 	DEBUG(putstring("Set year"));
 	mode = SET_YEAR;
 	// print the date normal
 
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change yr.", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set year", NORMAL);
+	print_menu_opts("change yr.","set year");
       } else {
 	// done!
 	DEBUG(putstring("done setting date"));
 	mode = SET_DATE;
 	// print the seconds normal
-	print_date(month,day,year,mode);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press MENU to advance", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set", NORMAL);
+	print_menu_advance();
 	
 	date_y = year;
 	date_m = month;
 	date_d = day;
 	writei2ctime(time_s, time_m, time_h, 0, date_d, date_m, date_y);
-	init_crand();
       }
+      print_date(month,day,year,mode);
       screenmutex--;
     }
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
@@ -323,7 +338,6 @@ void set_date(void) {
       if(day > 30)
       	day = 30;
 	}
-	print_date(month,day,year,mode);
 	
       }
       if (mode == SET_DAY) {
@@ -339,12 +353,11 @@ void set_date(void) {
       if(day > 30)
       	day = 1;
 	}
-	print_date(month,day,year,mode);
       }
       if (mode == SET_YEAR) {
 	year = (year+1) % 100;
-	print_date(month,day,year,mode);
       }
+      print_date(month,day,year,mode);
       screenmutex--;
 
       if (pressed & 0x4)
@@ -361,8 +374,7 @@ void set_backlight(void) {
   display_menu();
   
   screenmutex++;
-  glcdSetAddress(0, 6);
-  glcdPutStr("Press MENU to exit   ", NORMAL);
+  print_menu_exit();
 
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 43, MENU_INDENT -1);
@@ -396,20 +408,14 @@ void set_backlight(void) {
 	printnumber(OCR2B>>OCR2B_BITSHIFT,INVERTED);
 	
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change   ", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to save   ", NORMAL);
+	print_menu_change();
+
       } else {
 	mode = SET_BRIGHTNESS;
 	// print the region normal
 	glcdSetAddress(MENU_INDENT + 15*6, 5);
 	printnumber(OCR2B>>OCR2B_BITSHIFT,NORMAL);
-
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press MENU to exit", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set   ", NORMAL);
+        print_menu_exit();
       }
       screenmutex--;
     }
@@ -422,10 +428,7 @@ void set_backlight(void) {
 	      OCR2B = 0;
 	screenmutex++;
 	display_menu();
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change    ", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to save    ", NORMAL);
+        print_menu_change();
 
 	// put a small arrow next to 'set 12h/24h'
 	drawArrow(0, 43, MENU_INDENT -1);
@@ -452,7 +455,9 @@ void print_region_setting(uint8_t inverted) {
     glcdPutStr("     EU 12hr", inverted);
   } else if ((region == REGION_EU) && (time_format == TIME_24H)){
     glcdPutStr("     EU 24hr", inverted);
-  } else if ((region == DOW_REGION_US) && (time_format == TIME_12H)) {
+  } 
+#ifdef OPTION_DOW_DATELONG
+  else if ((region == DOW_REGION_US) && (time_format == TIME_12H)) {
     glcdPutStr(" US 12hr DOW", inverted);
   } else if ((region == DOW_REGION_US) && (time_format == TIME_24H)) {
     glcdPutStr(" US 24hr DOW", inverted);
@@ -469,6 +474,7 @@ void print_region_setting(uint8_t inverted) {
   } else if ((region == DATELONG_DOW) && (time_format == TIME_24H)){
     glcdPutStr("24h LONG DOW", inverted);
   }
+#endif
 }
 
 void set_region(void) {
@@ -479,8 +485,7 @@ void set_region(void) {
   screenmutex++;
   
 #ifndef BACKLIGHT_ADJUST
-  glcdSetAddress(0, 6);
-  glcdPutStr("Press MENU to exit   ", NORMAL);
+  print_menu_exit();
 #endif
 
   // put a small arrow next to 'set 12h/24h'
@@ -513,23 +518,16 @@ void set_region(void) {
 	// print the region 
 	print_region_setting(INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change    ", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to save    ", NORMAL);
+	print_menu_change();
       } else {
 	mode = SET_REGION;
 	// print the region normal
 	print_region_setting(NORMAL);
-
-	glcdSetAddress(0, 6);
 #ifdef BACKLIGHT_ADJUST
-	glcdPutStr("Press MENU to advance", NORMAL);
+        print_menu_advance();
 #else
-	glcdPutStr("Press MENU to exit   ", NORMAL);
+	print_menu_exit();
 #endif
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set     ", NORMAL);
       }
       screenmutex--;
     }
@@ -539,7 +537,11 @@ void set_region(void) {
       if (mode == SET_REG) {
 	    if(time_format) {        
 	      region++;
+#ifdef OPTION_DOW_DATELONG
 	      if(region > DATELONG_DOW)
+#else
+          if(region > REGION_EU)
+#endif
 	        region = 0;
 		  time_format = !time_format;
 		} else {
@@ -547,10 +549,7 @@ void set_region(void) {
 		}
 	screenmutex++;
 	display_menu();
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change    ", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to save    ", NORMAL);
+	print_menu_change();
 
 	// put a small arrow next to 'set 12h/24h'
 	drawArrow(0, 35, MENU_INDENT -1);
@@ -595,43 +594,21 @@ void set_alarm(void) {
 	DEBUG(putstring("Set alarm hour"));
 	// ok now its selected
 	mode = SET_HOUR;
-
-	// print the hour inverted
-	print_alarmhour(alarm_h, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change hr.", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set hour", NORMAL);
+        print_menu_opts("change hr.","set hour");
       } else if (mode == SET_HOUR) {
 	DEBUG(putstring("Set alarm min"));
 	mode = SET_MIN;
 	// print the hour normal
-	glcdSetAddress(MENU_INDENT + 12*6, 1);
-	print_alarmhour(alarm_h, NORMAL);
-	// and the minutes inverted
-	glcdSetAddress(MENU_INDENT + 15*6, 1);
-	printnumber(alarm_m, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change min", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set mins", NORMAL);
-
+	print_menu_opts("change min","set mins");
       } else {
 	mode = SET_ALARM;
 	// print the hour normal
-	glcdSetAddress(MENU_INDENT + 12*6, 1);
-	print_alarmhour(alarm_h, NORMAL);
-	// and the minutes inverted
-	glcdSetAddress(MENU_INDENT + 15*6, 1);
-	printnumber(alarm_m, NORMAL);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press MENU to advance", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set", NORMAL);
+	print_menu_advance();
       }
+      print_alarmline(mode);
       screenmutex--;
     }
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
@@ -641,15 +618,13 @@ void set_alarm(void) {
       if (mode == SET_HOUR) {
 	alarm_h = (alarm_h+1) % 24;
 	// print the hour inverted
-	print_alarmhour(alarm_h, INVERTED);
 	eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, alarm_h);    
       }
       if (mode == SET_MIN) {
 	alarm_m = (alarm_m+1) % 60;
-	glcdSetAddress(MENU_INDENT + 15*6, 1);
-	printnumber(alarm_m, INVERTED);
 	eeprom_write_byte((uint8_t *)EE_ALARM_MIN, alarm_m);    
       }
+      print_alarmline(mode);
       screenmutex--;
       if (pressed & 0x4)
 	_delay_ms(200);
@@ -695,90 +670,31 @@ void set_time(void) {
 	DEBUG(putstring("Set time hour"));
 	// ok now its selected
 	mode = SET_HOUR;
-
-	// print the hour inverted
-	glcdSetAddress(MENU_INDENT + 10*6, 2);
-	print_timehour(hour, INVERTED);
-	glcdSetAddress(MENU_INDENT + 18*6, 2);
-	if (time_format == TIME_12H) {
-	  glcdWriteChar(' ', NORMAL);
-	  if (hour >= 12) {
-	    glcdWriteChar('P', INVERTED);
-	  } else {
-	    glcdWriteChar('A', INVERTED);
-	  }
-	}
-
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change hr.", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set hour", NORMAL);
+        print_menu_opts("change hr","set hour");
       } else if (mode == SET_HOUR) {
 	DEBUG(putstring("Set time min"));
 	mode = SET_MIN;
-	// print the hour normal
-	glcdSetAddress(MENU_INDENT + 10*6, 2);
-	print_timehour(hour, NORMAL);
-	// and the minutes inverted
-	glcdWriteChar(':', NORMAL);
-	printnumber(min, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change min", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set mins", NORMAL);
-
-	glcdSetAddress(MENU_INDENT + 18*6, 2);
-	if (time_format == TIME_12H) {
-	  glcdWriteChar(' ', NORMAL);
-	  if (hour >= 12) {
-	    glcdWriteChar('P', NORMAL);
-	  } else {
-	    glcdWriteChar('A', NORMAL);
-	  }
-	}
+        print_menu_opts("change min","set mins");
       } else if (mode == SET_MIN) {
 	DEBUG(putstring("Set time sec"));
 	mode = SET_SEC;
-	// and the minutes normal
-	if(time_format == TIME_12H) {
-	  glcdSetAddress(MENU_INDENT + 13*6, 2);
-	} else {
-	  glcdSetAddress(MENU_INDENT + 15*6, 2);
-	}
-	printnumber(min, NORMAL);
-	glcdWriteChar(':', NORMAL);
-	// and the seconds inverted
-	printnumber(sec, INVERTED);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change sec", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set secs", NORMAL);
+        print_menu_opts("sec","set secs");
       } else {
 	// done!
 	DEBUG(putstring("done setting time"));
 	mode = SET_TIME;
-	// print the seconds normal
-	if(time_format == TIME_12H) {
-	  glcdSetAddress(MENU_INDENT + 16*6, 2);
-	} else {
-  	  glcdSetAddress(MENU_INDENT + 18*6, 2);
-	}
-	printnumber(sec, NORMAL);
 	// display instructions below
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press MENU to advance", NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to set", NORMAL);
+	print_menu_advance();
 	
 	time_h = hour;
 	time_m = min;
 	time_s = sec;
 	writei2ctime(time_s, time_m, time_h, 0, date_d, date_m, date_y);
-	init_crand();
       }
+      print_time(hour,min,sec,mode);
       screenmutex--;
     }
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
@@ -787,37 +703,14 @@ void set_time(void) {
       if (mode == SET_HOUR) {
 	hour = (hour+1) % 24;
 	time_h = hour;
-	
-	glcdSetAddress(MENU_INDENT + 10*6, 2);
-	print_timehour(hour, INVERTED);
-	glcdSetAddress(MENU_INDENT + 18*6, 2);
-	if (time_format == TIME_12H) {
-	  glcdWriteChar(' ', NORMAL);
-	  if (time_h >= 12) {
-	    glcdWriteChar('P', INVERTED);
-	  } else {
-	    glcdWriteChar('A', INVERTED);
-	  }
-	}
       }
       if (mode == SET_MIN) {
 	min = (min+1) % 60;
-	if(time_format == TIME_12H) {
-	  glcdSetAddress(MENU_INDENT + 13*6, 2);
-	} else {
-	  glcdSetAddress(MENU_INDENT + 15*6, 2);
-	}
-	printnumber(min, INVERTED);
       }
       if (mode == SET_SEC) {
 	sec = (sec+1) % 60;
-	if(time_format == TIME_12H) {
-	  glcdSetAddress(MENU_INDENT + 16*6, 2);
-	} else {
-	  glcdSetAddress(MENU_INDENT + 18*6, 2);
-	}
-	printnumber(sec, INVERTED);
       }
+      print_time(hour,min,sec,mode);
       screenmutex--;
       if (pressed & 0x4)
 	_delay_ms(200);
@@ -861,3 +754,60 @@ void print_alarmhour(uint8_t h, uint8_t inverted) {
     printnumber(h, inverted);
   }
 }
+
+void print_style_setting(uint8_t inverted) {
+glcdSetAddress(43, 0);
+  switch (displaystyle) {
+  case STYLE_RAT: glcdPutStr("RATTChron",inverted);
+                break;
+  case STYLE_INT: glcdPutStr("IntruderChron",inverted);
+				break;
+  case STYLE_SEV: glcdPutStr("SevenChron",inverted);
+ 				break;
+  case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
+                 break;
+  }
+}
+
+void print_menu_advance(){
+  print_menu("MENU","advance","SET","set");
+  // Press MENU to avance
+  // Press SET to set
+}
+
+void print_menu_exit(){
+  print_menu("MENU","exit","SET","save");
+  //Press MENU to exit
+  //Press SET to set
+}
+
+void print_menu_change(){
+ print_menu_opts("change","save");
+ // Press + to change
+ // Press SET to save
+}
+
+void print_menu_opts(char *Opt1, char *Opt2){
+ print_menu("+",Opt1,"SET",Opt2);
+ // Press + to X
+ // Press SET to X
+}
+
+void print_menu(char *Button1, char *Opt1, char *Button2, char *Opt2){
+ glcdFillRectangle(0, 48, GLCD_XPIXELS, 16, NORMAL);
+ print_menu_line(6,Button1,Opt1);
+ print_menu_line(7,Button2,Opt2);
+}
+
+void print_menu_line(uint8_t line, char *Button, char *Action){
+  glcdSetAddress(0, line);
+  glcdPutStr("Press ",NORMAL);
+  glcdPutStr(Button,NORMAL);
+  glcdPutStr(" to ",NORMAL);
+  glcdPutStr(Action,NORMAL);
+}
+
+
+
+
+

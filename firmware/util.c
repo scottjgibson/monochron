@@ -156,3 +156,35 @@ void uart_putdw_dec(uint32_t dw)
       num /= 10;
     }
 }
+
+// Date / Time Routines
+
+uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
+{
+  uint16_t month, year;
+
+    // Calculate day of the week
+    
+    month = mon;
+    year = 2000 + yr;
+    if (mon < 3)  {
+      month += 12;
+      year -= 1;
+    }
+    return (day + (2 * month) + (6 * (month+1)/10) + year + (year/4) - (year/100) + (year/400) + 1) % 7;
+}
+
+const uint8_t DOWText[] PROGMEM = "sunmontuewedthufrisat";
+const uint8_t MonthText[] PROGMEM = "   janfebmaraprmayjunjulaugsepoctnovdec";
+
+char sdotw(uint8_t dow, uint8_t ix) {
+ return pgm_read_byte(DOWText + (dow*3) + ix);
+}
+
+char smon(uint8_t date_m, uint8_t ix) {
+ return pgm_read_byte(MonthText + (date_m*3) + ix);
+}
+
+
+
+

@@ -6,7 +6,7 @@ F_CPU = 8000000
 FORMAT = ihex 
 
 # Target file name (without extension).
-TARGET = monochron
+TARGET = MultiChron
 
 # Optimization level, can be [0, 1, 2, 3, s]. 0 turns off optimization.
 # (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
@@ -15,7 +15,8 @@ OPT = s
 
 # List C source files here. (C dependencies are automatically generated.)
 
-SRC = ratt.c config.c buttons.c anim.c util.c glcd.c ks0108.c i2c.c
+SRC = ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c util.c glcd.c ks0108.c i2c.c rle.c
+#rle.c
 
 # List Assembler source files here.
 # Make them always end in a capital .S.  Files ending in a lowercase .s
