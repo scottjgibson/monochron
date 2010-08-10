@@ -51,7 +51,7 @@ uint32_t key[4];
 void initamin_rat(void);
 void initdisplay_rat(uint8_t);
 void drawdisplay_rat(uint8_t);
-void step(void);
+void step_rat(void);
 //Support
 void encipher(void);
 void init_crand(void);
@@ -64,6 +64,9 @@ void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 float random_angle_rads(void);
 uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, float theball_dy, uint8_t *keepout1, uint8_t *keepout2);
+
+
+uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
 
 
 void encipher(void) {  // Using 32 rounds of XTea encryption as a PRNG.
