@@ -24,7 +24,7 @@
 
 // 2010-08-07 Version 1 - Dataman
 
-extern volatile displaystyle;
+extern volatile uint8_t displaystyle;
 
 
 

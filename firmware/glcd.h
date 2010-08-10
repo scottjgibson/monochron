@@ -86,7 +86,7 @@ void glcdWriteChar(unsigned char c, uint8_t inverted);
 
 //! write a special graphic character/icon
 // to the display at current position
-void glcdWriteCharGr(u08 grCharIndex);
+void glcdWriteCharGr(u08 grCharIndex, uint8_t inverted);
 
 // ***** Private Functions ***** (or depricated)
 void glcdPutStr(char *data, uint8_t inverted);

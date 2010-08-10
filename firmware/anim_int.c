@@ -38,7 +38,8 @@ void drawdisplay_int(uint8_t);            // Draws Invaders
 void setscore_int(uint8_t);               // Updates Time
 
 //Local Routines
-void WriteInvaders_int(void);             // Displays Invaders
+void WriteInvaders_int(uint8_t);          // Displays Invaders
+void WriteBases_int(uint8_t);             // Displays Bases
 void WriteTime_int(uint8_t);              // Displays Time             
 void WriteDigits_int(uint8_t, uint8_t);   // Displays a Set of Digits
 
@@ -62,7 +63,7 @@ extern volatile uint8_t second_changed, minute_changed, hour_changed;
 
 uint8_t digitsmutex_int = 0;
 uint8_t last_score_mode2 = 0;
-
+uint8_t wasalarming = 0; // flag to indicate resetting bases from reverse video is required
 void initanim_int(void) {
 #ifdef DEBUGF
   DEBUG(putstring("screen width: "));
@@ -84,14 +85,9 @@ void initdisplay_int(uint8_t inverted) {
   setscore_int(inverted);
   WriteTime_int(inverted);
   // display players 
-  WriteInvaders_int();
+  WriteInvaders_int(inverted);
   // Show the bases, 1 time only
-  uint8_t i;
-  for (i=0;i<4;i++)
-   {
-    glcdSetAddress(20 + (i*24), 7);
-	glcdWriteCharGr(6);
-   }
+  WriteBases_int(inverted);
 }
 
 void step_int(void) {
@@ -107,7 +103,11 @@ void step_int(void) {
 }
 
 void drawdisplay_int(uint8_t inverted) {
-    WriteInvaders_int();
+    WriteInvaders_int(inverted);
+    if (alarming || wasalarming) {
+     WriteBases_int(inverted);
+     wasalarming=alarming;
+    }
     setscore_int(inverted);
     return;
 }
@@ -142,23 +142,28 @@ void setscore_int(uint8_t inverted) {
   }
 }
 
-void WriteInvaders_int(void)
-{
+void WriteInvaders_int(uint8_t inverted) {
   uint8_t j;
   uint8_t i;
   // Clear Previous
   if (pInvadersPrevious > pInvaders) {i=pInvaders+96;}
   else {i=pInvaders-1;}
-  glcdFillRectangle(i, 8, 1, 48, 0);
+  glcdFillRectangle(i, 8, 1, 48, inverted);
   // Draw Current
   for (i=0;i<6;i++){
-  for (j=0;j<6;j++){
+   for (j=0;j<6;j++){
     glcdSetAddress(pInvaders + (j*16), 1+i);
-	glcdWriteCharGr((i/2)+(Frame*3));
+	glcdWriteCharGr((i/2)+(Frame*3),inverted);
    }
-   }
+  }
 }
 
+void WriteBases_int(uint8_t inverted) {
+  for (uint8_t i=0;i<4;i++) {
+    glcdSetAddress(20 + (i*24), 7);
+    glcdWriteCharGr(6,inverted);
+   }
+}
 
 void WriteTime_int(uint8_t inverted) {
  	 glcdSetAddress(0,0);

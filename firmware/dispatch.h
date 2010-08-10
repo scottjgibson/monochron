@@ -18,7 +18,7 @@ void initdisplay_xda(uint8_t);
 void drawdisplay_rat(uint8_t);
 void drawdisplay_int(uint8_t);
 void drawdisplay_sev(uint8_t);
-void drawdisplay_xda(uini8_t);
+void drawdisplay_xda(uint8_t);
 
 void step_rat(void);
 void step_int(void);

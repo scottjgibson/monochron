@@ -67,9 +67,8 @@ uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, fl
 
 
 void encipher(void) {  // Using 32 rounds of XTea encryption as a PRNG.
-  unsigned int i;
   uint32_t v0=rval[0], v1=rval[1], sum=0, delta=0x9E3779B9;
-  for (i=0; i < 32; i++) {
+  for (unsigned int i=0; i < 32; i++) {
     v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key[sum & 3]);
     sum += delta;
     v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum>>11) & 3]);
@@ -78,7 +77,7 @@ void encipher(void) {  // Using 32 rounds of XTea encryption as a PRNG.
 }
 
 void init_crand() {
-  uint32_t temp;
+  //uint32_t temp;
   key[0]=0x2DE9716E;  //Initial XTEA key. Grabbed from the first 16 bytes
   key[1]=0x993FDDD1;  //of grc.com/password.  1 in 2^128 chance of seeing
   key[2]=0x2A77FB57;  //that key again there.
