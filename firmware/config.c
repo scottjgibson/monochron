@@ -16,6 +16,8 @@ extern volatile uint8_t last_buttonstate, just_pressed, pressed;
 extern volatile uint8_t buttonholdcounter;
 extern volatile uint8_t region;
 extern volatile uint8_t time_format;
+volatile uint8_t easter_egg;
+extern volatile uint8_t alarm_on;
 
 //dataman - add access to display style
 extern volatile uint8_t displaystyle;
@@ -66,6 +68,13 @@ void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode)
   }
 }
 
+void print_backlight(uint8_t mode)
+{
+  glcdSetAddress(MENU_INDENT, 5);
+  glcdPutStr("Set Backlight: ", NORMAL);
+  printnumber(OCR2B>>OCR2B_BITSHIFT,((mode==SET_BRT)?INVERTED:NORMAL));
+}
+
 void display_menu(void) {
   DEBUGP("display menu");
   
@@ -87,9 +96,7 @@ void display_menu(void) {
   print_region_setting(NORMAL);
   
 #ifdef BACKLIGHT_ADJUST
-  glcdSetAddress(MENU_INDENT, 5);
-  glcdPutStr("Set Backlight: ", NORMAL);
-  printnumber(OCR2B>>OCR2B_BITSHIFT,NORMAL);
+  print_backlight(SET_BRIGHTNESS);
 #endif
   
   print_menu_advance();
@@ -97,6 +104,14 @@ void display_menu(void) {
   screenmutex--;
 }
 
+uint8_t string[] EEMEM =  "\x07" "MultiChron Firmware\0" 
+	                      "\x0A" "Mod, IntruderChron\0" 
+	                      "\x22" "by Dataman\0" 
+	                      "\x04" "Debugging, CaitSith2\0" 
+	                      "\x01" "RattChronm XDALICRON\0"
+	                      "\x19" "SevenChron by\0" 
+	                      "\x07" "Adafruit Industries\0" 
+                          "\x10" "www.adafruit.com\0";
 //Dataman - Handle setting style
 void set_style(void) {
   uint8_t mode = SET_STYLE;
@@ -109,6 +124,7 @@ void set_style(void) {
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 3, MENU_INDENT -1);
   screenmutex--;
+  easter_egg = alarm_on;
   
   timeoutcounter = INACTIVITYTIMEOUT;  
 
@@ -152,7 +168,7 @@ void set_style(void) {
       
       if (mode == SET_STL) {
 	    displaystyle ++;
-	    if (displaystyle>STYLE_XDA) displaystyle=STYLE_INT;
+	    if (displaystyle>STYLE_RANDOM) displaystyle=STYLE_INT;
 	  eeprom_write_byte(&EE_STYLE,displaystyle);
 	screenmutex++;
 	display_menu();
@@ -173,16 +189,16 @@ void set_style(void) {
 
 #ifdef OPTION_DOW_DATELONG
 void print_month(uint8_t inverted, uint8_t month) {
-  glcdPutCh(sMon(month),0);
-  glcdPutCh(sMon(month),1);
-  glcdPutCh(sMon(month),2);
+  glcdWriteChar(smon(month,0),inverted);
+  glcdWriteChar(smon(month,1),inverted);
+  glcdWriteChar(smon(month,2),inverted);
 }
 
 void print_dow(uint8_t inverted, uint8_t mon, uint8_t day, uint8_t yr) {
  uint8_t t = dotw(mon,day,yr);
- glcdPutCh(smon(t,0),inverted);
- glcdPutCh(smon(t,1),inverted);
- glcdPutCh(smon(t,2),inverted);
+ glcdWriteChar(sdotw(t,0),inverted);
+ glcdWriteChar(sdotw(t,1),inverted);
+ glcdWriteChar(sdotw(t,2),inverted);
 }  
 #endif
 
@@ -269,7 +285,11 @@ void set_date(void) {
       just_pressed = 0;
       screenmutex++;
 
+#ifdef OPTION_DOW_DATELONG
       if ((mode == SET_DATE) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) {
+#else
+      if ((mode == SET_DATE) && (region == REGION_US)) {
+#endif
 	DEBUG(putstring("Set date month"));
 	// ok now its selected
 	mode = SET_MONTH;
@@ -285,7 +305,11 @@ void set_date(void) {
 	// print the day inverted
 	// display instructions below
 	print_menu_opts("change day","set date");
+#ifdef OPTION_DOW_DATELONG
       } else if ((mode == SET_MONTH) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) {
+#else
+      } else if ((mode == SET_MONTH) && (region == REGION_US)) {
+#endif
 	DEBUG(putstring("Set date day"));
 	mode = SET_DAY;
 
@@ -297,8 +321,13 @@ void set_date(void) {
 
 	// display instructions below
 	print_menu_opts("change mon","set mon.");
+#ifdef OPTION_DOW_DATELONG
       } else if ( ((mode == SET_DAY) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) ||
 		  ((mode == SET_MONTH) && ((region == REGION_EU) || (region == DOW_REGION_EU))) )  {
+#else
+      } else if ( ((mode == SET_DAY) && (region == REGION_US)) ||
+		  ((mode == SET_MONTH) && (region == REGION_EU)) )  {
+#endif
 	DEBUG(putstring("Set year"));
 	mode = SET_YEAR;
 	// print the date normal
@@ -405,19 +434,15 @@ void set_backlight(void) {
 	// ok now its selected
 	mode = SET_BRT;
 	// print the region 
-	glcdSetAddress(MENU_INDENT + 15*6, 5);
-	printnumber(OCR2B>>OCR2B_BITSHIFT,INVERTED);
-	
 	// display instructions below
 	print_menu_change();
 
       } else {
 	mode = SET_BRIGHTNESS;
 	// print the region normal
-	glcdSetAddress(MENU_INDENT + 15*6, 5);
-	printnumber(OCR2B>>OCR2B_BITSHIFT,NORMAL);
         print_menu_exit();
       }
+      print_backlight(mode);
       screenmutex--;
     }
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
@@ -428,14 +453,7 @@ void set_backlight(void) {
 	    if(OCR2B > OCR2A_VALUE)
 	      OCR2B = 0;
 	screenmutex++;
-	display_menu();
-        print_menu_change();
-
-	// put a small arrow next to 'set 12h/24h'
-	drawArrow(0, 43, MENU_INDENT -1);
-	glcdSetAddress(MENU_INDENT + 15*6, 5);
-	printnumber(OCR2B>>OCR2B_BITSHIFT,INVERTED);
-	
+	print_backlight(mode);
 	screenmutex--;
 
 	eeprom_write_byte(&EE_BRIGHT, OCR2B);
@@ -698,6 +716,27 @@ void set_time(void) {
       print_time(hour,min,sec,mode);
       screenmutex--;
     }
+    while((pressed & 1)&&(alarm_on==easter_egg));
+    _delay_ms(50);
+    if((pressed & 1)&&(alarm_on != easter_egg))
+    {
+    	glcdClearScreen();
+	    while(alarm_on != easter_egg)
+	    {
+	    	uint8_t i,j;
+	    	for(i=0,j=0;eeprom_read_byte(&string[j]);i++)
+	    	{
+	    		glcdSetAddress(eeprom_read_byte(&string[j++]),i);
+	    		for(;eeprom_read_byte(&string[j]);)
+	    			glcdWriteChar(eeprom_read_byte(&string[j++]),0);
+	    		j++;
+	    	}
+	    }
+	    displaymode = SHOW_TIME;     
+      	return;
+	}
+	else
+		easter_egg = alarm_on;
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
       just_pressed = 0;
       screenmutex++;
@@ -767,6 +806,8 @@ glcdSetAddress(43, 0);
  				break;
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
+  case STYLE_RANDOM: glcdPutStr("Random",inverted);
+  				break;
   }
 }
 

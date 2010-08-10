@@ -150,11 +150,13 @@ void setscore_rat(void)
     last_score_mode_rat = score_mode;
   }
   switch(score_mode) {
+#ifdef OPTION_DOW_DATELONG
   	case SCORE_MODE_DOW:
   	  break;
   	case SCORE_MODE_DATELONG:
   	  right_score = date_d;
   	  break;
+#endif
     case SCORE_MODE_TIME:
       if((minute_changed || hour_changed)) {
       	if(hour_changed) {
@@ -169,7 +171,11 @@ void setscore_rat(void)
       }
       break;
     case SCORE_MODE_DATE:
+#ifdef OPTION_DOW_DATELONG
       if((region == REGION_US)||(region == DOW_REGION_US)) {
+#else
+      if(region == REGION_US) {
+#endif
         left_score = date_m;
         right_score = date_d;
       } else {
@@ -728,6 +734,7 @@ uint8_t rat_time_loc[8] = {
 void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 	static uint8_t prev_mode;
 	uint8_t i;
+#ifdef OPTION_DOW_DATELONG
 	if(score_mode==SCORE_MODE_DOW) {
 		if(prev_mode != SCORE_MODE_DOW)
 		{
@@ -827,7 +834,8 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 		    }
 			glcdFillRectangle(ball_x, ball_y, ball_radius*2, ball_radius*2, ! inverted);
 			prev_mode = SCORE_MODE_TIME;
-		}
+	    }
+#endif
 	  if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
 				      DISPLAY_H10_X, DISPLAY_TIME_Y + 4, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
       
@@ -854,7 +862,9 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 				      DISPLAY_M1_X, DISPLAY_TIME_Y + 4, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
         drawbigdigit(DISPLAY_M1_X, DISPLAY_TIME_Y + 4, right_score%10, inverted);
       }
+#ifdef OPTION_DOW_DATELONG
   }
+#endif
 }
 
 
@@ -872,6 +882,8 @@ void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
     }
   }
 }
+
+#ifdef OPTION_DOW_DATELONG
 //uint8_t get_font(uint16_t addr)
 void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   uint8_t i, j;
@@ -887,6 +899,7 @@ void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
     }
   }
 }
+#endif
 
 float random_angle_rads(void) {
    // create random vector MEME seed it ok???

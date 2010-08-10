@@ -72,13 +72,13 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
-uint8_t EEMEM  EE_ALARM_HOUR=8;
-uint8_t EEMEM EE_ALARM_MIN=0;
+uint8_t EEMEM  EE_ALARM_HOUR=7;
+uint8_t EEMEM EE_ALARM_MIN=30;
 uint8_t EEMEM EE_BRIGHT=OCR2A_VALUE;
 uint8_t EEMEM EE_REGION=REGION_US;
 uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
 uint8_t EEMEM EE_SNOOZE=10;
-uint8_t EEMEM EE_STYLE=STYLE_INT;
+uint8_t EEMEM EE_STYLE=STYLE_RANDOM;
 
 /*
 void init_eeprom(void) {	//Set eeprom to a default state.

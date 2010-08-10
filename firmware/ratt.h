@@ -140,6 +140,7 @@
 #define STYLE_SEV 211
 #define STYLE_RAT 212
 #define STYLE_XDA 213
+#define STYLE_RANDOM 214
 
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased.

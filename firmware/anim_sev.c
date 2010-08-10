@@ -28,7 +28,7 @@ extern volatile uint8_t second_changed, minute_changed, hour_changed;
 
 #ifdef OPTION_DOW_DATELONG
 extern const uint8_t DOWText[] PROGMEM; 
-const uint8_t MonthText[] PROGMEM; 
+extern const uint8_t MonthText[] PROGMEM; 
 #endif
 
 uint8_t redraw_time = 0;
@@ -148,12 +148,9 @@ void drawdisplay_sev(uint8_t pinverted) {
     drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, right/10, inverted);
     drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, right%10, inverted);
     
-    if (second_changed && time_s%2) {
-      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*1/3, 0);
-      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*2/3, 0);
-    } else {
-      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*1/3, 1);
-      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*2/3, 1);
+    if (second_changed) {
+      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*1/3, time_s%2);
+      drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*2/3, time_s%2);
     }
   }
 }
