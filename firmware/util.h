@@ -41,6 +41,6 @@ void delay_s(uint8_t s);
 
 // Date Time Function
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
-char sdtow(uint8_t dow, uint8_t ix);
-char smon(uint8_t date_m, uint8_t ix);
+uint8_t sdtow(uint8_t dow, uint8_t ix);
+uint8_t smon(uint8_t date_m, uint8_t ix);
 

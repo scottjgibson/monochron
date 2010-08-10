@@ -319,11 +319,12 @@ void glcdWriteChar(unsigned char c, uint8_t inverted)
 	glcdStartLine(0);
 }
 
-void glcdWriteCharGr(u08 grCharIdx)
+void glcdWriteCharGr(u08 grCharIdx, uint8_t inverted)
 {
 	u08 idx;
 	u08 grLength;
 	u08 grStartIdx = 0;
+        u08 line;
 
 	// get starting index of graphic bitmap
 	for(idx=0; idx<grCharIdx; idx++)
@@ -341,7 +342,9 @@ void glcdWriteCharGr(u08 grCharIdx)
 	for(idx=0; idx<grLength; idx++)
 	{
 		// write the line
-		glcdDataWrite(eeprom_read_byte(&FontGr[(grStartIdx+1)+idx]));
+                line = eeprom_read_byte(&FontGr[(grStartIdx+1)+idx]);
+                if (inverted == INVERTED) line = 255-line;
+		glcdDataWrite(line);
 	}
 }
 

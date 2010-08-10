@@ -178,11 +178,11 @@ uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
 const uint8_t DOWText[] EEMEM = "sunmontuewedthufrisat";
 const uint8_t MonthText[] EEMEM = "   janfebmaraprmayjunjulaugsepoctnovdec";
 
-char sdotw(uint8_t dow, uint8_t ix) {
+uint8_t sdotw(uint8_t dow, uint8_t ix) {
  return eeprom_read_byte(&DOWText[(dow*3) + ix]);
 }
 
-char smon(uint8_t date_m, uint8_t ix) {
+uint8_t smon(uint8_t date_m, uint8_t ix) {
  return eeprom_read_byte(&MonthText[(date_m*3) + ix]);
 }
 
