@@ -149,8 +149,10 @@ void set_style(void) {
 	mode = SET_STYLE;
 	// print the region normal
 	print_style_setting(NORMAL);
-
 	print_menu_advance();
+        // faster return?
+	displaymode = SHOW_TIME;
+        return;
       }
       screenmutex--;
     }
