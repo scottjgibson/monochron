@@ -186,7 +186,7 @@ int main(void) {
 	{
 		display_date=0;
 		score_mode = SCORE_MODE_YEAR;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    //drawdisplay();
 	}
 #ifdef OPTION_DOW_DATELONG
@@ -194,21 +194,21 @@ int main(void) {
 	{
 		display_date=3;
 		score_mode = SCORE_MODE_DATE;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    //drawdisplay();
 	}
 	else if(display_date==1 && !score_mode_timeout)
 	{
 		display_date=4;
 		score_mode = SCORE_MODE_DATELONG_MON;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    //drawdisplay();
 	}
 	else if(display_date==4 && !score_mode_timeout)
 	{
 		display_date=3;
 		score_mode = SCORE_MODE_DATELONG_DAY;
-		score_mode_timeout = 3;
+		score_mode_timeout = SCORE_MODE_TIMEOUT;
 	}
 #endif
 	
@@ -217,20 +217,20 @@ int main(void) {
 	  if(last_score_mode == SCORE_MODE_DATELONG)
 	  {
 	    score_mode = SCORE_MODE_DOW;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    setscore();
 	  }
 	  
 	  else if(last_score_mode == SCORE_MODE_DOW)
 	  {
 	    score_mode = SCORE_MODE_DATE;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    setscore();
 	  }
 	  else if(last_score_mode == SCORE_MODE_DATE)
 	  {
 	    score_mode = SCORE_MODE_YEAR;
-	    score_mode_timeout = 3;
+	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    setscore();
 	    display_date = 0;
 	  }
@@ -239,7 +239,7 @@ int main(void) {
 	/*if(display_date && !score_mode_timeout)
 	{
 	  score_mode = SCORE_MODE_YEAR;
-	  score_mode_timeout = 3;
+	  score_mode_timeout = SCORE_MODE_TIMEOUT;
 	  setscore();
 	  display_date = 0;
 	}*/
@@ -270,7 +270,7 @@ int main(void) {
 	  	score_mode = SCORE_MODE_DOW;
 	  }
 #endif
-	  score_mode_timeout = 3;
+	  score_mode_timeout = SCORE_MODE_TIMEOUT;
 	  //drawdisplay();
 	}
 
@@ -312,18 +312,18 @@ int main(void) {
 #endif
       default:
 	displaymode = SHOW_TIME;
+	//glcdClearScreen();
+	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
+	//initdisplay(0);
+	//initanim();
+      }
+
+      if (displaymode == SHOW_TIME) {
 	glcdClearScreen();
 	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
 	//initdisplay(0);
 	initanim();
       }
-
-      /*if (displaymode == SHOW_TIME) {
-	glcdClearScreen();
-	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
-	//initdisplay(0);
-	initanim();
-      }*/
     }
 
     step();
@@ -394,7 +394,7 @@ void setalarmstate(void) {
       // reset snoozing
       snoozetimer = 0;
 	  score_mode = SCORE_MODE_ALARM;
-	  score_mode_timeout = 3;
+	  score_mode_timeout = SCORE_MODE_TIMEOUT;
 	  //drawdisplay();
       DEBUGP("alarm on");
     }   
@@ -567,21 +567,6 @@ SIGNAL (TIMER2_OVF_vect) {
        (displaymode == SET_REGION) ||
        (displaymode == SET_BRIGHTNESS)) &&
       (!screenmutex) ) {
-      /*glcdSetAddress(MENU_INDENT + 10*6, 2);
-      print_timehour(time_h, NORMAL);
-      glcdWriteChar(':', NORMAL);
-      printnumber(time_m, NORMAL);
-      glcdWriteChar(':', NORMAL);
-      printnumber(time_s, NORMAL);
-
-      if (time_format == TIME_12H) {
-	glcdWriteChar(' ', NORMAL);
-	if (time_h >= 12) {
-	  glcdWriteChar('P', NORMAL);
-	} else {
-	  glcdWriteChar('A', NORMAL);
-	}
-      }*/
       print_time(time_h, time_m, time_s, SET_TIME);
   }
 

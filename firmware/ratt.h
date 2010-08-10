@@ -87,6 +87,8 @@
 #define SCORE_MODE_DATELONG_MON 5
 #define SCORE_MODE_DATELONG_DAY 6
 
+#define SCORE_MODE_TIMEOUT ((displaystyle == STYLE_XDA)?5:3)
+
 // Constants for how to display time & date
 #define REGION_US 0
 #define REGION_EU 1

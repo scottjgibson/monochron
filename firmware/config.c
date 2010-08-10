@@ -53,12 +53,12 @@ void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode)
   glcdPutStr("Set Time: ", NORMAL);
   print_timehour(hour, ((mode==SET_HOUR)?INVERTED:NORMAL));
   glcdWriteChar(':', NORMAL);
-  printnumber(time_m, ((mode==SET_MIN)?INVERTED:NORMAL));
+  printnumber(min, ((mode==SET_MIN)?INVERTED:NORMAL));
   glcdWriteChar(':', NORMAL);
-  printnumber(time_s, ((mode==SET_SEC)?INVERTED:NORMAL));
+  printnumber(sec, ((mode==SET_SEC)?INVERTED:NORMAL));
   if (time_format == TIME_12H) {
     glcdWriteChar(' ', NORMAL);
-    if (time_h >= 12) {
+    if (hour >= 12) {
       glcdWriteChar('P', ((mode==SET_HOUR)?INVERTED:NORMAL));
     } else {
       glcdWriteChar('A', ((mode==SET_HOUR)?INVERTED:NORMAL));

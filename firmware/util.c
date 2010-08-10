@@ -2,6 +2,7 @@
 #include <avr/interrupt.h>
 #include <util/delay.h>
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 #include "util.h"
 
 // Creates a 8N1 UART connect
@@ -174,15 +175,15 @@ uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
     return (day + (2 * month) + (6 * (month+1)/10) + year + (year/4) - (year/100) + (year/400) + 1) % 7;
 }
 
-const uint8_t DOWText[] PROGMEM = "sunmontuewedthufrisat";
-const uint8_t MonthText[] PROGMEM = "   janfebmaraprmayjunjulaugsepoctnovdec";
+const uint8_t DOWText[] EEMEM = "sunmontuewedthufrisat";
+const uint8_t MonthText[] EEMEM = "   janfebmaraprmayjunjulaugsepoctnovdec";
 
 char sdotw(uint8_t dow, uint8_t ix) {
- return pgm_read_byte(DOWText + (dow*3) + ix);
+ return eeprom_read_byte(&DOWText[(dow*3) + ix]);
 }
 
 char smon(uint8_t date_m, uint8_t ix) {
- return pgm_read_byte(MonthText + (date_m*3) + ix);
+ return eeprom_read_byte(&MonthText[(date_m*3) + ix]);
 }
 
 

@@ -156,7 +156,7 @@ void setscore_rat(void)
   	  right_score = date_d;
   	  break;
     case SCORE_MODE_TIME:
-      if(alarming && (minute_changed || hour_changed)) {
+      if((minute_changed || hour_changed)) {
       	if(hour_changed) {
 	      left_score = old_h;
 	      right_score = old_m;
@@ -601,6 +601,7 @@ void drawmidline(uint8_t inverted) {
 
 void drawdisplay_rat(uint8_t inverted) {
 
+	setscore_rat();
     // erase old ball
     glcdFillRectangle(oldball_x, oldball_y, ball_radius*2, ball_radius*2, inverted);
     // draw new ball

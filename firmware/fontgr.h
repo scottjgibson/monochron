@@ -17,10 +17,10 @@
 
 #ifndef WIN32
 // AVR specific includes
-	#include <avr/pgmspace.h>
+	#include <avr/eeprom.h>
 #endif
 
-static unsigned char __attribute__((section(".eeprom"))) FontGr[] =
+static unsigned char EEMEM FontGr[] =
 {
 // format is one character per line:
 // length, byte array[length]
