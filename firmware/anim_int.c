@@ -114,6 +114,7 @@ void drawdisplay_int(uint8_t inverted) {
 
 void setscore_int(uint8_t inverted) {
    if (minute_changed || hour_changed || last_score_mode2 != score_mode) {
+   	   minute_changed = hour_changed = 0;
    if (! digitsmutex_int) {
     digitsmutex_int++;
     last_score_mode2 = score_mode;

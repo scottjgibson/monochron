@@ -160,6 +160,7 @@ void drawdisplay_sev(uint8_t pinverted) {
 
 
 void step_sev(void) {
+	minute_changed = hour_changed = 0;
 }
 
 void drawdot_sev(uint8_t x, uint8_t y, uint8_t inverted) {
