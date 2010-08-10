@@ -1,5 +1,6 @@
 
 #include <avr/pgmspace.h>
+#include <avr/eeprom.h>
 
 #define NUM_ELEM(x) (sizeof (x) / sizeof (*(x)))
 
@@ -459,7 +460,7 @@ const uint8_t six_seg[] PROGMEM = {24, 26, 255, 255,
 10, 19, 255, 255,
 				   12, 16, 255, 255};
 
-const uint8_t seven[] PROGMEM = {3, 27, 255, 255,
+const uint8_t EEMEM seven[] = {3, 27, 255, 255,
 3, 27, 255, 255,
 2, 26, 255, 255,
 2, 26, 255, 255,
@@ -524,7 +525,7 @@ const uint8_t seven[] PROGMEM = {3, 27, 255, 255,
 8, 13, 255, 255,
 8, 13, 255, 255,};
 
-const uint8_t eight[] PROGMEM = {11, 17, 255, 255,
+const uint8_t EEMEM eight[] = {11, 17, 255, 255,
 8, 20, 255, 255,
 7, 21, 255, 255,
 6, 11, 16, 22,
@@ -589,7 +590,7 @@ const uint8_t eight[] PROGMEM = {11, 17, 255, 255,
 8, 18, 255, 255,
 10, 15, 255, 255,};
 
-const uint8_t nine[] PROGMEM = {11, 16, 255, 255,
+const uint8_t EEMEM nine[] = {11, 16, 255, 255,
 8, 18, 255, 255,
 7, 19, 255, 255,
 6, 11, 15, 20,

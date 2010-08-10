@@ -153,6 +153,7 @@ void set_style(void) {
       if (mode == SET_STL) {
 	    displaystyle ++;
 	    if (displaystyle>STYLE_XDA) displaystyle=STYLE_INT;
+	  eeprom_write_byte(&EE_STYLE,displaystyle);
 	screenmutex++;
 	display_menu();
 	print_menu_change();
@@ -163,7 +164,7 @@ void set_style(void) {
  	
 	screenmutex--;
 
-	//eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2B);
+	//eeprom_write_byte(&EE_BRIGHT, OCR2B);
       }
     }
   }
@@ -437,7 +438,7 @@ void set_backlight(void) {
 	
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2B);
+	eeprom_write_byte(&EE_BRIGHT, OCR2B);
       }
     }
   }
@@ -557,8 +558,8 @@ void set_region(void) {
 	print_region_setting(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_REGION, region);
-	eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, time_format);    
+	eeprom_write_byte(&EE_REGION, region);
+	eeprom_write_byte(&EE_TIME_FORMAT, time_format);    
       }
     }
   }
@@ -618,11 +619,11 @@ void set_alarm(void) {
       if (mode == SET_HOUR) {
 	alarm_h = (alarm_h+1) % 24;
 	// print the hour inverted
-	eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, alarm_h);    
+	eeprom_write_byte(&EE_ALARM_HOUR, alarm_h);    
       }
       if (mode == SET_MIN) {
 	alarm_m = (alarm_m+1) % 60;
-	eeprom_write_byte((uint8_t *)EE_ALARM_MIN, alarm_m);    
+	eeprom_write_byte(&EE_ALARM_MIN, alarm_m);    
       }
       print_alarmline(mode);
       screenmutex--;

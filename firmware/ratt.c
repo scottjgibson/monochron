@@ -72,26 +72,35 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
+uint8_t EEMEM  EE_ALARM_HOUR=8;
+uint8_t EEMEM EE_ALARM_MIN=0;
+uint8_t EEMEM EE_BRIGHT=OCR2A_VALUE;
+uint8_t EEMEM EE_REGION=REGION_US;
+uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
+uint8_t EEMEM EE_SNOOZE=10;
+uint8_t EEMEM EE_STYLE=STYLE_INT;
+
+/*
 void init_eeprom(void) {	//Set eeprom to a default state.
 #ifndef OPTION_DOW_DATELONG
-  if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
+  if(eeprom_read_byte(&EE_INIT) != EE_INITIALIZED) {
 #else
-  if(eeprom_read_byte((uint8_t *)EE_INIT) != (EE_INITIALIZED-1)) {
+  if(eeprom_read_byte(&EE_INIT) != (EE_INITIALIZED-1)) {
 #endif
-    eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, 8);
-    eeprom_write_byte((uint8_t *)EE_ALARM_MIN, 0);
-    eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2A_VALUE);
-    eeprom_write_byte((uint8_t *)EE_VOLUME, 1);
-    eeprom_write_byte((uint8_t *)EE_REGION, REGION_US);
-    eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, TIME_12H);
-    eeprom_write_byte((uint8_t *)EE_SNOOZE, 10);
+    eeprom_write_byte(&EE_ALARM_HOUR, 8);
+    eeprom_write_byte(&EE_ALARM_MIN, 0);
+    eeprom_write_byte(&EE_BRIGHT, OCR2A_VALUE);
+    eeprom_write_byte(&EE_VOLUME, 1);
+    eeprom_write_byte(&EE_REGION, REGION_US);
+    eeprom_write_byte(&EE_TIME_FORMAT, TIME_12H);
+    eeprom_write_byte(&EE_SNOOZE, 10);
 #ifndef OPTION_DOW_DATELONG
-    eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
+    eeprom_write_byte(&EE_INIT, EE_INITIALIZED);
 #else
-    eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED-1);
+    eeprom_write_byte(&EE_INIT, EE_INITIALIZED-1);
 #endif
   }
-}
+}*/
 
 int main(void) {
   uint8_t inverted = 0;
@@ -119,9 +128,10 @@ int main(void) {
   clock_init();
   //beep(4000, 100);
 
-  init_eeprom();
-  region = eeprom_read_byte((uint8_t *)EE_REGION);
-  time_format = eeprom_read_byte((uint8_t *)EE_TIME_FORMAT);
+  //init_eeprom();
+  
+  region = eeprom_read_byte(&EE_REGION);
+  time_format = eeprom_read_byte(&EE_TIME_FORMAT);
   DEBUGP("buttons!");
   initbuttons();
 
@@ -142,7 +152,7 @@ int main(void) {
   TCCR2A |= _BV(WGM21) | _BV(WGM20); // fast PWM
   TCCR2B |= _BV(WGM22);
   OCR2A = OCR2A_VALUE;
-  OCR2B = eeprom_read_byte((uint8_t *)EE_BRIGHT);
+  OCR2B = eeprom_read_byte(&EE_BRIGHT);
 #endif
 
   DDRB |= _BV(5);
@@ -159,7 +169,7 @@ int main(void) {
   
   //Dataman - InitiAmin now init displays(0) as well.
   //initdisplay(0);
-  displaystyle = STYLE_INT;
+  displaystyle = eeprom_read_byte(&EE_STYLE);
   initanim();
   
   while (1) {
@@ -647,8 +657,8 @@ void clock_init(void) {
   DEBUG(uart_putw_dec(date_y));
   DEBUG(putstring_nl(""));
 
-  alarm_m = eeprom_read_byte((uint8_t *)EE_ALARM_MIN) % 60;
-  alarm_h = eeprom_read_byte((uint8_t *)EE_ALARM_HOUR) % 24;
+  alarm_m = eeprom_read_byte(&EE_ALARM_MIN) % 60;
+  alarm_h = eeprom_read_byte(&EE_ALARM_HOUR) % 24;
 
 
   //ASSR |= _BV(AS2); // use crystal
@@ -663,7 +673,7 @@ void clock_init(void) {
 }
 
 void setsnooze(void) {
-  //snoozetimer = eeprom_read_byte((uint8_t *)EE_SNOOZE);
+  //snoozetimer = eeprom_read_byte(&EE_SNOOZE);
   //snoozetimer *= 60; // convert minutes to seconds
   snoozetimer = MAXSNOOZE;
   TCCR1B = 0;

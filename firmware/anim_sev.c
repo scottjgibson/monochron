@@ -179,9 +179,9 @@ void draw7seg_sev(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 
 void drawdigit_sev(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
   if(d < 10)
-  	  draw7seg_sev(x,y,pgm_read_byte(numbertable_p + d),inverted);
+  	  draw7seg_sev(x,y,eeprom_read_byte(&numbertable[d]),inverted);
   else if ((d >= 'a') || (d <= 'z'))
-  	  draw7seg_sev(x,y,pgm_read_byte(alphatable_p + (d - 'a')),inverted);
+  	  draw7seg_sev(x,y,eeprom_read_byte(&alphatable[(d - 'a')]),inverted);
   else
   	  draw7seg_sev(x,y,0x00,inverted);
 }

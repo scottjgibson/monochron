@@ -143,13 +143,22 @@
 //the state the eeprom will be in, when totally erased.
 #define EE_INITIALIZED 0xC3
 #define EE_INIT 0
+/*
 #define EE_ALARM_HOUR 1
 #define EE_ALARM_MIN 2
 #define EE_BRIGHT 3
 #define EE_VOLUME 4
 #define EE_REGION 5
 #define EE_TIME_FORMAT 6
-#define EE_SNOOZE 7
+#define EE_SNOOZE 7*/
+
+extern uint8_t EE_ALARM_HOUR;
+extern uint8_t EE_ALARM_MIN;
+extern uint8_t EE_BRIGHT;
+extern uint8_t EE_REGION;
+extern uint8_t EE_TIME_FORMAT;
+extern uint8_t EE_SNOOZE;
+extern uint8_t EE_STYLE;
 
 /*************************** FUNCTION PROTOTYPES */
 

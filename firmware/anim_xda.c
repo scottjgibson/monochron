@@ -40,6 +40,7 @@ uint8_t last_score_mode_xda = 0;
 
 extern const uint8_t zero_seg[];
 extern const uint8_t one_seg[];
+extern const uint8_t seven[];
 
 // special pointer for reading from ROM memory
 PGM_P zero_p PROGMEM = zero_seg;
@@ -57,7 +58,7 @@ void drawdots_xda(uint8_t inverted);
 void drawdigit_xda(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted);
 void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inverted);
 void bitblit_ram(uint8_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t size, uint8_t inverted);
-void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
+void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, uint8_t d, uint8_t height, uint8_t inverted);
 void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t size, uint8_t inverted);
 
 uint8_t steps = 0;
@@ -344,7 +345,7 @@ void step_xda(void) {
 
 
 void drawdigit_xda(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
-  blitsegs_rom(x, y, zero_p+d*DIGIT_HEIGHT*4, 64, inverted);
+    blitsegs_rom(x, y, d, 64, inverted);
 }
 void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inverted) {
   uint8_t oline[4], tline[4], i;
@@ -360,7 +361,12 @@ void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inv
       oline[0] = oline[1] = oline[2] = oline[3] = 0;
     } else {
       for(i=0;i<4;i++)
-        oline[i] = pgm_read_byte(zero_p+o*DIGIT_HEIGHT*4+4*line+i);
+      {
+      	if(o<7)
+        	oline[i] = pgm_read_byte(zero_p+o*DIGIT_HEIGHT*4+4*line+i);
+        else
+        	oline[i] = eeprom_read_byte(&seven[(o-7)*DIGIT_HEIGHT*4+4*line+i]);
+      }
     }
     uint8_t osegs = 0;
     if (oline[0] != 255)
@@ -369,7 +375,13 @@ void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inv
       osegs++;
 
     for(i=0;i<4;i++)
-      tline[i] = pgm_read_byte(zero_p+t*DIGIT_HEIGHT*4+line*4+i);
+    {
+      if(t<7)
+        tline[i] = pgm_read_byte(zero_p+t*DIGIT_HEIGHT*4+line*4+i);
+      else
+      	tline[i] = eeprom_read_byte(&seven[(t-7)*DIGIT_HEIGHT*4+4*line+i]);
+    }
+      
     uint8_t tsegs = 0;
     if (tline[0] != 255)
       tsegs++;
@@ -470,14 +482,22 @@ void bitblit_ram(uint8_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t 
 // number of segments to expect
 #define SEGMENTS 2
 
-void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
+void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, uint8_t d, uint8_t height, uint8_t inverted) {
   uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
-  uint8_t i;
+  uint8_t i, start, stop;
 
   for (uint8_t line = 0; line<height; line++) {
     for(i=0;i<2;i++) {
-    uint8_t start = pgm_read_byte(bitmap_p+4*line+(i*2));
-    uint8_t stop = pgm_read_byte(bitmap_p+4*line+(i*2)+1);
+    if(d<7)
+    {
+      start = pgm_read_byte((zero_p+d*DIGIT_HEIGHT*4)+4*line+(i*2));
+      stop = pgm_read_byte((zero_p+d*DIGIT_HEIGHT*4)+4*line+(i*2)+1);
+    }
+    else
+    {
+      start = eeprom_read_byte(&seven[((d-7)*DIGIT_HEIGHT*4)+(4*line)+(i*2)]);
+      stop = eeprom_read_byte(&seven[((d-7)*DIGIT_HEIGHT*4)+(4*line)+(i*2)+1]);
+    }
     
      while (start < stop) {
 	bitmap[start + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
