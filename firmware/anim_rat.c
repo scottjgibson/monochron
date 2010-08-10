@@ -19,7 +19,6 @@
 #include "ratt.h"
 #include "ks0108.h"
 #include "glcd.h"
-#include "font5x7.h"
 
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t old_m, old_h;
@@ -604,6 +603,8 @@ void drawdisplay_rat(uint8_t inverted) {
 
     // erase old ball
     glcdFillRectangle(oldball_x, oldball_y, ball_radius*2, ball_radius*2, inverted);
+    // draw new ball
+    glcdFillRectangle(ball_x, ball_y, ball_radius*2, ball_radius*2, ! inverted);
 
     // draw middle lines around where the ball may have intersected it?
     if  (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
@@ -646,9 +647,6 @@ void drawdisplay_rat(uint8_t inverted) {
     
     redraw_digits = 0;
     
-    // draw new ball
-    glcdFillRectangle(ball_x, ball_y, ball_radius*2, ball_radius*2, ! inverted);
-    
     // print 'alarm'
     /*
     if (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
@@ -686,7 +684,7 @@ uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
 }
 
 // 8 pixels high
-static unsigned char __attribute__ ((progmem)) BigFont[] = {
+static unsigned char EEMEM BigFont[] = {
 	0xFF, 0x81, 0x81, 0xFF,// 0
 	0x00, 0x00, 0x00, 0xFF,// 1
 	0x9F, 0x91, 0x91, 0xF1,// 2
@@ -863,7 +861,7 @@ void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   uint8_t i, j;
   
   for (i = 0; i < 4; i++) {
-    uint8_t d = pgm_read_byte(BigFont+(n*4)+i);
+    uint8_t d = eeprom_read_byte(&BigFont[(n*4)+i]);
     for (j=0; j<8; j++) {
       if (d & _BV(7-j)) {
 	glcdFillRectangle(x+i*2, y+j*2, 2, 2, !inverted);
@@ -873,12 +871,12 @@ void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
     }
   }
 }
-
+//uint8_t get_font(uint16_t addr)
 void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   uint8_t i, j;
   
   for (i = 0; i < 5; i++) {
-    uint8_t d = pgm_read_byte(Font5x7+((n-0x20)*5)+i);
+    uint8_t d = get_font(((n-0x20)*5)+i);
     for (j=0; j<7; j++) {
       if (d & _BV(j)) {
 	glcdFillRectangle(x+i*2, y+j*2, 2, 2, !inverted);

@@ -318,12 +318,12 @@ int main(void) {
 	initanim();
       }
 
-      if (displaymode == SHOW_TIME) {
+      /*if (displaymode == SHOW_TIME) {
 	glcdClearScreen();
 	//Dataman - Changing initdisplays to initanims, need to make sure as animation may have changed.
 	//initdisplay(0);
 	initanim();
-      }
+      }*/
     }
 
     step();

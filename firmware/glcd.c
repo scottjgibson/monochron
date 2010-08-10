@@ -23,6 +23,7 @@
 // AVR specific includes
 	#include <avr/io.h>
 	#include <avr/pgmspace.h>
+	#include <avr/eeprom.h>
 #endif
 
 #include "glcd.h"
@@ -296,9 +297,9 @@ void glcdWriteChar(unsigned char c, uint8_t inverted)
 	for(i=0; i<5; i++)
 	{
 	  if (inverted) {
-	    glcdDataWrite(~ pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(~ eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  } else {
-	    glcdDataWrite(pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  }
 	}
 
@@ -331,16 +332,16 @@ void glcdWriteCharGr(u08 grCharIdx)
 		// to get the startIdx of the next one
 		// 2010-03-03 BUG Dataman/CRJONES There's a bug here:  Have to add 1 for the byte-cout.
 		// grStartIdx += pgm_read_byte(FontGr+grStartIdx);
-		grStartIdx += pgm_read_byte(FontGr+grStartIdx)+1;
+		grStartIdx += eeprom_read_byte(&FontGr[grStartIdx])+1;
 		
 	}
-	grLength = pgm_read_byte(FontGr+grStartIdx);
+	grLength = eeprom_read_byte(&FontGr[grStartIdx]);
 
 	// write the lines of the desired graphic to the display
 	for(idx=0; idx<grLength; idx++)
 	{
 		// write the line
-		glcdDataWrite(pgm_read_byte(FontGr+(grStartIdx+1)+idx));
+		glcdDataWrite(eeprom_read_byte(&FontGr[(grStartIdx+1)+idx]));
 	}
 }
 
@@ -350,4 +351,9 @@ void glcdPutStr(char *data, uint8_t inverted)
     glcdWriteChar(*data, inverted);
     data++;
   }
+}
+
+uint8_t get_font(uint16_t addr)
+{
+	return eeprom_read_byte(&Font5x7[addr]);
 }

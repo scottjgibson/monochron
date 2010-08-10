@@ -20,7 +20,7 @@
 #include "ks0108.h"
 #include "ks0108conf.h"
 #include "glcd.h"
-#include "font5x7.h"
+//#include "font5x7.h"
 
 // 2010-03-03 First Version
 //            Requires: Patch to glcd.c routine glcdWriteCharGr(u08 grCharIdx)

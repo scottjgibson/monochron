@@ -91,5 +91,7 @@ void glcdWriteCharGr(u08 grCharIndex);
 // ***** Private Functions ***** (or depricated)
 void glcdPutStr(char *data, uint8_t inverted);
 
+uint8_t get_font(uint16_t addr);
+
 
 #endif
