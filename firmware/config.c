@@ -16,7 +16,6 @@ extern volatile uint8_t last_buttonstate, just_pressed, pressed;
 extern volatile uint8_t buttonholdcounter;
 extern volatile uint8_t region;
 extern volatile uint8_t time_format;
-volatile uint8_t easter_egg;
 extern volatile uint8_t alarm_on;
 
 //dataman - add access to display style
@@ -104,14 +103,7 @@ void display_menu(void) {
   screenmutex--;
 }
 
-uint8_t string[] EEMEM =  "\x07" "MultiChron Firmware\0" 
-	                      "\x0A" "Mod, IntruderChron\0" 
-	                      "\x22" "by Dataman\0" 
-	                      "\x04" "Debugging, CaitSith2\0" 
-	                      "\x01" "RattChronm XDALICRON\0"
-	                      "\x19" "SevenChron by\0" 
-	                      "\x07" "Adafruit Industries\0" 
-                          "\x10" "www.adafruit.com\0";
+
 //Dataman - Handle setting style
 void set_style(void) {
   uint8_t mode = SET_STYLE;
@@ -124,8 +116,7 @@ void set_style(void) {
   // put a small arrow next to 'set 12h/24h'
   drawArrow(0, 3, MENU_INDENT -1);
   screenmutex--;
-  easter_egg = alarm_on;
-  
+   
   timeoutcounter = INACTIVITYTIMEOUT;  
 
   while (1) {
@@ -168,8 +159,8 @@ void set_style(void) {
       
       if (mode == SET_STL) {
 	    displaystyle ++;
-	    if (displaystyle>STYLE_RANDOM) displaystyle=STYLE_INT;
-	  eeprom_write_byte(&EE_STYLE,displaystyle);
+	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_INT;
+	    if (displaystyle<STYLE_ABOUT) eeprom_write_byte(&EE_STYLE,displaystyle);
 	screenmutex++;
 	display_menu();
 	print_menu_change();
@@ -716,27 +707,7 @@ void set_time(void) {
       print_time(hour,min,sec,mode);
       screenmutex--;
     }
-    while((pressed & 1)&&(alarm_on==easter_egg));
-    _delay_ms(50);
-    if((pressed & 1)&&(alarm_on != easter_egg))
-    {
-    	glcdClearScreen();
-	    while(alarm_on != easter_egg)
-	    {
-	    	uint8_t i,j;
-	    	for(i=0,j=0;eeprom_read_byte(&string[j]);i++)
-	    	{
-	    		glcdSetAddress(eeprom_read_byte(&string[j++]),i);
-	    		for(;eeprom_read_byte(&string[j]);)
-	    			glcdWriteChar(eeprom_read_byte(&string[j++]),0);
-	    		j++;
-	    	}
-	    }
-	    displaymode = SHOW_TIME;     
-      	return;
-	}
-	else
-		easter_egg = alarm_on;
+    // was easter egg
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
       just_pressed = 0;
       screenmutex++;
@@ -807,6 +778,8 @@ glcdSetAddress(43, 0);
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
   case STYLE_RANDOM: glcdPutStr("Random",inverted);
+  				break;
+  case STYLE_ABOUT:  glcdPutStr("About",inverted);
   				break;
   }
 }

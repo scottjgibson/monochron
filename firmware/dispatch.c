@@ -40,6 +40,8 @@ void initanim(void){
                 break;
  case STYLE_RANDOM: init_crand(); displaystyle = STYLE_INT + (crand(0) & 3); initanim();
                 break;
+ case STYLE_ABOUT: initanim_abo();
+                break;
  }
 }
 
