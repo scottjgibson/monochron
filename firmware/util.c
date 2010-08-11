@@ -3,6 +3,7 @@
 #include <util/delay.h>
 #include <avr/pgmspace.h>
 #include <avr/eeprom.h>
+#include "ratt.h"
 #include "util.h"
 
 // Creates a 8N1 UART connect
@@ -158,6 +159,7 @@ void uart_putdw_dec(uint32_t dw)
     }
 }
 
+#ifdef OPTION_DOW_DATELONG
 // Date / Time Routines
 
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
@@ -185,7 +187,7 @@ uint8_t sdotw(uint8_t dow, uint8_t ix) {
 uint8_t smon(uint8_t date_m, uint8_t ix) {
  return eeprom_read_byte(&MonthText[(date_m*3) + ix]);
 }
-
+#endif
 
 
 

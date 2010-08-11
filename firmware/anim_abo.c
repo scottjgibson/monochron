@@ -25,39 +25,45 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
                              "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
-	                     "\x0d" "IntruderChron" 
+	                         "\x0d" "IntruderChron" 
                                   // 123456789ABCDEF0123456
-	                     "\x0a" "by Dataman"
+	                         "\x0a" "by Dataman"
                                   // 123456789ABCDEF0123456
-	                     "\x0d" "Data Magician"
+	                         "\x0d" "Data Magician"
+	                       #ifndef OPTION_DOW_DATELONG
+	                         "\x12" "http://crjones.com"	//These lines don't fit with OPTION_DOW_DATELONG :(
+	                       #endif
                                   // 123456789ABCDEF0123456
                              "\x01" "-"
                                   // 123456789ABCDEF0123456
                              "\x0c" "Optimization"
                                   // 123456789ABCDEF0123456
-	                     "\x09" "Debugging"
+	                         "\x09" "Debugging"
                                   // 123456789ABCDEF0123456
                              "\x0c" "by CaitSith2"
                                   // 123456789ABCDEF0123456
                              "\x0a" "Code Jedi!"
+                            #ifndef OPTION_DOW_DATELONG
+                             "\x14" "http://caitsith2.com"
+                            #endif
                                   // 123456789ABCDEF0123456
                              "\x01" "-"
                                   // 123456789ABCDEF0123456
-	                     "\x09" "RATTChron"
+	                         "\x09" "RATTChron"
                                   // 123456789ABCDEF0123456
-	                     "\x0a" "SevenChron"
+	                         "\x0a" "SevenChron"
                                   // 123456789ABCDEF0123456
                              "\x0b" "XADALICHRON"
                                   // 123456789ABCDEF0123456
                              "\x12" "MonoChron Hardware"
                                   // 123456789ABCDEF0123456
-			     "\x0a" "by LadyAda"
+			                 "\x0a" "by LadyAda"
                                   // 123456789ABCDEF0123456
-			     "\x10" "Simply The Best!"
+			                 "\x10" "Simply The Best!"
                                   // 123456789ABCDEF0123456
                              "\x01" "-"
                                   // 123456789ABCDEF0123456
-	                     "\x13" "Adafruit Industries" 
+	                         "\x13" "Adafruit Industries" 
                                   // 123456789ABCDEF0123456
                              "\x10" "www.adafruit.com"
                                   // 123456789ABCDEF0123456
@@ -66,7 +72,8 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
 void initanim_abo(void);
 
 void initanim_abo(){
- uint8_t k, b, line, ix, lineix, eof;
+ uint8_t k, b, line, eof;
+ uint16_t ix, lineix;
  ix=0;
  while (1) {
   glcdClearScreen();
