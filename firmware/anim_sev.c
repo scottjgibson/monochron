@@ -23,6 +23,7 @@ extern volatile uint8_t alarming, alarm_h, alarm_m;
 extern volatile uint8_t time_format;
 extern volatile uint8_t region;
 extern volatile uint8_t score_mode;
+extern volatile uint8_t RotateFlag;
 
 extern volatile uint8_t second_changed, minute_changed, hour_changed;
 
@@ -157,7 +158,8 @@ void drawdisplay_sev(uint8_t pinverted) {
 
 
 void step_sev(void) {
-	minute_changed = hour_changed = 0;
+	if(!RotateFlag || (minute_changed == 2) || (hour_changed == 2))
+		minute_changed = hour_changed = 0;
 }
 
 void drawdot_sev(uint8_t x, uint8_t y, uint8_t inverted) {

@@ -172,10 +172,6 @@ int main(void) {
   //initdisplay(0);
   displaystyle = eeprom_read_byte(&EE_STYLE);
   RotateFlag = 0;
-  if (displaystyle==STYLE_ROTATE) {
-    RotateFlag = ROTATEPERIOD;
-    displaystyle = STYLE_RANDOM;
-  }
   initanim();
   
   while (1) {

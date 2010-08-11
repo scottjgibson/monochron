@@ -153,10 +153,6 @@ void set_style(void) {
 	print_menu_advance();
         // faster return?
         RotateFlag = 0;
-        if (displaystyle==STYLE_ROTATE) {
-         RotateFlag = ROTATEPERIOD;
-         displaystyle = STYLE_RANDOM;
-        }
         displaymode = SHOW_TIME;
         return;
       }
