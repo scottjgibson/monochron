@@ -26,7 +26,7 @@
 
 extern volatile uint8_t displaystyle;
 extern volatile uint8_t RotateFlag;
-extern volatile uint8_t minute_changed;
+extern volatile uint8_t minute_changed, hour_changed;
 
 void initanim(void){
  switch (displaystyle) {
@@ -60,7 +60,11 @@ void initdisplay(uint8_t inverted) {
 }
 
 void drawdisplay(uint8_t inverted) {
- if (RotateFlag && minute_changed) {
+ if (RotateFlag && ((minute_changed==1)||(hour_changed==1))) {
+  if(minute_changed)
+    minute_changed = 2;
+  if(hour_changed)
+  	hour_changed = 2;
   if (!--RotateFlag) {
    RotateFlag = ROTATEPERIOD;
    if (++displaystyle>STYLE_XDA) {displaystyle=STYLE_INT;}
