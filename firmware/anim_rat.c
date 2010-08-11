@@ -628,16 +628,18 @@ void drawdisplay_rat(uint8_t inverted) {
     if (oldleftpaddle_y != leftpaddle_y) {
       // clear left paddle
       glcdFillRectangle(LEFTPADDLE_X, oldleftpaddle_y, PADDLE_W, PADDLE_H, inverted);
+    }
       // draw left paddle
       glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y, PADDLE_W, PADDLE_H, !inverted);
-    }
+    
 
     if (oldrightpaddle_y != rightpaddle_y) {
       // clear right paddle
       glcdFillRectangle(RIGHTPADDLE_X, oldrightpaddle_y, PADDLE_W, PADDLE_H, inverted);
+    }
       // draw right paddle
       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y, PADDLE_W, PADDLE_H, !inverted);
-    }
+    
 
     if (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2, RIGHTPADDLE_X, rightpaddle_y, PADDLE_W, PADDLE_H)) {
       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y, PADDLE_W, PADDLE_H, !inverted);
