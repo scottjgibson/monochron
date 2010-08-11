@@ -30,6 +30,7 @@ volatile uint8_t score_mode_timeout = 0;
 volatile uint8_t score_mode = SCORE_MODE_TIME;
 volatile uint8_t last_score_mode;
 volatile uint8_t displaystyle; //dataman - add access to displaystyle, enables MultiChron
+volatile uint8_t RotateFlag;   //dataman - enables display rotation
 
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
@@ -170,6 +171,7 @@ int main(void) {
   //Dataman - InitiAmin now init displays(0) as well.
   //initdisplay(0);
   displaystyle = eeprom_read_byte(&EE_STYLE);
+  RotateFlag = 0;
   initanim();
   
   while (1) {

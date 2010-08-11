@@ -25,8 +25,8 @@
 // 2010-08-07 Version 1 - Dataman
 
 extern volatile uint8_t displaystyle;
-
-
+extern volatile uint8_t RotateFlag;
+extern volatile uint8_t minute_changed;
 
 void initanim(void){
  switch (displaystyle) {
@@ -59,8 +59,14 @@ void initdisplay(uint8_t inverted) {
  }
 }
 
-
 void drawdisplay(uint8_t inverted) {
+ if (RotateFlag && minute_changed) {
+  if (!--RotateFlag) {
+   RotateFlag = ROTATEPERIOD;
+   if (++displaystyle>STYLE_XDA) {displaystyle=STYLE_INT;}
+   initanim();
+  }
+ }
  switch (displaystyle) {
  case STYLE_RAT: drawdisplay_rat(inverted);
                 break;

@@ -147,7 +147,11 @@
 #define STYLE_RAT 212
 #define STYLE_XDA 213
 #define STYLE_RANDOM 214
-#define STYLE_ABOUT 215
+#define STYLE_ROTATE 215
+#define STYLE_ABOUT 216
+
+// ROTATEPERIOD is the the wait period, in minutes, between screen rotations.
+#define ROTATEPERIOD 15 
 
 //DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased.

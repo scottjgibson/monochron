@@ -20,6 +20,7 @@ extern volatile uint8_t alarm_on;
 
 //dataman - add access to display style
 extern volatile uint8_t displaystyle;
+extern volatile uint8_t RotateFlag;
 
 extern volatile uint8_t displaymode;
 // This variable keeps track of whether we have not pressed any
@@ -151,7 +152,12 @@ void set_style(void) {
 	print_style_setting(NORMAL);
 	print_menu_advance();
         // faster return?
-	displaymode = SHOW_TIME;
+        RotateFlag = 0;
+        if (displaystyle==STYLE_ROTATE) {
+         RotateFlag = ROTATEPERIOD;
+         displaystyle = STYLE_RANDOM;
+        }
+        displaymode = SHOW_TIME;
         return;
       }
       screenmutex--;
@@ -780,6 +786,8 @@ glcdSetAddress(43, 0);
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
   case STYLE_RANDOM: glcdPutStr("Random",inverted);
+  				break;
+  case STYLE_ROTATE: glcdPutStr("Rotate",inverted);
   				break;
   case STYLE_ABOUT:  glcdPutStr("About",inverted);
   				break;
