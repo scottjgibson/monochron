@@ -52,6 +52,12 @@
 #define DISPLAY_M1_X  GLCD_XPIXELS - VSEGMENT_W - HSEGMENT_W - 2
 #define DISPLAY_TIME_Y 0
 
+#define DISPLAY_H10_X_RAT 30
+#define DISPLAY_H1_X_RAT 45
+#define DISPLAY_M10_X_RAT 70
+#define DISPLAY_M1_X_RAT 85
+#define DISPLAY_TIME_Y_RAT 4
+
 
 /* not used
 #define ALARMBOX_X 20

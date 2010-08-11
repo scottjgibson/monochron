@@ -14,8 +14,10 @@
 #include "glcd.h"
 
 extern volatile uint8_t displaystyle;
-                                  // 123456789ABCDEF0123456
-uint8_t about[] EEMEM =      "\x0a" "MultiChron"
+                                  
+uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
+	                              // 123456789ABCDEF0123456
+	                         "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
                              "\x0b" "Version 1.0"
                                   // 123456789ABCDEF0123456
@@ -59,7 +61,7 @@ uint8_t about[] EEMEM =      "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
                              "\x10" "www.adafruit.com"
                                   // 123456789ABCDEF0123456
-                             "\xff";
+                             "\0\0" "\xff";
 
 void initanim_abo(void);
 
