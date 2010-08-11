@@ -339,7 +339,14 @@ void drawdisplay_xda(uint8_t inverted) {
 
 
 void step_xda(void) {
- 
+ if(score_mode == SCORE_MODE_TIME)
+ {
+ 	if (second_changed)
+	{
+	  second_changed = 0;
+      drawdots_xda((time_s%2));
+    }
+ }
 }
 
 
