@@ -67,8 +67,7 @@ void initdisplay_sev(uint8_t inverted) {
 }
 
 
-void drawdisplay_sev(uint8_t pinverted) {
-  uint8_t inverted = 0;
+void drawdisplay_sev(uint8_t inverted) {
 
   if ((score_mode != SCORE_MODE_TIME) && (score_mode != SCORE_MODE_ALARM))
   {
