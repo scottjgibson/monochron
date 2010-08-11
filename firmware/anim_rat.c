@@ -203,11 +203,11 @@ void initanim_rat(void) {
   DEBUG(uart_putw_dec(GLCD_YPIXELS));
   DEBUG(putstring_nl(""));
 
-  leftpaddle_y = 25;
-  rightpaddle_y = 25;
+  oldleftpaddle_y = leftpaddle_y = 25;
+  oldrightpaddle_y = rightpaddle_y = 25;
 
-  ball_x = (SCREEN_W / 2) - 1;
-  ball_y = (SCREEN_H / 2) - 1;
+  oldball_x = ball_x = (SCREEN_W / 2) - 1;
+  oldball_y = ball_y = (SCREEN_H / 2) - 1;
   float angle = random_angle_rads();
   ball_dx = MAX_BALL_SPEED * cos(angle);
   ball_dy = MAX_BALL_SPEED * sin(angle);

@@ -76,7 +76,7 @@ void initanim_xda(void) {
 }
 
 uint8_t time_loc[4] = {
-	DISPLAY_H10_X, DISPLAY_H1_X, DISPLAY_M10_X, DISPLAY_M1_X
+	DISPLAY_H10_X_XDA, DISPLAY_H1_X_XDA, DISPLAY_M10_X_XDA, DISPLAY_M1_X_XDA
 };
 
 void initdisplay_xda(uint8_t inverted) {
@@ -99,14 +99,14 @@ void initdisplay_xda(uint8_t inverted) {
   
   while (steps++ <= MAX_STEPS) {
   	for(uint8_t i=0;i<4;i++)
-  		transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y, old_digits[i], new_digits[i], inverted);
-    /*transitiondigit_xda(DISPLAY_M1_X, DISPLAY_TIME_Y,
+  		transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, old_digits[i], new_digits[i], inverted);
+    /*transitiondigit_xda(DISPLAY_M1_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[3], new_digits[3], inverted);
-    transitiondigit_xda(DISPLAY_M10_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_M10_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[2], new_digits[2], inverted);
-    transitiondigit_xda(DISPLAY_H1_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[1], new_digits[1], inverted);
-    transitiondigit_xda(DISPLAY_H10_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[0], new_digits[0], inverted);*/
   }
   putstring("done init");
@@ -209,12 +209,12 @@ void drawdisplay_xda(uint8_t inverted) {
 
       drawdots_xda(inverted);
 
-      /*drawdigit_xda(DISPLAY_M1_X, DISPLAY_TIME_Y, new_digits[3], inverted);
-      drawdigit_xda(DISPLAY_M10_X, DISPLAY_TIME_Y, new_digits[2], inverted);
-      drawdigit_xda(DISPLAY_H1_X, DISPLAY_TIME_Y, new_digits[1], inverted);
-      drawdigit_xda(DISPLAY_H10_X, DISPLAY_TIME_Y, new_digits[0], inverted);*/
+      /*drawdigit_xda(DISPLAY_M1_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[3], inverted);
+      drawdigit_xda(DISPLAY_M10_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[2], inverted);
+      drawdigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[1], inverted);
+      drawdigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[0], inverted);*/
       for(i=0;i<4;i++)
-      	  drawdigit_xda(time_loc[i], DISPLAY_TIME_Y, new_digits[i], inverted);
+      	  drawdigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, new_digits[i], inverted);
     }
    
   } else if (score_mode == SCORE_MODE_DATE) {
@@ -288,24 +288,24 @@ void drawdisplay_xda(uint8_t inverted) {
 
   /*
   if (old_digits[3] != new_digits[3]) {
-    transitiondigit_xda(DISPLAY_M1_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_M1_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[3], new_digits[3], inverted);
   }
   if (old_digits[2] != new_digits[2]) {
-    transitiondigit_xda(DISPLAY_M10_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_M10_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[2], new_digits[2], inverted);
   }
   if (old_digits[1] != new_digits[1]) {
-    transitiondigit_xda(DISPLAY_H1_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[1], new_digits[1], inverted);
   }
   if (old_digits[0] != new_digits[0]) {
-    transitiondigit_xda(DISPLAY_H10_X, DISPLAY_TIME_Y,
+    transitiondigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA,
 		    old_digits[0], new_digits[0], inverted);
   }*/
   for(i=0;i<4;i++)
     if (old_digits[i] != new_digits[i]) {
-  	  transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y,
+  	  transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA,
   	  	  old_digits[i], new_digits[i], inverted);
     }
 

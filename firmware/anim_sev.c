@@ -77,10 +77,10 @@ void drawdisplay_sev(uint8_t inverted) {
   }
 
   if (score_mode == SCORE_MODE_YEAR) {
-    drawdigit_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, 2 , inverted);
-    drawdigit_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, 0, inverted);
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, (date_y % 100)/10, inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, date_y % 10, inverted);
+    drawdigit_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, 2 , inverted);
+    drawdigit_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, 0, inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, (date_y % 100)/10, inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, date_y % 10, inverted);
   } else if (score_mode == SCORE_MODE_DATE) {
     uint8_t left, right;
     if (region == REGION_US) {
@@ -90,28 +90,28 @@ void drawdisplay_sev(uint8_t inverted) {
       left = date_d;
       right = date_m;
     }
-    drawdigit_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, left/10 , inverted);
-    drawdigit_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, left%10, inverted);
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, right/10, inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, right % 10, inverted);
+    drawdigit_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, left/10 , inverted);
+    drawdigit_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, left%10, inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, right/10, inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, right % 10, inverted);
   } 
 #ifdef OPTION_DOW_DATELONG
   else if (score_mode == SCORE_MODE_DOW) {
   	uint8_t dow = dotw(date_m, date_d, date_y);
-  	draw7seg_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, 0x00 , inverted);
-    drawdigit_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, sdotw(dow,0), inverted);
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, sdotw(dow,1), inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, sdotw(dow,2), inverted);
+  	draw7seg_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, 0x00 , inverted);
+    drawdigit_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, sdotw(dow,0), inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, sdotw(dow,1), inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, sdotw(dow,2), inverted);
   } else if (score_mode == SCORE_MODE_DATELONG_MON) {
-  	draw7seg_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, 0x00 , inverted);
-    drawdigit_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, smon(date_m,0), inverted);
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, smon(date_m, 1), inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, smon(date_m,2), inverted);
+  	draw7seg_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, 0x00 , inverted);
+    drawdigit_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, smon(date_m,0), inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, smon(date_m, 1), inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, smon(date_m,2), inverted);
   } else if (score_mode == SCORE_MODE_DATELONG_DAY) {
-  	draw7seg_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, 0x00 , inverted);
-    draw7seg_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, 0x00 , inverted);
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, date_d/10, inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, date_d % 10, inverted);
+  	draw7seg_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, 0x00 , inverted);
+    draw7seg_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, 0x00 , inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, date_d/10, inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, date_d % 10, inverted);
   } 
 #endif
   else if ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)) {
@@ -139,14 +139,14 @@ void drawdisplay_sev(uint8_t inverted) {
 
     // draw hours
     if (left >= 10) {
-      drawdigit_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, left/10, inverted);
+      drawdigit_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, left/10, inverted);
     } else {
-      drawdigit_sev(DISPLAY_H10_X, DISPLAY_TIME_Y, 8, !inverted);
+      drawdigit_sev(DISPLAY_H10_X_SEV, DISPLAY_TIME_Y_SEV, 8, !inverted);
     }
-    drawdigit_sev(DISPLAY_H1_X, DISPLAY_TIME_Y, left%10, inverted);
+    drawdigit_sev(DISPLAY_H1_X_SEV, DISPLAY_TIME_Y_SEV, left%10, inverted);
     
-    drawdigit_sev(DISPLAY_M10_X, DISPLAY_TIME_Y, right/10, inverted);
-    drawdigit_sev(DISPLAY_M1_X, DISPLAY_TIME_Y, right%10, inverted);
+    drawdigit_sev(DISPLAY_M10_X_SEV, DISPLAY_TIME_Y_SEV, right/10, inverted);
+    drawdigit_sev(DISPLAY_M1_X_SEV, DISPLAY_TIME_Y_SEV, right%10, inverted);
     
     if (second_changed) {
       drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*1/3, time_s%2);
