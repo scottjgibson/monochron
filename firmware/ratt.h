@@ -126,6 +126,7 @@
 #define SET_DEATHCLOCK_MODE 13
 #define SET_DEATHCLOCK_BMI 14
 #define SET_DEATHCLOCK_SMOKER 15
+#define SET_ABOUT 16
 
 #define SET_MONTH 101
 #define SET_DAY 102
@@ -173,6 +174,7 @@ extern uint8_t EE_SET_SEC;
 /*************************** FUNCTION PROTOTYPES */
 
 /******* config.c ********/
+void set_about(void);
 void set_deathclock_dob(void);
 void set_deathclock_gender(void);
 void set_deathclock_mode(void);
@@ -209,6 +211,7 @@ void load_etd(void);
 
 /******* anim.c ********/
 void initanim(void);
+void initanim_abo(void);
 void initdisplay(uint8_t inverted);
 void step(void);
 void setscore(void);

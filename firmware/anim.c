@@ -329,10 +329,14 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
                              "\0\0" "\xff";
 
-void initanim_abo(){
+void initanim_abo(void) {
  uint8_t k, b, line, eof;
  uint16_t ix, lineix;
  ix=0;
+ glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+ blitsegs_rom(36,0,logo_p, 57, 64, 1);
+ uint8_t i = (time_s + 5) % 60;
+ while(i != time_s);
  while (1) {
   glcdClearScreen();
   for (eof=0, lineix=0, line=0; line<8; line++) {
@@ -360,17 +364,6 @@ void initanim_abo(){
 
 void initdisplay(uint8_t inverted) {
   int16_t i;
-  if(inverted == 2)
-  {
-        glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
-        blitsegs_rom(36,0,logo_p, 57, 64, 1);
-        i = (time_s + 5) % 60;
-        while(i != time_s);
-		initanim_abo();
-        initdisplay(0);
-        just_pressed = 0;
-        return;
-  }
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
   setscore();
   prep_digits();

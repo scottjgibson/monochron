@@ -922,6 +922,7 @@ void set_backlight(void) {
     if(mode == SET_BRIGHTNESS)
     {
     	screenmutex++;
+    	display_time(time_h, time_m, time_s, NORMAL);
     	glcdSetAddress(0, 6);
     	if((time_s%4)<2)
         	glcdPutStr("Press MENU to advance", NORMAL);
@@ -1056,6 +1057,24 @@ void set_alarm(void) {
   timeoutcounter = INACTIVITYTIMEOUT;  
 
   while (1) {
+  	if(mode == SET_ALARM)
+  	{
+	  	screenmutex++;
+	  	display_time(time_h,time_m,time_s,NORMAL);
+	  	glcdSetAddress(0,6);
+	  	if((time_s % 4) < 2)
+	  	{
+	      glcdPutStr("Press + to view      ",NORMAL);
+	      glcdSetAddress(0,7);
+	      glcdPutStr("About Screen         ",NORMAL);
+	    }
+	    else
+	    {
+	      menu_advance_set_exit(0);
+	    }
+	    screenmutex--;
+	}
+    
     if (just_pressed & 0x1) { // mode change
       return;
     }
@@ -1092,7 +1111,7 @@ void set_alarm(void) {
 	// print the hour normal
 	display_alarm(NORMAL,NORMAL);
 	// display instructions below
-	menu_advance_set_exit(0);
+	//menu_advance_set_exit(0);
       }
       screenmutex--;
     }
@@ -1110,6 +1129,11 @@ void set_alarm(void) {
 	alarm_m = (alarm_m+1) % 60;
 	display_alarm(NORMAL,INVERTED);
 	eeprom_write_byte(&EE_ALARM_MIN, alarm_m);    
+      }
+      if (mode == SET_ALARM) {
+    initanim_abo();
+    displaymode = SHOW_TIME;
+    return;
       }
       screenmutex--;
       if (pressed & 0x4)

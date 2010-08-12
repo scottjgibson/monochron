@@ -172,18 +172,6 @@ uint8_t EEMEM EE_SET_HOUR = 20;
 uint8_t EEMEM EE_SET_MIN = 05;
 uint8_t EEMEM EE_SET_SEC = 25;
 
-void credits(uint8_t state)
-{
-    while (pressed & 2)
-    {
-      if(state != alarm_on)
-      {
-        initdisplay(2);
-      }
-    }
-    
-}
-
 int main(void) {
   uint8_t inverted = 0;
   uint8_t mcustate;
@@ -288,8 +276,6 @@ int main(void) {
 	  display_death_date = 0;
 	}
 	
-	
-	credits(alarm_on);
     //Was formally set for just the + button.  However, because the Set button was never
     //accounted for, If the alarm was turned on, and ONLY the set button was pushed since then,
     //the alarm would not sound at alarm time, but go into a snooze immediately after going off.
