@@ -15,7 +15,7 @@ OPT = s
 
 # List C source files here. (C dependencies are automatically generated.)
 
-SRC = ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c anim_abo.c util.c glcd.c ks0108.c i2c.c rle.c
+SRC = ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c anim_abo.c anim_gps.c util.c glcd.c ks0108.c i2c.c rle.c
 #rle.c
 
 # List Assembler source files here.

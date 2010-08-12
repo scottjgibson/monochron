@@ -41,6 +41,8 @@ void initanim(void){
  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
  case STYLE_RANDOM: init_crand(); displaystyle = STYLE_INT + (crand(0) & 3); initanim();
                 break;
+ case STYLE_GPS: initanim_GPS();
+               break;
  case STYLE_ABOUT: initanim_abo();
                 break;
  }

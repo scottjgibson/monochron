@@ -32,6 +32,9 @@ volatile uint8_t last_score_mode;
 volatile uint8_t displaystyle; //dataman - add access to displaystyle, enables MultiChron
 volatile uint8_t RotateFlag;   //dataman - enables display rotation
 
+volatile uint8_t gpsenable=0;    //dataman - enables gps check
+volatile int8_t timezone=0;     //timezone +/- gmt
+
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
 // This allows for 'high speed incrementing' when setting the time
@@ -672,3 +675,9 @@ void setsnooze(void) {
   displaymode = SHOW_TIME;
 }
 
+void GPSRead(uin8_t debugmode) {
+// debugmode 1=quiet, 2=debug to line 6
+// method, read chars dump to screen
+ 
+
+}
