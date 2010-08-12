@@ -97,9 +97,6 @@ void glcdWriteCharGr(u08 grCharIndex);
 void glcdPutStr_ram(char *data, uint8_t inverted);
 void glcdPutStr_rom(const char *data, uint8_t inverted);
 
-//Write 1 full line of exactly 128 columns.  Great for text scrollers.
-void glcdPutStr_part_rom(const char *data, uint8_t pos, uint8_t offset, uint8_t inverted);
-
 /*
 	#define putstring(x) ROM_putstring(PSTR(x), 0)
 #define putstring_nl(x) ROM_putstring(PSTR(x), 1)

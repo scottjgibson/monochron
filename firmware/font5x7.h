@@ -15,9 +15,14 @@
 #ifndef FONT5X7_H
 #define FONT5X7_H
 
+#ifndef WIN32
+// AVR specific includes
+	#include <avr/eeprom.h>
+#endif
+
 // standard ascii 5x7 font
 // defines ascii characters 0x20-0x7F (32-127)
-static unsigned char __attribute__ ((progmem)) Font5x7[] = {
+static unsigned char EEMEM Font5x7[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00,// (space)
 	0x00, 0x00, 0x5F, 0x00, 0x00,// !
 	0x00, 0x07, 0x00, 0x07, 0x00,// "

@@ -23,6 +23,7 @@
 // AVR specific includes
 	#include <avr/io.h>
 	#include <avr/pgmspace.h>
+	#include <avr/eeprom.h>
 #endif
 
 #include "glcd.h"
@@ -272,9 +273,9 @@ void glcdWriteChar(unsigned char c, uint8_t inverted)
 	for(i=0; i<5; i++)
 	{
 	  if (inverted) {
-	    glcdDataWrite(~ pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(~ eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  } else {
-	    glcdDataWrite(pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  }
 	}
 
@@ -283,39 +284,6 @@ void glcdWriteChar(unsigned char c, uint8_t inverted)
 	  glcdDataWrite(0xFF);
 	else 
 	  glcdDataWrite(0x00);
-	// unless we're at the end of the display
-	//if(xx == 128)
-	//	xx = 0;
-	//else 
-	//	glcdWriteData(0x00);
-
-	//cbi(GLCD_Control, GLCD_CS1);
-	//cbi(GLCD_Control, GLCD_CS2);
-	glcdStartLine(0);
-}
-
-// write part of a character at the current position
-void glcdWriteCharPart(unsigned char c, uint8_t offset, uint8_t count, uint8_t inverted)
-{
-	u08 i = 0;
-
-	for(i=0+offset; (i<(count-1)) && (i < 5); i++)
-	{
-	  if (inverted) {
-	    glcdDataWrite(~ pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
-	  } else {
-	    glcdDataWrite(pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
-	  }
-	}
-
-	if(!(count < 6))
-	{
-		// write a spacer line
-		if (inverted) 
-		  glcdDataWrite(0xFF);
-		else 
-		  glcdDataWrite(0x00);
-	}
 	// unless we're at the end of the display
 	//if(xx == 128)
 	//	xx = 0;
@@ -368,25 +336,4 @@ void glcdPutStr_rom(const char *data, uint8_t inverted)
 	for (i=0; pgm_read_byte(&data[i]); i++) {
 		glcdWriteChar(pgm_read_byte(&data[i]),inverted);
 	}
-}
-
-void glcdPutStr_part_rom(const char *data, uint8_t pos, uint8_t offset, uint8_t inverted)
-{
-	uint8_t i;
-	
-	if(pgm_read_byte(&data[0]))
-		glcdWriteCharPart(pgm_read_byte(&data[0+pos]),offset,6,inverted);
-	else return;
-
-	for (i=1; pgm_read_byte(&data[i+pos]) && (i<21) ; i++) {
-		glcdWriteChar(pgm_read_byte(&data[i+pos]),inverted);
-	}
-	if(!pgm_read_byte(&data[i+pos]))
-		return;
-	if(pgm_read_byte(&data[21+pos]))
-		glcdWriteCharPart(pgm_read_byte(&data[21+pos]),0,2+offset,inverted);
-	else
-		return;
-	if((offset == 5) && pgm_read_byte(&data[22+pos]))
-		glcdWriteCharPart(pgm_read_byte(&data[21+pos]),0,1,inverted);
 }

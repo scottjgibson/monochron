@@ -6,7 +6,7 @@ F_CPU = 8000000
 FORMAT = ihex 
 
 # Target file name (without extension).
-TARGET = deathclock
+TARGET = DeathChron
 
 # Optimization level, can be [0, 1, 2, 3, s]. 0 turns off optimization.
 # (Note: 3 is not always the best optimization level. See avr-libc FAQ.)
@@ -108,7 +108,7 @@ AVRDUDE_PORT = com5	   # programmer connected to serial device
 #AVRDUDE_PORT = lpt1	# programmer connected to parallel port
 
 AVRDUDE_WRITE_FLASH = -U flash:w:$(TARGET).hex
-#AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
+AVRDUDE_WRITE_EEPROM = -U eeprom:w:$(TARGET).eep
 
 AVRDUDE_FLAGS = -p $(MCU) -P $(AVRDUDE_PORT) -c $(AVRDUDE_PROGRAMMER)
 
@@ -258,7 +258,7 @@ extcoff: $(TARGET).elf
 
 # Program the device.  
 program: $(TARGET).hex $(TARGET).eep
-	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$< 
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex -U eeprom:w:$(TARGET).eep
 
 reset:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) 

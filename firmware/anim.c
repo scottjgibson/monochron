@@ -288,6 +288,76 @@ void prep_digits(void)
     }
 }
 
+uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
+	                              // 123456789ABCDEF0123456
+	                         "\x0a" "DeathChron"
+                                  // 123456789ABCDEF0123456
+                             "\x0b" "Version 1.0"
+                                  // 123456789ABCDEF0123456
+                             "\x00"
+                                  // 123456789ABCDEF0123456
+                             "\x0c" "Optimization"
+                                  // 123456789ABCDEF0123456
+	                         "\x09" "Debugging"
+                                  // 123456789ABCDEF0123456
+                             "\x0c" "by CaitSith2"
+                                  // 123456789ABCDEF0123456
+                             "\x0a" "Code Jedi!"
+                             "\x14" "http://caitsith2.com"
+                                  // 123456789ABCDEF0123456
+                             "\x00"
+                                  // 123456789ABCDEF0123456
+                             "\x12" "MonoChron Hardware"
+                                  // 123456789ABCDEF0123456
+			                 "\x0a" "by LadyAda"
+                                  // 123456789ABCDEF0123456
+			                 "\x10" "Simply The Best!"
+                                  // 123456789ABCDEF0123456
+                             "\x00"
+                             "\x05" "Skull"
+                             "\x09" "Tombstone"
+                             "\x0F" "The Grim Reaper"
+                             "\x11" "The Adafruit logo"
+                             "\x12" "by Phillip Torrone"
+                             "\x0C" "Very Awesome"
+                             "\x00"
+                             
+                                  // 123456789ABCDEF0123456
+	                         "\x13" "Adafruit Industries" 
+                                  // 123456789ABCDEF0123456
+                             "\x10" "www.adafruit.com"
+                                  // 123456789ABCDEF0123456
+                             "\0\0" "\xff";
+
+void initanim_abo(){
+ uint8_t k, b, line, eof;
+ uint16_t ix, lineix;
+ ix=0;
+ while (1) {
+  glcdClearScreen();
+  for (eof=0, lineix=0, line=0; line<8; line++) {
+   if (!eof) {
+    b = eeprom_read_byte(&about[ix++]);
+    if (b==255) {
+     eof = 1;
+     if (!line) {return;}
+     continue;
+    } 
+    if (!line) {lineix = ix + b;}
+    k = ((128 - (b * 6))/2)-1;
+    if (k<0) {k=0;}
+    glcdSetAddress(k,line);
+    for(;b>0;b--) {
+     glcdWriteChar(eeprom_read_byte(&about[ix++]),0);
+    }
+   }
+  }
+  ix = lineix;
+  _delay_ms(500);
+ }
+}
+
+
 void initdisplay(uint8_t inverted) {
   int16_t i;
   if(inverted == 2)
@@ -296,27 +366,7 @@ void initdisplay(uint8_t inverted) {
         blitsegs_rom(36,0,logo_p, 57, 64, 1);
         i = (time_s + 5) % 60;
         while(i != time_s);
-        glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 0);
-        glcdSetAddress(7,0);
-        glcdPutStr("DeathChron Firmware",0);
-        glcdSetAddress(16,1);
-        glcdPutStr("Mod by CaitSith2",0);
-        glcdSetAddress(1,2);
-                      //0123456789ABCDEFGHIJK
-        glcdPutStr("Monochron by Adafruit",0);
-        glcdSetAddress(34,3);
-        glcdPutStr("Industries",0);
-        glcdSetAddress(10,4);
-        glcdPutStr("Tombstone, Reaper,",0);
-        glcdSetAddress(4,5);
-        glcdPutStr("Skull, Logo drawn by",0);
-        glcdSetAddress(19,6);
-        glcdPutStr("Phillip Torrone",0);
-        glcdSetAddress(19,7);
-        glcdPutStr("www.adafuit.com",0);
-        i = (time_s + 10) % 60;
-        while(i != time_s);
-        while (pressed & 2);
+		initanim_abo();
         initdisplay(0);
         just_pressed = 0;
         return;

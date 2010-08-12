@@ -84,28 +84,28 @@ SIGNAL(TIMER0_COMPA_vect) {
 
 uint32_t load_raw_etd(void)
 {
-  dc_mode = eeprom_read_byte((uint8_t *)EE_DC_MODE);
-  return ETD(  eeprom_read_byte((uint8_t *)EE_DOB_MONTH),
-                              eeprom_read_byte((uint8_t *)EE_DOB_DAY),
-                              eeprom_read_byte((uint8_t *)EE_DOB_YEAR)+1900,
-                              eeprom_read_byte((uint8_t *)EE_SET_MONTH),
-                              eeprom_read_byte((uint8_t *)EE_SET_DAY),
-                              eeprom_read_byte((uint8_t *)EE_SET_YEAR)+1900,
-                              eeprom_read_byte((uint8_t *)EE_GENDER),
+  dc_mode = eeprom_read_byte(&EE_DC_MODE);
+  return ETD(  eeprom_read_byte(&EE_DOB_MONTH),
+                              eeprom_read_byte(&EE_DOB_DAY),
+                              eeprom_read_byte(&EE_DOB_YEAR)+1900,
+                              eeprom_read_byte(&EE_SET_MONTH),
+                              eeprom_read_byte(&EE_SET_DAY),
+                              eeprom_read_byte(&EE_SET_YEAR)+1900,
+                              eeprom_read_byte(&EE_GENDER),
                               dc_mode,
-                              BodyMassIndex( eeprom_read_byte((uint8_t *)EE_BMI_UNIT), eeprom_read_word((uint16_t *)EE_BMI_HEIGHT), eeprom_read_word((uint16_t *)EE_BMI_WEIGHT)),
-                              eeprom_read_byte((uint8_t *)EE_SMOKER),
-                              eeprom_read_byte((uint8_t *)EE_SET_HOUR),
-                              eeprom_read_byte((uint8_t *)EE_SET_MIN),
-                              eeprom_read_byte((uint8_t *)EE_SET_SEC));
+                              BodyMassIndex( eeprom_read_byte(&EE_BMI_UNIT), eeprom_read_word(&EE_BMI_HEIGHT), eeprom_read_word(&EE_BMI_WEIGHT)),
+                              eeprom_read_byte(&EE_SMOKER),
+                              eeprom_read_byte(&EE_SET_HOUR),
+                              eeprom_read_byte(&EE_SET_MIN),
+                              eeprom_read_byte(&EE_SET_SEC));
 }
 
 void load_etd(void)
 {
   uint32_t result = load_raw_etd();
-      result -= date_diff( eeprom_read_byte((uint8_t *)EE_SET_MONTH),
-                           eeprom_read_byte((uint8_t *)EE_SET_DAY),
-                           eeprom_read_byte((uint8_t *)EE_SET_YEAR)+1900,
+      result -= date_diff( eeprom_read_byte(&EE_SET_MONTH),
+                           eeprom_read_byte(&EE_SET_DAY),
+                           eeprom_read_byte(&EE_SET_YEAR)+1900,
                            date_m,date_d,date_y+2000) * 1440l * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
@@ -126,9 +126,9 @@ void load_etd(void)
 void calc_death_date(void)
 {
 	uint32_t timeleft;
-	death_m = eeprom_read_byte((uint8_t *)EE_SET_MONTH);
-	death_d = eeprom_read_byte((uint8_t *)EE_SET_DAY);
-	death_y = eeprom_read_byte((uint8_t *)EE_SET_YEAR);
+	death_m = eeprom_read_byte(&EE_SET_MONTH);
+	death_d = eeprom_read_byte(&EE_SET_DAY);
+	death_y = eeprom_read_byte(&EE_SET_YEAR);
 	timeleft = load_raw_etd();
 	
 	while (timeleft >= 1440)
@@ -150,16 +150,27 @@ void calc_death_date(void)
       }
 }
 
-uint8_t ee_init_data[] PROGMEM = {11,0,OCR2A_VALUE,1,REGION_US,TIME_12H,10,0,11,14,80,7,28,110,
-           DC_gender_male,DC_mode_normal,BMI_Imperial,0x90,1,78,0,DC_non_smoker,20,05,25};
-
-void init_eeprom(void) {	
-    if(eeprom_read_byte((uint8_t *)EE_INIT) != EE_INITIALIZED) {
-    	for(uint8_t i=1;i<=25;i++)
-    		eeprom_write_byte((uint8_t *)i,pgm_read_byte(&ee_init_data[i-1]));
-    	eeprom_write_byte((uint8_t *)EE_INIT, EE_INITIALIZED);
-    }
-}
+uint8_t EEMEM EE_ALARM_HOUR = 11;
+uint8_t EEMEM EE_ALARM_MIN = 0;
+uint8_t EEMEM EE_BRIGHT = OCR2A_VALUE;
+uint8_t EEMEM EE_VOLUME = 1;
+uint8_t EEMEM EE_REGION = REGION_US;
+uint8_t EEMEM EE_TIME_FORMAT = TIME_12H;
+uint8_t EEMEM EE_DOB_MONTH = 11; //Death Clock variables are preserved in the event of an extended power outage.
+uint8_t EEMEM EE_DOB_DAY = 14;
+uint8_t EEMEM EE_DOB_YEAR = 80;
+uint8_t EEMEM EE_SET_MONTH = 7;
+uint8_t EEMEM EE_SET_DAY = 28;
+uint8_t EEMEM EE_SET_YEAR = 110;
+uint8_t EEMEM EE_GENDER = DC_gender_male;
+uint8_t EEMEM EE_DC_MODE = DC_mode_normal;
+uint8_t EEMEM EE_BMI_UNIT = BMI_Imperial;
+uint16_t EEMEM EE_BMI_WEIGHT = 400;
+uint16_t EEMEM EE_BMI_HEIGHT = 78;
+uint8_t EEMEM EE_SMOKER = DC_non_smoker;
+uint8_t EEMEM EE_SET_HOUR = 20;
+uint8_t EEMEM EE_SET_MIN = 05;
+uint8_t EEMEM EE_SET_SEC = 25;
 
 void credits(uint8_t state)
 {
@@ -202,9 +213,8 @@ int main(void) {
 
   //beep(4000, 100);
 
-  init_eeprom();
-  region = eeprom_read_byte((uint8_t *)EE_REGION);
-  time_format = eeprom_read_byte((uint8_t *)EE_TIME_FORMAT);
+  region = eeprom_read_byte(&EE_REGION);
+  time_format = eeprom_read_byte(&EE_TIME_FORMAT);
   DEBUGP("buttons!");
   initbuttons();
 
@@ -225,7 +235,7 @@ int main(void) {
   TCCR2A |= _BV(WGM21) | _BV(WGM20); // fast PWM
   TCCR2B |= _BV(WGM22);
   OCR2A = OCR2A_VALUE;
-  OCR2B = eeprom_read_byte((uint8_t *)EE_BRIGHT);
+  OCR2B = eeprom_read_byte(&EE_BRIGHT);
 #endif
 
   DDRB |= _BV(5);
@@ -722,8 +732,8 @@ void clock_init(void) {
   DEBUG(uart_putw_dec(date_y));
   DEBUG(putstring_nl(""));
 
-  alarm_m = eeprom_read_byte((uint8_t *)EE_ALARM_MIN) % 60;
-  alarm_h = eeprom_read_byte((uint8_t *)EE_ALARM_HOUR) % 24;
+  alarm_m = eeprom_read_byte(&EE_ALARM_MIN) % 60;
+  alarm_h = eeprom_read_byte(&EE_ALARM_HOUR) % 24;
 
 
   //ASSR |= _BV(AS2); // use crystal
@@ -738,7 +748,7 @@ void clock_init(void) {
 }
 
 void setsnooze(void) {
-  //snoozetimer = eeprom_read_byte((uint8_t *)EE_SNOOZE);
+  //snoozetimer = eeprom_read_byte(&EE_SNOOZE);
   //snoozetimer *= 60; // convert minutes to seconds
   snoozetimer = MAXSNOOZE;
   TCCR1B = 0;

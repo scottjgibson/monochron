@@ -43,12 +43,12 @@ void deathclock_changed(void) //Any changes to the death clock neccesitates a re
 	
 	if(((date_y + 100)-cfg_dob_y)>max_year_diff[cfg_dc_mode][cfg_gender]) ee_set_year = cfg_dob_y + max_year_diff[cfg_dc_mode][cfg_gender];
 	
-	eeprom_write_byte((uint8_t *)EE_SET_MONTH,date_m);
-	eeprom_write_byte((uint8_t *)EE_SET_DAY,date_d);
-	eeprom_write_byte((uint8_t *)EE_SET_YEAR,ee_set_year);
-	eeprom_write_byte((uint8_t *)EE_SET_HOUR,time_h);
-	eeprom_write_byte((uint8_t *)EE_SET_MIN,time_m);
-	eeprom_write_byte((uint8_t *)EE_SET_SEC,time_s);
+	eeprom_write_byte(&EE_SET_MONTH,date_m);
+	eeprom_write_byte(&EE_SET_DAY,date_d);
+	eeprom_write_byte(&EE_SET_YEAR,ee_set_year);
+	eeprom_write_byte(&EE_SET_HOUR,time_h);
+	eeprom_write_byte(&EE_SET_MIN,time_m);
+	eeprom_write_byte(&EE_SET_SEC,time_s);
 	load_etd();
 }
 
@@ -164,15 +164,15 @@ void display_smoker(uint8_t inverted)
 
 //Setting the Death Clock needs its own screen.
 void display_death_menu(void) {
-  cfg_dob_m = eeprom_read_byte((uint8_t *)EE_DOB_MONTH);
-  cfg_dob_d = eeprom_read_byte((uint8_t *)EE_DOB_DAY);
-  cfg_dob_y = eeprom_read_byte((uint8_t *)EE_DOB_YEAR);
-  cfg_gender = eeprom_read_byte((uint8_t *)EE_GENDER);
-  cfg_dc_mode = eeprom_read_byte((uint8_t *)EE_DC_MODE);
-  cfg_bmi_unit = eeprom_read_byte((uint8_t *)EE_BMI_UNIT);
-  cfg_bmi_height = eeprom_read_word((uint16_t *)EE_BMI_HEIGHT);
-  cfg_bmi_weight = eeprom_read_word((uint16_t *)EE_BMI_WEIGHT);
-  cfg_smoker = eeprom_read_byte((uint8_t *)EE_SMOKER);
+  cfg_dob_m = eeprom_read_byte(&EE_DOB_MONTH);
+  cfg_dob_d = eeprom_read_byte(&EE_DOB_DAY);
+  cfg_dob_y = eeprom_read_byte(&EE_DOB_YEAR);
+  cfg_gender = eeprom_read_byte(&EE_GENDER);
+  cfg_dc_mode = eeprom_read_byte(&EE_DC_MODE);
+  cfg_bmi_unit = eeprom_read_byte(&EE_BMI_UNIT);
+  cfg_bmi_height = eeprom_read_word(&EE_BMI_HEIGHT);
+  cfg_bmi_weight = eeprom_read_word(&EE_BMI_WEIGHT);
+  cfg_smoker = eeprom_read_byte(&EE_SMOKER);
 
 
   screenmutex++;
@@ -295,9 +295,9 @@ void set_deathclock_dob(void) {
 	//date_y = year;
 	//date_m = month;
 	//date_d = day;
-	eeprom_write_byte((uint8_t *)EE_DOB_MONTH,cfg_dob_m);
-    eeprom_write_byte((uint8_t *)EE_DOB_DAY,cfg_dob_d);
-    eeprom_write_byte((uint8_t *)EE_DOB_YEAR,cfg_dob_y);
+	eeprom_write_byte(&EE_DOB_MONTH,cfg_dob_m);
+    eeprom_write_byte(&EE_DOB_DAY,cfg_dob_d);
+    eeprom_write_byte(&EE_DOB_YEAR,cfg_dob_y);
     deathclock_changed();
       }
       screenmutex--;
@@ -412,7 +412,7 @@ void set_deathclock_gender(void) {
 	display_gender(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_GENDER, cfg_gender);
+	eeprom_write_byte(&EE_GENDER, cfg_gender);
 	deathclock_changed();   
       }
     }
@@ -476,7 +476,7 @@ void set_deathclock_mode(void) {
 	display_dc_mode(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_DC_MODE, cfg_dc_mode);
+	eeprom_write_byte(&EE_DC_MODE, cfg_dc_mode);
 	deathclock_changed();   
       }
     }
@@ -583,9 +583,9 @@ void set_deathclock_bmi(void) {
       	  }
       	  display_bmi_set(4);
       }
-      eeprom_write_byte((uint8_t *)EE_BMI_UNIT,cfg_bmi_unit);
-      eeprom_write_word((uint16_t *)EE_BMI_WEIGHT,cfg_bmi_weight);
-      eeprom_write_word((uint16_t *)EE_BMI_HEIGHT,cfg_bmi_height);
+      eeprom_write_byte(&EE_BMI_UNIT,cfg_bmi_unit);
+      eeprom_write_word(&EE_BMI_WEIGHT,cfg_bmi_weight);
+      eeprom_write_word(&EE_BMI_HEIGHT,cfg_bmi_height);
       deathclock_changed();
       screenmutex--;
       if (pressed & 0x4)
@@ -652,7 +652,7 @@ void set_deathclock_smoker(void) {
 	display_smoker(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_SMOKER, cfg_smoker);
+	eeprom_write_byte(&EE_SMOKER, cfg_smoker);
 	deathclock_changed();   
       }
     }
@@ -727,21 +727,6 @@ void display_backlight(uint8_t inverted)
   printnumber_2d(OCR2B>>OCR2B_BITSHIFT,inverted);
 }
 #endif
-
-uint16_t position=0;
-uint8_t old_tick;
-void display_advance_next_page(void)
-{
-	glcdSetAddress(0,6);
-	glcdPutStr_part_rom(PSTR("Press MENU to advance to the next page. Press MENU to advance"),position / 2,(position % 2) * 3,0);
-	if(old_tick != border_tick)
-	{
-		old_tick = border_tick;
-		position++;
-	}
-	if((position/2)==40)
-		position=0;
-}
 
 void display_menu(void) {
   DEBUGP("display menu");
@@ -937,7 +922,11 @@ void set_backlight(void) {
     if(mode == SET_BRIGHTNESS)
     {
     	screenmutex++;
-    	display_advance_next_page();
+    	glcdSetAddress(0, 6);
+    	if((time_s%4)<2)
+        	glcdPutStr("Press MENU to advance", NORMAL);
+        else
+        	glcdPutStr("to the next page.    ", NORMAL);
     	screenmutex--;
     }
   
@@ -974,7 +963,7 @@ void set_backlight(void) {
 	display_backlight(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_BRIGHT, OCR2B);
+	eeprom_write_byte(&EE_BRIGHT, OCR2B);
       }
     }
   }
@@ -1049,8 +1038,8 @@ void set_region(void) {
 	display_region(INVERTED);
 	screenmutex--;
 
-	eeprom_write_byte((uint8_t *)EE_REGION, region);
-	eeprom_write_byte((uint8_t *)EE_TIME_FORMAT, time_format);    
+	eeprom_write_byte(&EE_REGION, region);
+	eeprom_write_byte(&EE_TIME_FORMAT, time_format);    
       }
     }
   }
@@ -1115,12 +1104,12 @@ void set_alarm(void) {
 	alarm_h = (alarm_h+1) % 24;
 	// print the hour inverted
 	display_alarm(INVERTED,NORMAL);
-	eeprom_write_byte((uint8_t *)EE_ALARM_HOUR, alarm_h);    
+	eeprom_write_byte(&EE_ALARM_HOUR, alarm_h);    
       }
       if (mode == SET_MIN) {
 	alarm_m = (alarm_m+1) % 60;
 	display_alarm(NORMAL,INVERTED);
-	eeprom_write_byte((uint8_t *)EE_ALARM_MIN, alarm_m);    
+	eeprom_write_byte(&EE_ALARM_MIN, alarm_m);    
       }
       screenmutex--;
       if (pressed & 0x4)
