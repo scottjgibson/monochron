@@ -372,8 +372,6 @@ int main(void) {
 	break;
       default:
 	displaymode = SHOW_TIME;
-	glcdClearScreen();
-	initdisplay(0);
       }
 
       if (displaymode == SHOW_TIME) {

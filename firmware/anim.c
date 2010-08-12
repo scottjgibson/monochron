@@ -375,6 +375,15 @@ void initdisplay(uint8_t inverted) {
   setscore();
   prep_digits();
   // time
+  if(score_mode == SCORE_MODE_TIME)
+  {
+  	  display_digits[2] = 10;
+  	  if(time_format == TIME_24H)
+  	  {
+  	  	  display_digits[6] = time_s / 10;
+  	  	  display_digits[7] = time_s % 10;
+  	  }
+  }
   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
   ((left_score != 0) || (right_score != 0))) {
     for(i=0;i<8;i++)
