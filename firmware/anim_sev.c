@@ -126,7 +126,7 @@ void drawdisplay_sev(uint8_t inverted) {
     }
     uint8_t am = (left < 12);
     if (time_format == TIME_12H) {
-      left = (left + 23)%12 + 1;
+      left = hours(left);
       if(am) {
       	drawdot_sev(GLCD_XPIXELS/2, GLCD_YPIXELS*1/10, inverted);
       } else {

@@ -85,11 +85,8 @@ void initdisplay_xda(uint8_t inverted) {
   steps = 0;
 
   uint8_t newleft, newright;
-  newleft = time_h;
+  newleft = hours(time_h);
   newright = time_m;
-  if (time_format == TIME_12H) {
-    newleft = (newleft + 23)%12 + 1;
-  }
   
   old_digits[0] = old_digits[1] = old_digits[2] = old_digits[3] = 255;
   new_digits[3] = newright % 10;	
@@ -156,14 +153,11 @@ void drawdisplay_xda(uint8_t inverted) {
 	}
 	uint8_t newleft, newright;
 	if (score_mode == SCORE_MODE_TIME) {
-	  newleft = time_h;
+	  newleft = hours(time_h);
 	  newright = time_m;
 	} else {
-	  newleft = alarm_h;
+	  newleft = hours(alarm_h);
 	  newright = alarm_m;
-	}
-	if (time_format == TIME_12H) {
-	  newleft = (newleft + 23)%12 + 1;
 	}
 	new_digits[3] = newright % 10;	
 	new_digits[2] = newright / 10;
@@ -190,10 +184,7 @@ void drawdisplay_xda(uint8_t inverted) {
 	  new_digits[2] = time_m / 10;
 	    
 	  if (hour_changed) {
-	    uint8_t newleft = time_h;
-	    if (time_format == TIME_12H) {
-	      newleft = (time_h + 23)%12 + 1;
-	    }
+	    uint8_t newleft = hours(time_h);
 	    old_digits[0] = new_digits[0];
 	    old_digits[1] = new_digits[1];
 	    new_digits[0] = newleft/10;

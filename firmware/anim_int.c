@@ -118,10 +118,10 @@ void setscore_int(uint8_t inverted) {
    if (! digitsmutex_int) {
     digitsmutex_int++;
     last_score_mode2 = score_mode;
-    left_score = time_h % (time_format == TIME_12H ? 12 : 24);
+    left_score = hours(time_h);
     left_score2 = time_m;
     if (score_mode == SCORE_MODE_ALARM) {
-     right_score = alarm_h % (time_format == TIME_12H ? 12 : 24);
+     right_score = hours(alarm_h);
      right_score2 = alarm_m;
     } 
     else if (score_mode == SCORE_MODE_DATE) {

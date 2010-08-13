@@ -6,6 +6,8 @@
 #include "ratt.h"
 #include "util.h"
 
+extern volatile uint8_t time_format;
+
 // Creates a 8N1 UART connect
 // remember that the BBR is #defined for each F_CPU in util.h
 void uart_init(uint16_t BRR) {
@@ -188,6 +190,9 @@ uint8_t smon(uint8_t date_m, uint8_t ix) {
  return eeprom_read_byte(&MonthText[(date_m*3) + ix]);
 }
 #endif
-
+uint8_t hours(uint8_t h)
+{
+	return (time_format == TIME_12H ? ((h + 23) % 12 + 1) : h);
+}
 
 

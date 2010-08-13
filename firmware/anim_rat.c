@@ -162,13 +162,13 @@ void setscore_rat(void)
     case SCORE_MODE_TIME:
       if((minute_changed || hour_changed)) {
       	if(hour_changed) {
-	      left_score = old_h;
+	      left_score = hours(old_h);
 	      right_score = old_m;
 	    } else if (minute_changed) {
 	      right_score = old_m;
 	    }
       } else {
-        left_score = time_h;
+        left_score = hours(time_h);
         right_score = time_m;
       }
       break;
@@ -190,7 +190,7 @@ void setscore_rat(void)
       right_score = date_y;
       break;
     case SCORE_MODE_ALARM:
-      left_score = alarm_h;
+      left_score = hours(alarm_h);
       right_score = alarm_m;
       break;
   }
@@ -234,14 +234,7 @@ void initdisplay_rat(uint8_t inverted) {
 	setscore_rat();
 
   // time
-	if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-		drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, ((left_score + 23)%12 + 1)/10, inverted);
-  else 
     drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, left_score/10, inverted);
-  
-	if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-		drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, ((left_score + 23)%12 + 1)%10, inverted);
-  else
     drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, left_score%10, inverted);
   
   drawbigdigit(DISPLAY_M10_X_RAT, DISPLAY_TIME_Y_RAT, right_score/10, inverted);
@@ -842,19 +835,12 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 #endif
 	  if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
 				      DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-      
-			if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-				drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, ((left_score + 23)%12 + 1)/10, inverted);
-      else 
 	    drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, left_score/10, inverted);
       }
     
       // redraw 1's of hours
       if (redraw_digits || intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
 		      DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
-			if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_ALARM)))
-				drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, ((left_score + 23)%12 + 1)%10, inverted);
-      else
 	    drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, left_score%10, inverted);
       }
 
