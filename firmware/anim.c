@@ -181,7 +181,7 @@ void setscore(void)
       break;
     case SCORE_MODE_DEATH_ALARM:
       results = minutes_left;
-      if((time_h > alarm_h) || ((time_h == alarm_h) && (time_m > alarm_m)))
+      if((time_h > alarm_h) || ((time_h == alarm_h) && (time_m > alarm_m)) || ((time_h == alarm_h) && (time_m == alarm_m) && (time_s > 0)))
         results -= (((((alarm_h * 60) + alarm_m) + 1440) - ((time_h * 60) + time_m)) * ((dc_mode == DC_mode_sadistic)?4:1));
       else
         results -= ((((alarm_h * 60) + alarm_m) - ((time_h * 60) + time_m)) * ((dc_mode == DC_mode_sadistic)?4:1));

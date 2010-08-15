@@ -257,8 +257,11 @@ extcoff: $(TARGET).elf
 
 
 # Program the device.  
-program: $(TARGET).hex $(TARGET).eep
+eeprom: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex -U eeprom:w:$(TARGET).eep
+
+program: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex
 
 reset:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) 
