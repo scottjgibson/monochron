@@ -15,7 +15,7 @@ OPT = s
 
 # List C source files here. (C dependencies are automatically generated.)
 
-SRC = ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c anim_abo.c util.c glcd.c ks0108.c i2c.c rle.c
+SRC = ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c anim_abo.c util.c glcd.c ks0108.c i2c.c rle.c eeprom.c
 #rle.c
 
 # List Assembler source files here.
@@ -257,9 +257,12 @@ extcoff: $(TARGET).elf
 
 
 
-# Program the device.  
-program: $(TARGET).hex $(TARGET).eep
+# Program the device.
+eeprom: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex -U eeprom:w:$(TARGET).eep
+
+program: $(TARGET).hex $(TARGET).eep
+	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex
 
 reset:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) 

@@ -73,35 +73,33 @@ SIGNAL(TIMER0_COMPA_vect) {
   }
 }
 
-uint8_t EEMEM  EE_ALARM_HOUR=7;
-uint8_t EEMEM EE_ALARM_MIN=30;
-uint8_t EEMEM EE_BRIGHT=OCR2A_VALUE;
-uint8_t EEMEM EE_REGION=REGION_US;
-uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
-uint8_t EEMEM EE_SNOOZE=10;
-uint8_t EEMEM EE_STYLE=STYLE_RANDOM;
+extern uint8_t EE_ALARM_HOUR;
+extern uint8_t EE_ALARM_MIN;
+extern uint8_t EE_BRIGHT;
+extern uint8_t EE_REGION;
+extern uint8_t EE_TIME_FORMAT;
+extern uint8_t EE_SNOOZE;
+extern uint8_t EE_STYLE;
 
-/*
+
 void init_eeprom(void) {	//Set eeprom to a default state.
-#ifndef OPTION_DOW_DATELONG
-  if(eeprom_read_byte(&EE_INIT) != EE_INITIALIZED) {
-#else
-  if(eeprom_read_byte(&EE_INIT) != (EE_INITIALIZED-1)) {
-#endif
-    eeprom_write_byte(&EE_ALARM_HOUR, 8);
-    eeprom_write_byte(&EE_ALARM_MIN, 0);
-    eeprom_write_byte(&EE_BRIGHT, OCR2A_VALUE);
-    eeprom_write_byte(&EE_VOLUME, 1);
-    eeprom_write_byte(&EE_REGION, REGION_US);
-    eeprom_write_byte(&EE_TIME_FORMAT, TIME_12H);
-    eeprom_write_byte(&EE_SNOOZE, 10);
-#ifndef OPTION_DOW_DATELONG
-    eeprom_write_byte(&EE_INIT, EE_INITIALIZED);
-#else
-    eeprom_write_byte(&EE_INIT, EE_INITIALIZED-1);
-#endif
+ if (eeprom_read_byte(&EE_INIT) != EE_INITIALIZED) {
+    DEBUG(putstring("Error with EEPROM data. Clock cannot function without it. Please reprogram.")); 
+    DEBUG(uart_putw_dec(eeprom_read_byte(&EE_INIT))); DEBUG(putstring_nl(""));
+    while(1) {
+      beep(4000, 100);
+      delay_ms(100);
+      beep(4000, 100);
+      delay_ms(100);
+      beep(4000, 100);
+      delay_ms(1000);
+    }
   }
-}*/
+  //We do not have the capability to reinitialize the EEPROM, other than by reprogramming it.
+  //Because of this, and because we are storing some data there, bad things will happen if the
+  //eeprom is NOT initialized. This is why we error out with infinite triple beeps if it is
+  //not initialized.
+}
 
 int main(void) {
   uint8_t inverted = 0;
@@ -128,8 +126,9 @@ int main(void) {
   DEBUGP("clock!");
   clock_init();
   //beep(4000, 100);
+  
 
-  //init_eeprom();
+  init_eeprom();
   
   region = eeprom_read_byte(&EE_REGION);
   time_format = eeprom_read_byte(&EE_TIME_FORMAT);

@@ -28,8 +28,8 @@ extern volatile uint8_t RotateFlag;
 extern volatile uint8_t second_changed, minute_changed, hour_changed;
 
 #ifdef OPTION_DOW_DATELONG
-extern const uint8_t DOWText[] PROGMEM; 
-extern const uint8_t MonthText[] PROGMEM; 
+extern const uint8_t DOWText[]; 
+extern const uint8_t MonthText[]; 
 #endif
 
 uint8_t redraw_time = 0;

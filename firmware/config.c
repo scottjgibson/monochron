@@ -104,25 +104,10 @@ void display_menu(void) {
   screenmutex--;
 }
 
-
-//Dataman - Handle setting style
-void set_style(void) {
-  uint8_t mode = SET_STYLE;
-
-  display_menu();
-  
-  screenmutex++;
-  print_menu_advance();
- 
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 3, MENU_INDENT -1);
-  screenmutex--;
-   
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
+uint8_t check_timeout(void)
+{
+	if (just_pressed & 0x1) { // mode change
+      return 1;
     }
     if (just_pressed || pressed) {
       timeoutcounter = INACTIVITYTIMEOUT;  
@@ -130,8 +115,35 @@ void set_style(void) {
     } else if (!timeoutcounter) {
       //timed out!
       displaymode = SHOW_TIME;     
-      return;
+      return 2;
     }
+    return 0;
+}
+
+uint8_t init_set_menu(uint8_t line)
+{
+  display_menu();
+  
+  screenmutex++;
+#ifdef BACKLIGHT_ADJUST
+  if(displaymode == SET_BRIGHTNESS)
+#else
+  if(displaymode == SET_REGION)
+#endif
+  	  print_menu_exit();
+  // put a small arrow next to 'set 12h/24h'
+  drawArrow(0, (line*8)+3, MENU_INDENT -1);
+  screenmutex--;
+   
+  timeoutcounter = INACTIVITYTIMEOUT;
+  return displaymode;
+}
+
+
+//Dataman - Handle setting style
+void set_style(void) {
+  uint8_t mode = init_set_menu(0);
+  while (!check_timeout()) {
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -248,34 +260,14 @@ void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
 }
 
 void set_date(void) {
-  uint8_t mode = SET_DATE;
+  uint8_t mode = init_set_menu(3);
   uint8_t day, month, year;
     
   day = date_d;
   month = date_m;
   year = date_y;
-
-  display_menu();
-
-  screenmutex++;
-  // put a small arrow next to 'set date'
-  drawArrow(0, 27, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
+    
     if (just_pressed & 0x2) {
       just_pressed = 0;
       screenmutex++;
@@ -394,31 +386,9 @@ void set_date(void) {
 
 #ifdef BACKLIGHT_ADJUST
 void set_backlight(void) {
-  uint8_t mode = SET_BRIGHTNESS;
-
-  display_menu();
-  
-  screenmutex++;
-  print_menu_exit();
-
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 43, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  uint8_t mode = init_set_menu(5);
+  while (!check_timeout()) {
+    
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -492,34 +462,10 @@ void print_region_setting(uint8_t inverted) {
 }
 
 void set_region(void) {
-  uint8_t mode = SET_REGION;
+  uint8_t mode = init_set_menu(4);
 
-  display_menu();
-  
-  screenmutex++;
-  
-#ifndef BACKLIGHT_ADJUST
-  print_menu_exit();
-#endif
-
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 35, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
+    
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -579,27 +525,10 @@ void set_region(void) {
 }
 
 void set_alarm(void) {
-  uint8_t mode = SET_ALARM;
+  uint8_t mode = init_set_menu(1);
 
-  display_menu();
-  screenmutex++;
-  // put a small arrow next to 'set alarm'
-  drawArrow(0, 11, MENU_INDENT -1);
-  screenmutex--;
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
+    
     if (just_pressed & 0x2) {
       just_pressed = 0;
       screenmutex++;
@@ -647,7 +576,7 @@ void set_alarm(void) {
 }
 
 void set_time(void) {
-  uint8_t mode = SET_TIME;
+  uint8_t mode = init_set_menu(2);
 
   uint8_t hour, min, sec;
     
@@ -655,27 +584,8 @@ void set_time(void) {
   min = time_m;
   sec = time_s;
 
-  display_menu();
-  
-  screenmutex++;
-  // put a small arrow next to 'set time'
-  drawArrow(0, 19, MENU_INDENT -1);
-  screenmutex--;
- 
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
+    
     if (just_pressed & 0x2) {
       just_pressed = 0;
       screenmutex++;

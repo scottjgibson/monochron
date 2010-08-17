@@ -192,8 +192,8 @@ uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
     return (day + (2 * month) + (6 * (month+1)/10) + year + (year/4) - (year/100) + (year/400) + 1) % 7;
 }
 
-const uint8_t DOWText[] EEMEM = "sunmontuewedthufrisat";
-const uint8_t MonthText[] EEMEM = "   janfebmaraprmayjunjulaugsepoctnovdec";
+extern uint8_t DOWText[];
+extern uint8_t MonthText[];
 
 uint8_t sdotw(uint8_t dow, uint8_t ix) {
  return eeprom_read_byte(&DOWText[(dow*3) + ix]);
