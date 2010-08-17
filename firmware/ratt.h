@@ -171,10 +171,6 @@
 // ROTATEPERIOD is the the wait period, in minutes, between screen rotations.
 #define ROTATEPERIOD 15 
 
-//DO NOT set EE_INITIALIZED to 0xFF / 255,  as that is
-//the state the eeprom will be in, when totally erased.
-#define EE_INITIALIZED 0xC3
-
 /*
 #define EE_INIT 0
 #define EE_ALARM_HOUR 1
@@ -185,6 +181,7 @@
 #define EE_TIME_FORMAT 6
 #define EE_SNOOZE 7*/
 
+extern uint8_t EE_DATA[];
 extern uint8_t EE_INIT;
 extern uint8_t EE_ALARM_HOUR;
 extern uint8_t EE_ALARM_MIN;
