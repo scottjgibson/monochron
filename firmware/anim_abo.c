@@ -15,7 +15,59 @@
 
 extern volatile uint8_t displaystyle;
                                   
-extern uint8_t about[];
+uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
+	                              // 123456789ABCDEF0123456
+	                         "\x0a" "MultiChron"
+                                  // 123456789ABCDEF0123456
+                             "\x0b" "Version 1.0"
+                                  // 123456789ABCDEF0123456
+                             "\x01" "-"
+                                  // 123456789ABCDEF0123456
+                             "\x0a" "MultiChron"
+                                  // 123456789ABCDEF0123456
+	                         "\x0d" "IntruderChron" 
+                                  // 123456789ABCDEF0123456
+	                         "\x0a" "by Dataman"
+                                  // 123456789ABCDEF0123456
+	                         "\x0d" "Data Magician"
+	                       #ifndef OPTION_DOW_DATELONG
+	                         "\x12" "http://crjones.com"	//These lines don't fit with OPTION_DOW_DATELONG :(
+	                       #endif
+                                  // 123456789ABCDEF0123456
+                             "\x01" "-"
+                                  // 123456789ABCDEF0123456
+                             "\x0c" "Optimization"
+                                  // 123456789ABCDEF0123456
+	                         "\x09" "Debugging"
+                                  // 123456789ABCDEF0123456
+                             "\x0c" "by CaitSith2"
+                                  // 123456789ABCDEF0123456
+                             "\x0a" "Code Jedi!"
+                            #ifndef OPTION_DOW_DATELONG
+                             "\x14" "http://caitsith2.com"
+                            #endif
+                                  // 123456789ABCDEF0123456
+                             "\x01" "-"
+                                  // 123456789ABCDEF0123456
+	                         "\x09" "RATTChron"
+                                  // 123456789ABCDEF0123456
+	                         "\x0a" "SevenChron"
+                                  // 123456789ABCDEF0123456
+                             "\x0b" "XADALICHRON"
+                                  // 123456789ABCDEF0123456
+                             "\x12" "MonoChron Hardware"
+                                  // 123456789ABCDEF0123456
+			                 "\x0a" "by LadyAda"
+                                  // 123456789ABCDEF0123456
+			                 "\x10" "Simply The Best!"
+                                  // 123456789ABCDEF0123456
+                             "\x01" "-"
+                                  // 123456789ABCDEF0123456
+	                         "\x13" "Adafruit Industries" 
+                                  // 123456789ABCDEF0123456
+                             "\x10" "www.adafruit.com"
+                                  // 123456789ABCDEF0123456
+                             "\0\0" "\xff";
 
 void initanim_abo(void);
 
@@ -43,6 +95,6 @@ void initanim_abo(){
    }
   }
   ix = lineix;
-  delay_ms(500);
+  _delay_ms(500);
  }
 }

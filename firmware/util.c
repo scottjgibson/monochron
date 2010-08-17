@@ -202,7 +202,28 @@ uint8_t sdotw(uint8_t dow, uint8_t ix) {
 uint8_t smon(uint8_t date_m, uint8_t ix) {
  return eeprom_read_byte(&MonthText[(date_m*3) + ix]);
 }
+#else
+ // GPS Needs the DOTW function
+ // This includes DOTW for GPS if DateLong disabled
+ #ifdef GPSENABLE
+ uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr)
+  {
+   uint16_t month, year; 
+
+    // Calculate day of the week
+    
+    month = mon;
+    year = 2000 + yr;
+    if (mon < 3)  {
+      month += 12;
+      year -= 1;
+    }
+    return (day + (2 * month) + (6 * (month+1)/10) + year + (year/4) - (year/100) + (year/400) + 1) % 7;
+ }
+ #endif
 #endif
+
+
 uint8_t hours(uint8_t h)
 {
 	return (time_format == TIME_12H ? ((h + 23) % 12 + 1) : h);

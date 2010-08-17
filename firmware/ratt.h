@@ -156,7 +156,17 @@
 #define STYLE_XDA 213
 #define STYLE_RANDOM 214
 #define STYLE_ROTATE 215
-#define STYLE_ABOUT 216
+
+// Undefine to disable GPS
+#define GPSENABLE 1
+
+#ifdef GPSENABLE
+ #define STYLE_GPS 216
+ #define STYLE_ABOUT 217
+#else
+ #define STYLE_ABOUT 216
+#endif
+
 
 // ROTATEPERIOD is the the wait period, in minutes, between screen rotations.
 #define ROTATEPERIOD 15 

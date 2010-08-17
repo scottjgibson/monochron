@@ -176,7 +176,11 @@ void set_style(void) {
       if (mode == SET_STL) {
 	    displaystyle ++;
 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_INT;
+#ifdef GPSENABLE
+	    if (displaystyle<STYLE_GPS) eeprom_write_byte(&EE_STYLE,displaystyle);
+#else
 	    if (displaystyle<STYLE_ABOUT) eeprom_write_byte(&EE_STYLE,displaystyle);
+#endif
 	screenmutex++;
 	display_menu();
 	print_menu_change();
@@ -695,6 +699,10 @@ glcdSetAddress(43, 0);
   				break;
   case STYLE_ROTATE: glcdPutStr("Rotate",inverted);
   				break;
+#ifdef GPSENABLE
+  case STYLE_GPS: glcdPutStr("GPS Setup",inverted);
+  				break;
+#endif
   case STYLE_ABOUT:  glcdPutStr("About",inverted);
   				break;
   }

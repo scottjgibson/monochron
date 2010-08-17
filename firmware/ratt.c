@@ -32,6 +32,11 @@ volatile uint8_t last_score_mode;
 volatile uint8_t displaystyle; //dataman - add access to displaystyle, enables MultiChron
 volatile uint8_t RotateFlag;   //dataman - enables display rotation
 
+#ifdef GPSENABLE
+volatile uint8_t gpsenable=0;    //dataman - enables gps check
+volatile int8_t timezone=0;     //timezone +/- gmt
+#endif
+
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
 // This allows for 'high speed incrementing' when setting the time
@@ -670,4 +675,95 @@ void setsnooze(void) {
   //delay_ms(1000);
   displaymode = SHOW_TIME;
 }
+
+#ifdef GPSENABLE
+
+char uart_getch(void);
+uint8_t GPSRead(uint8_t);
+uint8_t DecodeGPSBuffer(char *t);
+
+uint8_t GPSRead(uint8_t debugmode) {
+ // debugmode 1=quiet, 2=debug to line 6
+ // method, read chars dump to screen
+ static uint8_t soh=0;
+ static uint8_t blen=0;
+ static char buffer[10];
+ static int8_t dadjflag =0;
+ char ch=0;
+ static uint8_t scrpos=0;
+#ifdef SKIPTHISCODE
+                         JA FE MA AP MA JU JL AU SE OC NO DE
+  uint8_t monthmath[] = {31,27,31,30,31,30,31,31,30,31,30,31};
+#endif
+ ch = uart_getch();
+ if (ch<20) return 0;
+ if (debugmode) {
+  glcdSetAddress(scrpos++ * 6, 7);
+  glcdWriteChar(ch,NORMAL);
+  glcdWriteChar(32,NORMAL);
+  if (scrpos>20) scrpos=0;
+ }
+ if (ch=='$') {soh=1; blen=0; return 0;}
+ if (soh>0) {
+  if (ch == ',') {soh++;}
+  else { 
+   if (blen<10) {buffer[blen++]=ch;}
+   else buffer[9]=0; 
+  }
+  //
+  if (soh==2 && strcmp("GPRMC",buffer)) {soh=0;} //Not what we're looking for, skip sentence
+  else if (soh==3) { // Time Word
+   if (debugmode) {glcdSetAddress(MENU_INDENT+42, 6); glcdPutStr(buffer, NORMAL);} 
+#ifdef SKIPTHISCODE
+   time_s = DecodeGPSBuffer((char *)&buffer[5]); 
+   time_m = DecodeGPSBuffer((char *)&buffer[3]);
+   time_h = DecodeGPSBuffer(buffer);
+   dadjflag =0;
+   if (timezone<0 && abs(timezone) > time_h) {dadjflag=-1; time_h = 24 + time_h + timezone;}
+   else {
+    time_h+=timezone;
+    if (time_h>24) {time_h-=24; dadjflag=1;}
+   }  
+#endif
+  } 
+  else if (soh==10) {// Date Word
+   if (debugmode) { glcdSetAddress(MENU_INDENT+82, 6); glcdPutStr(buffer, NORMAL); soh=0; return 1;}
+#ifdef SKIPTHISCODE
+   // Joy, datemath...
+   date_m = DecodeGPSBuffer(buffer);  
+   date_d = DecodeGPSBuffer((char *)&buffer[3]); 
+   date_y = DecodeGPSBuffer((char *)&buffer[5]);
+   if (dadjflag) {
+    date_d += dadjflag;
+    if (!date_d) { // Subtracted to Day=0
+     if (!--date_m) {
+      date_y--;
+      date_m = 12;
+      date_d = 31;
+     }
+     else {
+     date_d = monthmath[date_m-1];
+     }     
+    }
+    else { // check for date > end of month
+     if (date_d > (monthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
+      date_d =1;
+      date_m++;
+      if (date_m>12) {date_y++; date_m=1;}
+     }
+    }
+   }
+   writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
+#endif
+   return 1;
+  }
+ }
+ return 0;
+}
+
+uint8_t DecodeGPSBuffer(char *cBuffer) {
+ return ((cBuffer[0]-48)*10) + (cBuffer[1]-48);
+}
+
+#endif
 
