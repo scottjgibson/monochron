@@ -345,7 +345,7 @@ void set_deathclock_dob(void) {
       screenmutex--;
 
       if (pressed & 0x4)
-	_delay_ms(200);  
+	delay_ms(200);  
     }
   }
 }
@@ -589,7 +589,7 @@ void set_deathclock_bmi(void) {
       deathclock_changed();
       screenmutex--;
       if (pressed & 0x4)
-	_delay_ms(200);
+	delay_ms(200);
     }
   }
 }
@@ -883,7 +883,7 @@ void set_date(void) {
       screenmutex--;
 
       if (pressed & 0x4)
-	_delay_ms(200);  
+	delay_ms(200);  
     }
   }
 
@@ -1137,7 +1137,7 @@ void set_alarm(void) {
       }
       screenmutex--;
       if (pressed & 0x4)
-	_delay_ms(200);
+	delay_ms(200);
     }
   }
 }
@@ -1233,7 +1233,7 @@ void set_time(void) {
       }
       screenmutex--;
       if (pressed & 0x4)
-	_delay_ms(200);
+	delay_ms(200);
     }
   }
 }

@@ -357,7 +357,7 @@ void initanim_abo(void) {
    }
   }
   ix = lineix;
-  _delay_ms(500);
+  delay_ms(500);
  }
 }
 
@@ -392,7 +392,7 @@ void initdisplay(uint8_t inverted) {
         for(i=-108;i<82;i++)
         {
           render_image(REAPER_TOW_RIP,i,inverted);
-          _delay_ms(16);
+          delay_ms(16);
         }
       }
       
@@ -430,7 +430,7 @@ void step(void) {
         //if((reaper_x%8)==0)
         //  draw(1);
         render_image (REAPER,reaper_x+1,1);
-        _delay_ms(16);
+        delay_ms(16);
         if(((reaper_x%15)==6)&&(reaper_x>6))
         {
         	prep_digits();
@@ -444,7 +444,7 @@ void step(void) {
         if(reaper_x==43) 
         {
           //render_image (REAPER,reaper_x+1,1);
-          _delay_ms(500);
+          delay_ms(500);
           hour_changed = 0;
           setscore();
           hour_changed = 1;
@@ -453,7 +453,7 @@ void step(void) {
           	display_digits[(reaper_x/15)+i] |= 0x40;
           redraw_time = 1;
           draw(1);
-          _delay_ms(500);
+          delay_ms(500);
         }
       }
       hour_changed = 0;

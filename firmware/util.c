@@ -31,7 +31,7 @@ void delay_10us(uint8_t ns)
 
 void delay_s(uint8_t s) {
   while (s--) {
-    _delay_ms(1000);
+    delay_ms(1000);
   }
 }
 
@@ -158,3 +158,16 @@ void uart_putdw_dec(uint32_t dw)
     }
 }
 #endif
+
+void delay_ms(uint16_t ms)
+{
+	uint16_t temp = ms;
+	while(temp)
+	{
+		_delay_ms(10);
+		if(temp >= 10)
+			temp-=10;
+		else
+			temp=0;
+	}
+}

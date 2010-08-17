@@ -37,7 +37,7 @@ void ROM_putstring(const char *str, uint8_t nl);
 
 // some timing functions
 
-void delay_ms(unsigned char ms);
+void delay_ms(uint16_t ms);
 void delay_10us(uint8_t us);
 void delay_s(uint8_t s);
 
