@@ -95,6 +95,6 @@ void initanim_abo(){
    }
   }
   ix = lineix;
-  _delay_ms(500);
+  delay_ms(500);
  }
 }

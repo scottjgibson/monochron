@@ -362,7 +362,7 @@ void beep(uint16_t freq, uint8_t duration) {
   TCCR1B =  _BV(WGM12) | _BV(CS10); // CTC with fastest timer
   TIMSK1 = _BV(TOIE1) | _BV(OCIE1A);
   OCR1A = (F_CPU / freq) / 2;
-  _delay_ms(duration);
+  delay_ms(duration);
   TCCR1B = 0;
   // turn off piezo
   PIEZO_PORT &= ~_BV(PIEZO);
@@ -430,9 +430,9 @@ uint8_t readi2ctime(void) {
     DEBUG(putstring("Reading i2c data: ")); DEBUG(uart_putw_dec(r)); DEBUG(putstring_nl(""));
     while(1) {
       beep(4000, 100);
-      _delay_ms(100);
+      delay_ms(100);
       beep(4000, 100);
-      _delay_ms(1000);
+      delay_ms(1000);
     }
   }
 
@@ -443,9 +443,9 @@ uint8_t readi2ctime(void) {
     DEBUG(putstring("Reading i2c data: ")); DEBUG(uart_putw_dec(r)); DEBUG(putstring_nl(""));
     while(1) {
       beep(4000, 100);
-      _delay_ms(100);
+      delay_ms(100);
       beep(4000, 100);
-      _delay_ms(1000);
+      delay_ms(1000);
     }
   }
 
@@ -488,9 +488,9 @@ void writei2ctime(uint8_t sec, uint8_t min, uint8_t hr, uint8_t day,
   if (r != 0) {
     while(1) {
       beep(4000, 100);
-      _delay_ms(100);
+      delay_ms(100);
       beep(4000, 100);
-      _delay_ms(1000);
+      delay_ms(1000);
     }
   }
 
@@ -668,7 +668,7 @@ void setsnooze(void) {
   PIEZO_PORT &= ~_BV(PIEZO);
   DEBUGP("snooze");
   //displaymode = SHOW_SNOOZE;
-  //_delay_ms(1000);
+  //delay_ms(1000);
   displaymode = SHOW_TIME;
 }
 

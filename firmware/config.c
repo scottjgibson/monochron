@@ -386,7 +386,7 @@ void set_date(void) {
       screenmutex--;
 
       if (pressed & 0x4)
-	_delay_ms(200);  
+	delay_ms(200);  
     }
   }
 
@@ -641,7 +641,7 @@ void set_alarm(void) {
       print_alarmline(mode);
       screenmutex--;
       if (pressed & 0x4)
-	_delay_ms(200);
+	delay_ms(200);
     }
   }
 }
@@ -728,7 +728,7 @@ void set_time(void) {
       print_time(hour,min,sec,mode);
       screenmutex--;
       if (pressed & 0x4)
-	_delay_ms(200);
+	delay_ms(200);
     }
   }
 }

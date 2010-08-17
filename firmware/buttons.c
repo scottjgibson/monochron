@@ -64,7 +64,7 @@ SIGNAL(ADC_vect) {
     // button 3 "+" pressed
     if (! (last_buttonstate & 0x4)) { // was not pressed before
       // debounce by taking a second reading 
-      _delay_ms(10);
+      delay_ms(10);
       reading2 = readADC();
       if ( (reading2 > 735) || (reading2 < 610)) {
 	// was a bounce, ignore it
@@ -95,7 +95,7 @@ SIGNAL(ADC_vect) {
     // button 2 "SET" pressed
     if (! (last_buttonstate & 0x2)) { // was not pressed before
       // debounce by taking a second reading 
-      _delay_ms(10);
+      delay_ms(10);
       reading2 = readADC();
       if ( (reading2 > 610) || (reading2 < 270)) {
 	// was a bounce, ignore it
@@ -112,7 +112,7 @@ SIGNAL(ADC_vect) {
     // button 1 "MENU" pressed
     if (! (last_buttonstate & 0x1)) { // was not pressed before
       // debounce by taking a second reading 
-      _delay_ms(10);
+      delay_ms(10);
       reading2 = readADC();
       if (reading2 > 270) {
 	// was a bounce, ignore it
