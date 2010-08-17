@@ -88,7 +88,11 @@ extern uint8_t EE_STYLE;
 
 
 void init_eeprom(void) {	//Set eeprom to a default state.
+<<<<<<< Updated upstream
  if (eeprom_read_byte(&EE_INIT) != pgm_read_byte(&EE_DATA[0])) {
+=======
+  if (eeprom_read_byte(&EE_INIT) != pgm_read_byte(&EE_DATA[0])) {
+>>>>>>> Stashed changes
     DEBUG(putstring("Error with EEPROM data. Clock cannot function without it. Please reprogram.")); 
     DEBUG(uart_putw_dec(eeprom_read_byte(&EE_INIT))); DEBUG(putstring_nl(""));
     while(1) {
@@ -786,7 +790,7 @@ uint8_t GPSRead(uint8_t debugmode) {
      }     
     }
     else { // check for date > end of month (including leap year calc)
-     if (date_d > (monthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
+     if (date_d > (imonthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
       date_d = 1;
       date_m++;
       if (date_m>12) {
