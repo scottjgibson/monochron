@@ -683,7 +683,7 @@ void setsnooze(void) {
 #ifdef GPSENABLE
 
 char uart_getch(void);
-uint8_t GPSRead(uint8_t);
+uint8_t static GPSRead(uint8_t);
 uint8_t DecodeGPSBuffer(char *t);
 
 uint8_t GPSRead(uint8_t debugmode) {
@@ -701,8 +701,8 @@ uint8_t GPSRead(uint8_t debugmode) {
  if (ch<32) return 0;
  if (debugmode) {
   glcdSetAddress(6 * scrpos++, 6); 
-  glcdPutCh(ch, NORMAL); 
-  glcdPutCh(32, NORMAL); 
+  glcdWriteChar(ch, NORMAL); 
+  glcdWriteChar(32, NORMAL); 
   if (++scrpos>21) {scrpos=0;}
  }
  // Check for start of sentence
@@ -790,7 +790,7 @@ uint8_t GPSRead(uint8_t debugmode) {
      }     
     }
     else { // check for date > end of month (including leap year calc)
-     if (date_d > (imonthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
+     if (date_d > (monthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
       date_d = 1;
       date_m++;
       if (date_m>12) {
@@ -810,7 +810,7 @@ uint8_t GPSRead(uint8_t debugmode) {
 }
 
 // Decodes a 2 char number to uint8
-uint8_t DecodeGPSBuffer(char *cBuffer) {
+uint8_t static DecodeGPSBuffer(char *cBuffer) {
  return ((cBuffer[0]-48)*10) + (cBuffer[1]-48);
 }
 
