@@ -88,7 +88,7 @@ extern uint8_t EE_STYLE;
 
 
 void init_eeprom(void) {	//Set eeprom to a default state.
- if (eeprom_read_byte(&EE_INIT) != EE_INITIALIZED) {
+ if (eeprom_read_byte(&EE_INIT) != pgm_read_byte(&EE_DATA[0])) {
     DEBUG(putstring("Error with EEPROM data. Clock cannot function without it. Please reprogram.")); 
     DEBUG(uart_putw_dec(eeprom_read_byte(&EE_INIT))); DEBUG(putstring_nl(""));
     while(1) {

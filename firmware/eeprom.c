@@ -10,14 +10,23 @@
 //we have to have a seperate loader in order to accomplish that task.
 //Anyone using the stock Arduino bootloader, can program the .eep file
 //as for anyone doing direct ISP programming.
+//
+//Optiboot is currently not compatible with this hardware, but if and when it
+//does, we would like to be able to use it in the future.
 #endif
 
 #include "ratt.h"
 
-#ifdef PGM_BOOTLOADER
-uint8_t PROGMEM EE_DATA[1] = { 0 };
-#endif
-uint8_t EEMEM EE_INIT=EE_INITIALIZED;
+//DO NOT set EE_INITIALIZED + EE_VERSION to 0xFF / 255,  as that is
+//the state the eeprom will be in, when totally erased.
+//If we add/delete stuff from here, Change the EE_VERSION define.
+//The clocks firmware will beep 3 times then pause repeatedly, if the eeprom
+//is not initialized.
+#define EE_INITIALIZED 0xC3
+#define EE_VERSION 1
+
+uint8_t PROGMEM EE_DATA[1] = { EE_INITIALIZED + EE_VERSION };
+uint8_t EEMEM EE_INIT=EE_INITIALIZED + EE_VERSION;
 uint8_t EEMEM  EE_ALARM_HOUR=7;
 uint8_t EEMEM EE_ALARM_MIN=30;
 uint8_t EEMEM EE_BRIGHT=OCR2A_VALUE;

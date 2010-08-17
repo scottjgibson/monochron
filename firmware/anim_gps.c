@@ -18,8 +18,6 @@ extern volatile int8_t timezone;
 extern volatile uint8_t just_pressed;
 
 
-void initanim_GPS(void);
-
 void initanim_GPS(void){
  uint8_t UpdateTZ =1;
  glcdClearScreen();
