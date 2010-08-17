@@ -683,56 +683,96 @@ uint8_t GPSRead(uint8_t);
 uint8_t DecodeGPSBuffer(char *t);
 
 uint8_t GPSRead(uint8_t debugmode) {
- // debugmode 1=quiet, 2=debug to line 6
+ // debugmode 0=quiet, 1=debug to line 6 (used by anim_gps.c)
  // method, read chars dump to screen
  static uint8_t soh=0;
  static uint8_t blen=0;
- static char buffer[10];
+ static char buffer[11];
  static int8_t dadjflag =0;
- char ch=0;
  static uint8_t scrpos=0;
-#ifdef SKIPTHISCODE
-                         JA FE MA AP MA JU JL AU SE OC NO DE
-  uint8_t monthmath[] = {31,27,31,30,31,30,31,31,30,31,30,31};
-#endif
+ char ch=0;
+ //                     JA FE MA AP MA JU JL AU SE OC NO DE
+ uint8_t monthmath[] = {31,27,31,30,31,30,31,31,30,31,30,31};
  ch = uart_getch();
- if (ch<20) return 0;
+ if (ch<32) return 0;
  if (debugmode) {
-  glcdSetAddress(scrpos++ * 6, 7);
-  glcdWriteChar(ch,NORMAL);
-  glcdWriteChar(32,NORMAL);
-  if (scrpos>20) scrpos=0;
+  glcdSetAddress(6 * scrpos++, 6); 
+  glcdPutCh(ch, NORMAL); 
+  glcdPutCh(32, NORMAL); 
+  if (++scrpos>21) {scrpos=0;}
  }
- if (ch=='$') {soh=1; blen=0; return 0;}
+ // Check for start of sentence
+ if (ch=='$') {
+  soh=1; 
+  blen=0; 
+  return 0; 
+ }
+ // If inside a sentence...
  if (soh>0) {
-  if (ch == ',') {soh++;}
-  else { 
-   if (blen<10) {buffer[blen++]=ch;}
-   else buffer[9]=0; 
+
+  // check for next field
+  if (ch == ',') {
+   soh++; 
+   if (blen==0) {buffer[0]=0;}  
+   blen=0;
   }
-  //
-  if (soh==2 && strcmp("GPRMC",buffer)) {soh=0;} //Not what we're looking for, skip sentence
-  else if (soh==3) { // Time Word
-   if (debugmode) {glcdSetAddress(MENU_INDENT+42, 6); glcdPutStr(buffer, NORMAL);} 
-#ifdef SKIPTHISCODE
-   time_s = DecodeGPSBuffer((char *)&buffer[5]); 
-   time_m = DecodeGPSBuffer((char *)&buffer[3]);
+  // otherwise, add character to buffer
+  else { 
+   if (blen<10) {
+    buffer[blen++]=ch;
+    buffer[blen]=0;
+   } 
+  }
+
+  // Process: Command
+  if (soh==2) {
+   if (!strcmp(buffer,"GPRMC")) {soh=3; blen=0; buffer[0]=0;}
+   else {soh=0;}
+   return 0;
+  }
+  
+  // Process: Time
+  if (soh==4) { // Time Word
+   soh++;
+   if (debugmode) {
+    buffer[6]=0; 
+    glcdSetAddress(MENU_INDENT+42, 6); 
+    glcdPutStr(buffer, NORMAL); 
+    return 0;
+   }
+   time_s = DecodeGPSBuffer((char *)&buffer[4]); 
+   time_m = DecodeGPSBuffer((char *)&buffer[2]);
    time_h = DecodeGPSBuffer(buffer);
+   // Adjust hour by time zone offset
+   // have to be careful because uint8's underflow back to 255, not -1
    dadjflag =0;
-   if (timezone<0 && abs(timezone) > time_h) {dadjflag=-1; time_h = 24 + time_h + timezone;}
+   if (timezone<0 && abs(timezone) > time_h) {
+    dadjflag=-1; // Remind us to subtract a day... 
+    time_h = 24 + time_h + timezone;
+   }
    else {
     time_h+=timezone;
-    if (time_h>24) {time_h-=24; dadjflag=1;}
+    if (time_h>24) { // Remind us to add a day...
+     time_h-=24; 
+     dadjflag=1;
+    }
    }  
-#endif
-  } 
-  else if (soh==10) {// Date Word
-   if (debugmode) { glcdSetAddress(MENU_INDENT+82, 6); glcdPutStr(buffer, NORMAL); soh=0; return 1;}
-#ifdef SKIPTHISCODE
+   return 0;
+  }
+  
+  // Process: Date
+  if (soh==13) {// Date Word
+   if (debugmode) {
+    glcdSetAddress(MENU_INDENT+82, 6); 
+    glcdPutStr(buffer, NORMAL); 
+    soh=0; 
+    return 1;
+   }
    // Joy, datemath...
-   date_m = DecodeGPSBuffer(buffer);  
-   date_d = DecodeGPSBuffer((char *)&buffer[3]); 
-   date_y = DecodeGPSBuffer((char *)&buffer[5]);
+   date_d = DecodeGPSBuffer(buffer);  
+   date_m = DecodeGPSBuffer((char *)&buffer[2]); 
+   date_y = DecodeGPSBuffer((char *)&buffer[4]);
+   // dadjflag is set by the time routine to remember to add or subtract a day...
    if (dadjflag) {
     date_d += dadjflag;
     if (!date_d) { // Subtracted to Day=0
@@ -745,22 +785,27 @@ uint8_t GPSRead(uint8_t debugmode) {
      date_d = monthmath[date_m-1];
      }     
     }
-    else { // check for date > end of month
+    else { // check for date > end of month (including leap year calc)
      if (date_d > (monthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
-      date_d =1;
+      date_d = 1;
       date_m++;
-      if (date_m>12) {date_y++; date_m=1;}
+      if (date_m>12) {
+       date_y++; 
+       date_m=1;
+      }
      }
     }
    }
+   // Save Results
    writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
-#endif
+   // Do we need to set hourchanged, minutechanged, etc?
    return 1;
   }
  }
  return 0;
 }
 
+// Decodes a 2 char number to uint8
 uint8_t DecodeGPSBuffer(char *cBuffer) {
  return ((cBuffer[0]-48)*10) + (cBuffer[1]-48);
 }
