@@ -142,6 +142,7 @@ uint8_t init_set_menu(uint8_t line)
 
 //Dataman - Handle setting style
 void set_style(void) {
+  displaystyle = eeprom_read_byte(&EE_STYLE);
   uint8_t mode = init_set_menu(0);
   while (!check_timeout()) {
   
@@ -166,6 +167,11 @@ void set_style(void) {
         // faster return?
         RotateFlag = 0;
         displaymode = SHOW_TIME;
+#ifdef GPSENABLE
+	    if (displaystyle<STYLE_GPS) eeprom_write_byte(&EE_STYLE,displaystyle);
+#else
+	    if (displaystyle<STYLE_ABOUT) eeprom_write_byte(&EE_STYLE,displaystyle);
+#endif
         return;
       }
       screenmutex--;
@@ -176,11 +182,6 @@ void set_style(void) {
       if (mode == SET_STL) {
 	    displaystyle ++;
 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_INT;
-#ifdef GPSENABLE
-	    if (displaystyle<STYLE_GPS) eeprom_write_byte(&EE_STYLE,displaystyle);
-#else
-	    if (displaystyle<STYLE_ABOUT) eeprom_write_byte(&EE_STYLE,displaystyle);
-#endif
 	screenmutex++;
 	display_menu();
 	print_menu_change();

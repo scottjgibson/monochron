@@ -29,7 +29,7 @@ void initanim_abo(void){
     b = eeprom_read_byte(&about[ix++]);
     if (b==255) {
      eof = 1;
-     if (!line) {displaystyle = STYLE_RANDOM; initanim(); return;}
+     if (!line) {displaystyle = eeprom_read_byte(&EE_STYLE); initanim(); return;}
      continue;
     } 
     if (!line) {lineix = ix + b;}

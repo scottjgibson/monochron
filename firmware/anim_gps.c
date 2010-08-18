@@ -17,6 +17,7 @@
 extern volatile uint8_t gpsenable;
 extern volatile int8_t timezone;
 extern volatile uint8_t just_pressed;
+extern volatile uint8_t displaystyle;
 
 
 
@@ -42,7 +43,7 @@ void initanim_GPS(void){
     case 2: if (--timezone<-48) {timezone=-48;}
             UpdateTZ=1;
             break;
-    case 1: return;
+    case 1: displaystyle=eeprom_read_byte(&EE_STYLE); return;
    }
    just_pressed=0;
   }
