@@ -88,11 +88,7 @@ extern uint8_t EE_STYLE;
 
 
 void init_eeprom(void) {	//Set eeprom to a default state.
-<<<<<<< Updated upstream
  if (eeprom_read_byte(&EE_INIT) != pgm_read_byte(&EE_DATA[0])) {
-=======
-  if (eeprom_read_byte(&EE_INIT) != pgm_read_byte(&EE_DATA[0])) {
->>>>>>> Stashed changes
     DEBUG(putstring("Error with EEPROM data. Clock cannot function without it. Please reprogram.")); 
     DEBUG(uart_putw_dec(eeprom_read_byte(&EE_INIT))); DEBUG(putstring_nl(""));
     while(1) {
@@ -682,10 +678,6 @@ void setsnooze(void) {
 
 #ifdef GPSENABLE
 
-char uart_getch(void);
-uint8_t static GPSRead(uint8_t);
-uint8_t DecodeGPSBuffer(char *t);
-
 uint8_t GPSRead(uint8_t debugmode) {
  // debugmode 0=quiet, 1=debug to line 6 (used by anim_gps.c)
  // method, read chars dump to screen
@@ -810,7 +802,7 @@ uint8_t GPSRead(uint8_t debugmode) {
 }
 
 // Decodes a 2 char number to uint8
-uint8_t static DecodeGPSBuffer(char *cBuffer) {
+uint8_t DecodeGPSBuffer(char *cBuffer) {
  return ((cBuffer[0]-48)*10) + (cBuffer[1]-48);
 }
 
