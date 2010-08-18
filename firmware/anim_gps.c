@@ -13,6 +13,7 @@
 #include "ks0108.h"
 #include "glcd.h"
 
+#ifdef GPSENABLE
 extern volatile uint8_t gpsenable;
 extern volatile int8_t timezone;
 extern volatile uint8_t just_pressed;
@@ -56,3 +57,4 @@ void initanim_GPS(void){
   //_delay_ms(500);
  }
 }
+#endif

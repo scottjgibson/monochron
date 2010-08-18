@@ -105,10 +105,11 @@ void glcdRectangle(u08 x, u08 y, u08 w, u08 h)
 // draw filled rectangle
 void glcdFillRectangle(u08 x, u08 y, u08 a, u08 b, u08 color)
 {
-  unsigned char i, j, temp, bitsleft;
+  unsigned char i, j, temp;
   signed char k;
 
   /*
+  unsigned char bitsleft;
 // slow :(
   for (i = 0; i < a; i++) {
     if ( (x+i) > GLCD_XPIXELS )

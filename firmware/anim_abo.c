@@ -18,9 +18,7 @@ extern volatile uint8_t displaystyle;
 extern uint8_t about[];
 //Definition of about[] is in eeprom.c.  Change it there.
 
-void initanim_abo(void);
-
-void initanim_abo(){
+void initanim_abo(void){
  uint8_t k, b, line, eof;
  uint16_t ix, lineix;
  ix=0;

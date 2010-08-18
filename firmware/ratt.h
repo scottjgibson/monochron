@@ -291,6 +291,10 @@ void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
 #define DIGIT_HEIGHT 64
 #define MAX_STEPS 32
 
-
+#ifdef GPSENABLE
+char uart_getch(void);
+uint8_t GPSRead(uint8_t);
+uint8_t DecodeGPSBuffer(char *t);
+#endif
 
 

@@ -79,7 +79,7 @@ void encipher(void) {  // Using 32 rounds of XTea encryption as a PRNG.
   rval[0]=v0; rval[1]=v1;
 }
 
-void init_crand() {
+void init_crand(void) {
   //uint32_t temp;
   key[0]=0x2DE9716E;  //Initial XTEA key. Grabbed from the first 16 bytes
   key[1]=0x993FDDD1;  //of grc.com/password.  1 in 2^128 chance of seeing
@@ -717,9 +717,9 @@ uint8_t rat_time_loc[8] = {
 };
 
 void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
-	static uint8_t prev_mode;
-	uint8_t i;
 #ifdef OPTION_DOW_DATELONG
+	uint8_t i;
+    static uint8_t prev_mode;
 	if(score_mode==SCORE_MODE_DOW) {
 		if(prev_mode != SCORE_MODE_DOW)
 		{

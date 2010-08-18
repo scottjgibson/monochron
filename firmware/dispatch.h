@@ -24,3 +24,9 @@ void step_rat(void);
 void step_int(void);
 void step_sev(void);
 void step_xda(void);
+
+void initanim_abo(void);
+
+
+uint16_t crand(uint8_t type);
+void init_crand(void);
