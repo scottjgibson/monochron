@@ -690,12 +690,12 @@ uint8_t GPSRead(uint8_t debugmode) {
  //                     JA FE MA AP MA JU JL AU SE OC NO DE
  uint8_t monthmath[] = {31,27,31,30,31,30,31,31,30,31,30,31};
  ch = uart_getch();
- if (ch<32) return 0;
+ if (ch<32 || ch>127) return 0;
  if (debugmode) {
   glcdSetAddress(6 * scrpos++, 6); 
   glcdWriteChar(ch, NORMAL); 
   glcdWriteChar(32, NORMAL); 
-  if (++scrpos>21) {scrpos=0;}
+  if (scrpos>21) {scrpos=0;}
  }
  // Check for start of sentence
  if (ch=='$') {
