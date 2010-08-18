@@ -35,6 +35,7 @@ volatile uint8_t RotateFlag;   //dataman - enables display rotation
 #ifdef GPSENABLE
 volatile uint8_t gpsenable=0;    //dataman - enables gps check
 volatile int8_t timezone=0;     //timezone +/- gmt
+volatile int8_t timezonehour=0, timezonemin=0;
 #endif
 
 // These store the current button states for all 3 buttons. We can 
@@ -687,6 +688,14 @@ uint8_t GPSRead(uint8_t debugmode) {
  static int8_t dadjflag =0;
  static uint8_t scrpos=0;
  char ch=0;
+ timezone=(int8_t)eeprom_read_byte(&EE_TIMEZONE);
+ timezonehour=TIMEZONEHOUR;
+ timezonemin=TIMEZONEMIN;
+ if(timezone<0) {
+  timezonehour*=-1;
+  timezonemin*=-1;
+ }
+ 
  //                     JA FE MA AP MA JU JL AU SE OC NO DE
  uint8_t monthmath[] = {31,28,31,30,31,30,31,31,30,31,30,31};
  ch = uart_getch();
@@ -742,17 +751,28 @@ uint8_t GPSRead(uint8_t debugmode) {
    // Adjust hour by time zone offset
    // have to be careful because uint8's underflow back to 255, not -1
    dadjflag =0;
-   if (timezone<0 && abs(timezone) > time_h) {
-    dadjflag=-1; // Remind us to subtract a day... 
-    time_h = 24 + time_h + timezone;
+   if (timezonemin<0 && abs(timezonemin) > time_m) {
+    timezonehour--;
+    time_m = 60 + time_m + timezonemin;
    }
    else {
-    time_h+=timezone;
+    time_m+=timezonemin;
+    if (time_m>60) { // Remind us to add a day...
+     time_m-=60; 
+     timezonehour++;
+    }
+   }
+   if (timezonehour<0 && abs(timezonehour) > time_h) {
+    dadjflag=-1; // Remind us to subtract a day... 
+    time_h = 24 + time_h + timezonehour;
+   }
+   else {
+    time_h+=timezonehour;
     if (time_h>24) { // Remind us to add a day...
      time_h-=24; 
      dadjflag=1;
     }
-   }  
+   }
    return 0;
   }
   

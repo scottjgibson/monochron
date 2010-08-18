@@ -163,6 +163,8 @@
 #ifdef GPSENABLE
  #define STYLE_GPS 216
  #define STYLE_ABOUT 217
+ #define TIMEZONEHOUR abs(timezone)>>2
+ #define TIMEZONEMIN (abs(timezone)&3)*15
 #else
  #define STYLE_ABOUT 216
 #endif
@@ -190,6 +192,7 @@ extern uint8_t EE_REGION;
 extern uint8_t EE_TIME_FORMAT;
 extern uint8_t EE_SNOOZE;
 extern uint8_t EE_STYLE;
+extern uint8_t EE_TIMEZONE;
 
 /*************************** FUNCTION PROTOTYPES */
 

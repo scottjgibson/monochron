@@ -23,7 +23,7 @@
 //The clocks firmware will beep 3 times then pause repeatedly, if the eeprom
 //is not initialized.
 #define EE_INITIALIZED 0xC3
-#define EE_VERSION 1
+#define EE_VERSION 2
 
 uint8_t PROGMEM EE_DATA[1] = { EE_INITIALIZED + EE_VERSION };
 uint8_t EEMEM EE_INIT=EE_INITIALIZED + EE_VERSION;
@@ -34,6 +34,7 @@ uint8_t EEMEM EE_REGION=REGION_US;
 uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
 uint8_t EEMEM EE_SNOOZE=10;
 uint8_t EEMEM EE_STYLE=STYLE_RANDOM;
+uint8_t EEMEM EE_TIMEZONE=-32;	//Both CaitSith2 and Dataman reside at timezone -8:00. :)
 
 unsigned char EEMEM BigFont[] = {
 	0xFF, 0x81, 0x81, 0xFF,// 0

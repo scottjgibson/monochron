@@ -27,6 +27,7 @@ void step_xda(void);
 
 void initanim_abo(void);
 
+void initanim_GPS(void);
 
 uint16_t crand(uint8_t type);
 void init_crand(void);

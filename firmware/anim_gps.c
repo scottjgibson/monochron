@@ -19,8 +19,10 @@ extern volatile int8_t timezone;
 extern volatile uint8_t just_pressed;
 
 
+
 void initanim_GPS(void){
  uint8_t UpdateTZ =1;
+ timezone=(int8_t)eeprom_read_byte(&EE_TIMEZONE);
  glcdClearScreen();
  glcdPutStr("GPS Setup",NORMAL);
  glcdSetAddress(MENU_INDENT, 2);
@@ -34,10 +36,10 @@ void initanim_GPS(void){
   // read buttons
   if (just_pressed) {
    switch (just_pressed) {
-    case 4: if (++timezone>8) {timezone=8;}
+    case 4: if (++timezone>56) {timezone=56;}
             UpdateTZ=1;
             break;
-    case 2: if (--timezone<-12) {timezone=-12;}
+    case 2: if (--timezone<-48) {timezone=-48;}
             UpdateTZ=1;
             break;
     case 1: return;
@@ -47,9 +49,13 @@ void initanim_GPS(void){
   // display
   if (UpdateTZ) {
    UpdateTZ=0;
+   eeprom_write_byte(&EE_TIMEZONE, timezone);
    glcdSetAddress(45+MENU_INDENT,2);
    glcdPutStr((timezone<0 ? "-" : "+"),NORMAL);
-   printnumber(abs(timezone),NORMAL);
+   printnumber(TIMEZONEHOUR,NORMAL);
+   glcdPutStr(":",NORMAL);
+   printnumber(TIMEZONEMIN,NORMAL);
+   
   }
   // read gps 
   GPSRead(1); //1 if debugging to screen on line 5
