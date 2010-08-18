@@ -688,7 +688,7 @@ uint8_t GPSRead(uint8_t debugmode) {
  static uint8_t scrpos=0;
  char ch=0;
  //                     JA FE MA AP MA JU JL AU SE OC NO DE
- uint8_t monthmath[] = {31,27,31,30,31,30,31,31,30,31,30,31};
+ uint8_t monthmath[] = {31,28,31,30,31,30,31,31,30,31,30,31};
  ch = uart_getch();
  if (ch<32 || ch>127) return 0;
  if (debugmode) {
@@ -768,6 +768,7 @@ uint8_t GPSRead(uint8_t debugmode) {
    date_d = DecodeGPSBuffer(buffer);  
    date_m = DecodeGPSBuffer((char *)&buffer[2]); 
    date_y = DecodeGPSBuffer((char *)&buffer[4]);
+   monthmath[2-1] = (((date_y%4)==0) ? 29 : 28);	//Account for leap year for month 2. 
    // dadjflag is set by the time routine to remember to add or subtract a day...
    if (dadjflag) {
     date_d += dadjflag;
@@ -782,7 +783,7 @@ uint8_t GPSRead(uint8_t debugmode) {
      }     
     }
     else { // check for date > end of month (including leap year calc)
-     if (date_d > (monthmath[date_m-1] + (date_m == 2 && (date_y%4)==0 ? 1 : 0))) {
+     if (date_d > monthmath[date_m-1]) {
       date_d = 1;
       date_m++;
       if (date_m>12) {
