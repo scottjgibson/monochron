@@ -173,11 +173,7 @@ void set_style(void) {
         // faster return?
         RotateFlag = 0;
         displaymode = SHOW_TIME;
-#ifdef GPSENABLE
-	    if (displaystyle<STYLE_GPS) eeprom_write_byte(&EE_STYLE,displaystyle);
-#else
-	    if (displaystyle<STYLE_ABOUT) eeprom_write_byte(&EE_STYLE,displaystyle);
-#endif
+		if (displaystyle<=STYLE_ROTATE) eeprom_write_byte(&EE_STYLE,displaystyle);
         return;
       }
       screenmutex--;
@@ -187,7 +183,7 @@ void set_style(void) {
       
       if (mode == SET_STL) {
 	    displaystyle ++;
-	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_INT;
+	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_BASE + 1;
 	screenmutex++;
 	display_menu();
 	print_menu_change();
@@ -694,14 +690,22 @@ void print_alarmhour(uint8_t h, uint8_t inverted) {
 void print_style_setting(uint8_t inverted) {
 glcdSetAddress(43, 0);
   switch (displaystyle) {
+#ifdef RATTCHRON
   case STYLE_RAT: glcdPutStr("RATTChron",inverted);
                 break;
+#endif
+#ifdef INTRUDERCHRON
   case STYLE_INT: glcdPutStr("IntruderChron",inverted);
 				break;
+#endif
+#ifdef SEVENCHRON
   case STYLE_SEV: glcdPutStr("SevenChron",inverted);
  				break;
+#endif
+#ifdef XDALICHRON
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
+#endif
   case STYLE_RANDOM: glcdPutStr("Random",inverted);
   				break;
   case STYLE_ROTATE: glcdPutStr("Rotate",inverted);

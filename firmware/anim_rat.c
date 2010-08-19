@@ -20,6 +20,8 @@
 #include "ks0108.h"
 #include "glcd.h"
 
+#ifdef RATTCHRON
+
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t old_m, old_h;
 extern volatile uint8_t date_m, date_d, date_y;
@@ -46,9 +48,6 @@ extern volatile uint8_t minute_changed, hour_changed;
 uint8_t redraw_time_rat = 0;
 uint8_t last_score_mode_rat = 0;
 
-uint32_t rval[2]={0,0};
-uint32_t key[4];
-
 // Prototypes
 // Called by dispatcher
 void initamin_rat(void);
@@ -70,83 +69,6 @@ uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, fl
 
 
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
-
-
-void encipher(void) {  // Using 32 rounds of XTea encryption as a PRNG.
-  uint32_t v0=rval[0], v1=rval[1], sum=0, delta=0x9E3779B9;
-  for (unsigned int i=0; i < 32; i++) {
-    v0 += (((v1 << 4) ^ (v1 >> 5)) + v1) ^ (sum + key[sum & 3]);
-    sum += delta;
-    v1 += (((v0 << 4) ^ (v0 >> 5)) + v0) ^ (sum + key[(sum>>11) & 3]);
-  }
-  rval[0]=v0; rval[1]=v1;
-}
-
-void init_crand(void) {
-  //uint32_t temp;
-  key[0]=0x2DE9716E;  //Initial XTEA key. Grabbed from the first 16 bytes
-  key[1]=0x993FDDD1;  //of grc.com/password.  1 in 2^128 chance of seeing
-  key[2]=0x2A77FB57;  //that key again there.
-  key[3]=0xB172E6B0;
-  key[0]^=time_s;
-  key[1]^=time_m;
-  key[2]^=time_h;
-  rval[0]=0;
-  rval[1]=0;
-  encipher();
-  /*temp = alarm_h;
-  temp<<=8;
-  temp|=time_h;
-  temp<<=8;
-  temp|=time_m;
-  temp<<=8;
-  temp|=time_s;
-  key[0]^=rval[1]<<1;
-  encipher();
-  key[1]^=temp<<1;
-  encipher();
-  key[2]^=temp>>1;
-  encipher();
-  key[3]^=rval[1]>>1;
-  encipher();
-  temp = alarm_m;
-  temp<<=8;
-  temp|=date_m;
-  temp<<=8;
-  temp|=date_d;
-  temp<<=8;
-  temp|=date_y;
-  key[0]^=temp<<1;
-  encipher();
-  key[1]^=rval[0]<<1;
-  encipher();
-  key[2]^=rval[0]>>1;
-  encipher();
-  key[3]^=temp>>1;
-  rval[0]=0;
-  rval[1]=0;
-  encipher();	//And at this point, the PRNG is now seeded, based on power on/date/time reset.*/
-}
-
-uint16_t crand(uint8_t type) {
-// Dataman - Compiler didn't like this logic, and I don't blame it,
-// Code path could be simplified.
-//  if((type==0)||(type>2)) {
-//    wdt_reset();
-//    encipher();
-//    return (rval[0]^rval[1])&RAND_MAX;
-//  } 
-//   else
- if (type==1) {
-  	return ((rval[0]^rval[1])>>15)&3;
-  } 
-    else if (type==2) {
-   return ((rval[0]^rval[1])>>17)&1;
-  }
-  wdt_reset();
-  encipher();
-  return (rval[0]^rval[1])&RAND_MAX; 
-}
 
 void setscore_rat(void)
 {
@@ -901,3 +823,5 @@ uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, fl
   return tix;
 }
       
+//#ifdef RATTCHRON
+#endif

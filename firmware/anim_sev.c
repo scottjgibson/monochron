@@ -15,6 +15,7 @@
 #include "font5x7.h"
 #include "fonttable.h"
 
+#ifdef SEVENCHRON
 
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t old_m, old_h;
@@ -232,5 +233,5 @@ void drawhseg_sev(uint8_t x, uint8_t y, uint8_t inverted) {
   glcdFillRectangle(x+HSEGMENT_W-1, y+2, 1, HSEGMENT_H - 4, ! inverted);
 }
 
-
-
+//#ifdef SEVENCHRON
+#endif

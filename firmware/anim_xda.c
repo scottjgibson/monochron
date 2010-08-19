@@ -22,6 +22,7 @@
 #include "glcd.h"
 #include "font5x7.h"
 
+#ifdef XDALICHRON
 extern volatile uint8_t time_s, time_m, time_h;
 extern volatile uint8_t old_m, old_h;
 extern volatile uint8_t date_m, date_d, date_y;
@@ -530,5 +531,6 @@ void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t siz
   }
 }
 
-
+//#ifdef XDALICHRON
+#endif
 

@@ -150,15 +150,13 @@
 
 #define SET_STYLE 200
 #define SET_STL   201
+/*
 #define STYLE_INT 210
 #define STYLE_SEV 211
 #define STYLE_RAT 212
 #define STYLE_XDA 213
 #define STYLE_RANDOM 214
 #define STYLE_ROTATE 215
-
-// Undefine to disable GPS
-#define GPSENABLE 1
 
 #ifdef GPSENABLE
  #define STYLE_GPS 216
@@ -167,7 +165,49 @@
  #define TIMEZONEMIN (abs(timezone)&3)*15
 #else
  #define STYLE_ABOUT 216
+#endif*/
+
+// Undefine to disable GPS
+#define GPSENABLE 1
+
+// Undefine the following to disable these clock modes
+#define INTRUDERCHRON 1
+#define SEVENCHRON 1
+#define RATTCHRON 1
+#define XDALICHRON 1
+
+#ifndef XDALICHRON
+	//The compiler is feeding me bullshit, about STYLE_XDA being undefined in ratt.c, 
+	//despite there being no references to STYLE_XDA in ratt.c
+	#define	STYLE_XDA 1
 #endif
+
+#ifdef GPSENABLE
+ #define TIMEZONEHOUR abs(timezone)>>2
+ #define TIMEZONEMIN (abs(timezone)&3)*15
+#endif
+
+enum {
+	STYLE_BASE = 209,
+#ifdef INTRUDERCHRON
+	STYLE_INT,
+#endif
+#ifdef SEVENCHRON
+	STYLE_SEV,
+#endif
+#ifdef RATTCHRON
+	STYLE_RAT,
+#endif
+#ifdef XDALICHRON
+	STYLE_XDA,
+#endif
+	STYLE_RANDOM,
+	STYLE_ROTATE,
+#ifdef GPSENABLE
+	STYLE_GPS,
+#endif
+	STYLE_ABOUT
+};
 
 
 // ROTATEPERIOD is the the wait period, in minutes, between screen rotations.

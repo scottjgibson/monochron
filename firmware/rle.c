@@ -1,6 +1,8 @@
 
 #include <avr/pgmspace.h>
+#include "ratt.h"
 
+#ifdef XDALICHRON
 #define NUM_ELEM(x) (sizeof (x) / sizeof (*(x)))
 
 const uint8_t zero_seg[] PROGMEM = {12, 15, 255, 255,
@@ -653,3 +655,6 @@ const uint8_t nine[] PROGMEM = {11, 16, 255, 255,
 1, 8, 255, 255,
 1, 5, 255, 255,
 1, 2, 255, 255,};
+
+//#ifdef XDALICHRON
+#endif

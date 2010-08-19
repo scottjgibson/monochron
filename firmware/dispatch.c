@@ -30,16 +30,24 @@ extern volatile uint8_t minute_changed, hour_changed;
 
 void initanim(void){
  switch (displaystyle) {
+#ifdef RATTCHRON
  case STYLE_RAT: initanim_rat();
                 break;
+#endif
+#ifdef INTRUDERCHRON
  case STYLE_INT: initanim_int();
 				break;
+#endif
+#ifdef SEVENCHRON
  case STYLE_SEV: initanim_sev();
 				break;
+#endif
+#ifdef XDALICHRON
  case STYLE_XDA: initanim_xda();
                 break;
+#endif
  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
- case STYLE_RANDOM: init_crand(); displaystyle = STYLE_INT + (crand(0) & 3); initanim();
+ case STYLE_RANDOM: init_crand(); displaystyle = (STYLE_BASE + 1) + (crand(0) % (STYLE_RANDOM - (STYLE_BASE + 1))); initanim();
                 break;
 #ifdef GPSENABLE
  case STYLE_GPS: initanim_GPS();
@@ -53,14 +61,22 @@ void initanim(void){
 
 void initdisplay(uint8_t inverted) {
  switch (displaystyle) {
+#ifdef RATTCHRON
  case STYLE_RAT: initdisplay_rat(inverted);
                 break;
+#endif
+#ifdef INTRUDERCHRON
  case STYLE_INT: initdisplay_int(inverted);
 				break;
+#endif
+#ifdef SEVENCHRON
  case STYLE_SEV: initdisplay_sev(inverted); 
 				break;
+#endif
+#ifdef XDALICHRON
  case STYLE_XDA: initdisplay_xda(inverted);
                  break;
+#endif
  }
 }
 
@@ -72,32 +88,48 @@ void drawdisplay(uint8_t inverted) {
   	hour_changed = 2;
   if (!--RotateFlag) {
    RotateFlag = ROTATEPERIOD;
-   if (++displaystyle>STYLE_XDA) {displaystyle=STYLE_INT;}
+   if (++displaystyle==STYLE_RANDOM) {displaystyle=STYLE_BASE+1;}
    initanim();
   }
  }
  switch (displaystyle) {
+#ifdef RATTCHRON
  case STYLE_RAT: drawdisplay_rat(inverted);
                 break;
+#endif
+#ifdef INTRUDERCHRON
  case STYLE_INT: drawdisplay_int(inverted);
 				break;
+#endif
+#ifdef SEVENCHRON
  case STYLE_SEV: drawdisplay_sev(inverted); 
  				break;
+#endif
+#ifdef XDALICHRON
  case STYLE_XDA: drawdisplay_xda(inverted);
                  break;
+#endif
  }
 }
 
 
 void step(void) {
  switch (displaystyle) {
+#ifdef RATTCHRON
  case STYLE_RAT: step_rat();
                 break;
+#endif
+#ifdef INTRUDERCHRON
  case STYLE_INT: step_int();
 				break;
+#endif
+#ifdef SEVENCHRON
  case STYLE_SEV: step_sev(); 
  				break;
+#endif
+#ifdef XDALICHRON
  case STYLE_XDA: step_xda();
                  break;
+#endif
  }
 }

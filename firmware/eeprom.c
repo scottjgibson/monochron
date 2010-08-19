@@ -25,8 +25,8 @@
 #define EE_INITIALIZED 0xC3
 #define EE_VERSION 2
 
-uint8_t PROGMEM EE_DATA[1] = { EE_INITIALIZED + EE_VERSION };
-uint8_t EEMEM EE_INIT=EE_INITIALIZED + EE_VERSION;
+uint8_t PROGMEM EE_DATA[1] = { EE_INITIALIZED + EE_VERSION + STYLE_ABOUT };
+uint8_t EEMEM EE_INIT=EE_INITIALIZED + EE_VERSION + STYLE_ABOUT;
 uint8_t EEMEM  EE_ALARM_HOUR=7;
 uint8_t EEMEM EE_ALARM_MIN=30;
 uint8_t EEMEM EE_BRIGHT=OCR2A_VALUE;
@@ -34,8 +34,11 @@ uint8_t EEMEM EE_REGION=REGION_US;
 uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
 uint8_t EEMEM EE_SNOOZE=10;
 uint8_t EEMEM EE_STYLE=STYLE_RANDOM;
-uint8_t EEMEM EE_TIMEZONE=-32;	//Both CaitSith2 and Dataman reside at timezone -8:00. :)
+#ifdef GPSENABLE
+  uint8_t EEMEM EE_TIMEZONE=-32;	//Both CaitSith2 and Dataman reside at timezone -8:00. :)
+#endif
 
+#ifdef RATTCHRON
 unsigned char EEMEM BigFont[] = {
 	0xFF, 0x81, 0x81, 0xFF,// 0
 	0x00, 0x00, 0x00, 0xFF,// 1
@@ -49,6 +52,7 @@ unsigned char EEMEM BigFont[] = {
 	0xF1, 0x91, 0x91, 0xFF,// 9
 	0x00, 0x00, 0x00, 0x00,// SPACE
 };
+#endif
 
 unsigned char EEMEM Font5x7[] = {
 	0x00, 0x00, 0x00, 0x00, 0x00,// (space)
@@ -155,7 +159,7 @@ unsigned char EEMEM FontGr[] =
 // length, byte array[length]
 //0x0B,0x3E,0x41,0x41,0x41,0x41,0x42,0x42,0x42,0x42,0x3C,0x00,// 0. Folder Icon
 //0x06,0xFF,0xFF,0xFF,0xFF,0xFF,0xFF		       	// 1. Solid 6x8 block
-	
+#ifdef INTRUDERCHRON
 16, 88, 188, 28, 22, 22, 63, 63, 22, 22, 28, 188, 88, 0, 0, 0, 0, // 0 = Triangle Up
 16, 30, 184, 125, 54, 60, 60, 60, 60, 54, 125, 184, 30, 0, 0, 0, 0,// 1 = Square Up
 16, 156, 158, 94, 118, 55, 95, 95, 55, 118, 94, 158, 156, 0, 0, 0, 0, // 2 = Circle Up
@@ -163,8 +167,10 @@ unsigned char EEMEM FontGr[] =
 16, 112, 24, 125, 182, 188, 60, 60, 188, 182, 125, 24, 112, 0, 0, 0, 0, // 4 = Square Down
 16, 28, 94, 254, 182, 55, 95, 95, 55, 182, 254, 94, 28, 0, 0, 0, 0, // 5 = Circle Down
 12, 248, 252, 254, 254, 63, 31, 31, 63, 254, 254, 252, 248  // 6 = Base
+#endif
 };
 
+#ifdef SEVENCHRON
 uint8_t EEMEM alphatable[] = {
 	0xFA, /* a */
 	0x3E, /* b */
@@ -214,6 +220,8 @@ uint8_t EEMEM numbertable[] = {
   0xE6, /* 9 */
 #endif
 };
+//#ifdef SEVENCHRON
+#endif
 
 #ifdef OPTION_DOW_DATELONG
 uint8_t DOWText[] EEMEM = "sunmontuewedthufrisat";
@@ -224,13 +232,15 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
 	                              // 123456789ABCDEF0123456
 	                         "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
-                             "\x0b" "Version 1.0"
+                             "\x0b" "Version 1.1"
                                   // 123456789ABCDEF0123456
                              "\x01" "-"
                                   // 123456789ABCDEF0123456
                              "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
+                         #ifdef INTRUDERCHRON
 	                         "\x0d" "IntruderChron" 
+	                     #endif
                                   // 123456789ABCDEF0123456
 	                         "\x0a" "by Dataman"
                                   // 123456789ABCDEF0123456
@@ -254,11 +264,17 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
                              "\x01" "-"
                                   // 123456789ABCDEF0123456
+                         #ifdef RATTCHRON
 	                         "\x09" "RATTChron"
+	                     #endif
+	                     #ifdef SEVENCHRON
                                   // 123456789ABCDEF0123456
 	                         "\x0a" "SevenChron"
+	                     #endif
+	                     #ifdef XDALICHRON
                                   // 123456789ABCDEF0123456
                              "\x0b" "XADALICHRON"
+                         #endif
                                   // 123456789ABCDEF0123456
                              "\x12" "MonoChron Hardware"
                                   // 123456789ABCDEF0123456

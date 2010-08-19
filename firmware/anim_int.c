@@ -20,6 +20,8 @@
 #include "ks0108.h"
 #include "ks0108conf.h"
 #include "glcd.h"
+
+#ifdef INTRUDERCHRON
 //#include "font5x7.h"
 
 // 2010-03-03 First Version
@@ -182,4 +184,4 @@ void WriteDigits_int(uint8_t t, uint8_t inverted)
 	glcdWriteChar(48 + j,inverted);
 }
 
-
+#endif

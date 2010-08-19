@@ -176,6 +176,10 @@ int main(void) {
   //Dataman - InitiAmin now init displays(0) as well.
   //initdisplay(0);
   displaystyle = eeprom_read_byte(&EE_STYLE);
+  if(displaystyle >= STYLE_ABOUT) {
+    displaystyle = STYLE_ROTATE;
+    eeprom_write_byte(&EE_STYLE,displaystyle);
+  }
   RotateFlag = 0;
   initanim();
   
