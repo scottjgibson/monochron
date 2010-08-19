@@ -1,6 +1,6 @@
 #define halt(x)  while (1)
 
-#define DEBUGGING 0
+#define DEBUGGING 1
 #define DEBUG(x)  if (DEBUGGING) { x; }
 #define DEBUGP(x) DEBUG(putstring_nl(x))
 
@@ -13,11 +13,15 @@
 //#define OPTION_DOW_DATELONG 1
 
 // This is a tradeoff between sluggish and too fast to see
-#define MAX_BALL_SPEED 5 // note this is in vector arith.
+//#define MAX_BALL_SPEED 5 // note this is in vector arith.
+#define MAX_BALL_SPEED 500 // fixed point math rewrite. We are keeping 2 significant places, so real speed is 5.00.
 #define ball_radius 2 // in pixels
 
 // If the angle is too shallow or too narrow, the game is boring
-#define MIN_BALL_ANGLE 20
+//#define MIN_BALL_ANGLE 20
+//Fixed point math rewrite. //Our sin/cos table is 1/4 of a 256 degree circle table.  As such
+#define MIN_BALL_ANGLE 15 //Minimum angle of 20 in 360, is 15 in 256.
+
 
 // how fast to proceed the animation, note that the redrawing
 // takes some time too so you dont want this too small or itll
@@ -223,7 +227,8 @@ void printnumber(uint8_t n, uint8_t inverted);
 void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode);
 
 
-float random_angle_rads(void);
+//float random_angle_rads(void);
+int8_t random_angle(void);
 
 void init_crand(void);
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
@@ -247,20 +252,34 @@ void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
 
 // RATT SPECIFIC
 
+#define FIXED_MATH 100
+
 // How big our screen is in pixels
 #define SCREEN_W 128
 #define SCREEN_H 64
 
+#define SCREEN_W_FIXED (SCREEN_W * FIXED_MATH)
+#define SCREEN_H_FIXED (SCREEN_H * FIXED_MATH)
+
 #define RIGHTPADDLE_X (SCREEN_W - PADDLE_W - 10)
 #define LEFTPADDLE_X 10
+
+#define RIGHTPADDLE_X_FIXED (RIGHTPADDLE_X * FIXED_MATH)
+#define LEFTPADDLE_X_FIXED (LEFTPADDLE_X * FIXED_MATH)
 
 // Paddle size (in pixels) and max speed for AI
 #define PADDLE_H 12
 #define PADDLE_W 3
 
+#define PADDLE_H_FIXED (PADDLE_H * FIXED_MATH)
+#define PADDLE_W_FIXED (PADDLE_W * FIXED_MATH)
+
 // How thick the top and bottom lines are in pixels
 #define BOTBAR_H 2
 #define TOPBAR_H 2
+
+#define BOTBAR_H_FIXED (BOTBAR_H * FIXED_MATH)
+#define TOPBAR_H_FIXED (TOPBAR_H * FIXED_MATH)
 
 // Specs of the middle line
 #define MIDLINE_W 1

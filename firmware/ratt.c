@@ -560,13 +560,13 @@ SIGNAL (TIMER2_OVF_vect) {
 	}
 
 
-    DEBUG(putstring("**** "));
+    /*DEBUG(putstring("**** "));
     DEBUG(uart_putw_dec(time_h));
     DEBUG(uart_putchar(':'));
     DEBUG(uart_putw_dec(time_m));
     DEBUG(uart_putchar(':'));
     DEBUG(uart_putw_dec(time_s));
-    DEBUG(putstring_nl("****"));
+    DEBUG(putstring_nl("****"));*/
   }
 
   if (((displaymode == SET_ALARM) ||
