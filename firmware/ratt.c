@@ -569,14 +569,6 @@ SIGNAL (TIMER2_OVF_vect) {
     DEBUG(putstring_nl("****"));*/
   }
 
-  if (((displaymode == SET_ALARM) ||
-       (displaymode == SET_DATE) ||
-       (displaymode == SET_REGION) ||
-       (displaymode == SET_BRIGHTNESS)) &&
-      (!screenmutex) ) {
-      print_time(time_h, time_m, time_s, SET_TIME);
-  }
-
   // check if we have an alarm set
   if (alarm_on && (time_s == 0) && (time_m == alarm_m) && (time_h == alarm_h)) {
     DEBUG(putstring_nl("ALARM TRIPPED!!!"));

@@ -679,22 +679,6 @@ void drawdisplay_rat(uint8_t inverted) {
     
     redraw_digits = 0;
     
-    // print 'alarm'
-    /*
-    if (intersectrect(oldball_x, oldball_y, ball_radius*2, ball_radius*2,
-		      ALARMBOX_X, ALARMBOX_Y, ALARMBOX_W, ALARMBOX_H)) {
-      
-      glcdFillRectangle(ALARMBOX_X+2, ALARMBOX_Y+2, ALARMBOX_W-4, ALARMBOX_H-4, OFF);
-
-      glcdFillRectangle(ALARMBOX_X, ALARMBOX_Y, 2, ALARMBOX_H, ON);
-      glcdFillRectangle(ALARMBOX_X+ALARMBOX_W, ALARMBOX_Y, 2, ALARMBOX_H, ON);
-    }
-
-    if (!intersectrect(ball_x, ball_y, ball_radius*2, ball_radius*2,
-		      ALARMBOX_X, ALARMBOX_Y, ALARMBOX_W, ALARMBOX_H)) {
-    */
-
-      //}
 }
 
 uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
@@ -733,6 +717,7 @@ extern unsigned char BigFont[];
     return (day + (2 * month) + (6 * (month+1)/10) + year + (year/4) - (year/100) + (year/400) + 1) % 7;
 }*/
 
+#ifdef OPTION_DOW_DATELONG
 uint8_t rat_time_loc[8] = {
 	DISPLAY_H10_X_RAT,
 	DISPLAY_H1_X_RAT,
@@ -743,6 +728,7 @@ uint8_t rat_time_loc[8] = {
 	DISPLAY_DOW2_X,
 	DISPLAY_DOW3_X
 };
+#endif
 
 void check_ball_digit_collision(uint8_t redraw_digits, uint8_t digit_x, uint8_t digit, uint8_t inverted)
 {

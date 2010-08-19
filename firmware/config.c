@@ -106,6 +106,12 @@ void display_menu(void) {
 
 uint8_t check_timeout(void)
 {
+	if(displaymode != SET_TIME)
+	{
+		screenmutex++;
+		print_time(time_h, time_m, time_s, SET_TIME);
+		screenmutex--;
+	}
 	if (just_pressed & 0x1) { // mode change
       return 1;
     }
