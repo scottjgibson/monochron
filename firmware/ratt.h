@@ -175,10 +175,10 @@
 #define GPSENABLE 1
 
 // Undefine the following to disable these clock modes
-//#define INTRUDERCHRON 1
-//#define SEVENCHRON 1
+#define INTRUDERCHRON 1
+#define SEVENCHRON 1
 #define RATTCHRON 1
-//#define XDALICHRON 1
+#define XDALICHRON 1
 
 #ifndef XDALICHRON
 	//The compiler is feeding me bullshit, about STYLE_XDA being undefined in ratt.c, 
