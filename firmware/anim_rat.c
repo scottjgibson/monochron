@@ -152,7 +152,7 @@ void setscore_rat(void)
   }
 }
 
-uint8_t ticksremaining;
+int16_t ticksremaining;
 void initanim_rat(void) {
   DEBUG(putstring("screen width: "));
   DEBUG(uart_putw_dec(GLCD_XPIXELS));
@@ -363,11 +363,16 @@ void step_rat(void) {
     }
   }*/
   
+  //ticksremaining--;
   if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
-    move_paddle(&leftpaddle_y, dest_paddle_pos);
-  }
-  if((ball_dx > 0) && (ball_x > (SCREEN_W_FIXED/2))) {
-  	move_paddle(&rightpaddle_y, dest_paddle_pos);
+    move_paddle(&leftpaddle_y, minute_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+  } else if((ball_dx > 0) && (ball_x > (SCREEN_W_FIXED/2))) {
+  	move_paddle(&rightpaddle_y, hour_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+  } else {
+  	if(ball_dx < 0)
+  		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
+  	else
+  		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
   }
 
   // make sure the paddles dont hit the top or bottom
@@ -385,13 +390,13 @@ void step_rat(void) {
     ball_dx *= -1;
     ball_x = RIGHTPADDLE_X_FIXED - (ball_radius*2*FIXED_MATH);
     //ball_y = right_dest;
-    ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
+    //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
   }
   if ((ball_dx < 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H)) {
     ball_dx *= -1;
     ball_x = LEFTPADDLE_X_FIXED + PADDLE_W_FIXED;
     //ball_y = left_dest;
-    ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
+    //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
   }
   
 }
