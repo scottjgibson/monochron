@@ -580,7 +580,9 @@ SIGNAL (TIMER2_OVF_vect) {
   uint8_t last_h = time_h;
 
   readi2ctime();
-  GPSRead(displaystyle==STYLE_GPS);	//Hooking time reading, and thus time_changed here.
+#ifdef GPSENABLE
+  GPSRead((displaystyle==STYLE_GPS) && (displaymode == SHOW_TIME));	//Hooking time reading, and thus time_changed here.
+#endif
   
   if (time_h != last_h) {
     hour_changed = 1; 
