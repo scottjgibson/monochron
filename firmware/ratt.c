@@ -36,6 +36,55 @@ volatile uint8_t RotateFlag;   //dataman - enables display rotation
 volatile uint8_t gpsenable=0;    //dataman - enables gps check
 volatile int8_t timezone=0;     //timezone +/- gmt
 volatile int8_t timezonehour=0, timezonemin=0;
+
+#define RX_BUFFER_SIZE 128
+
+struct ring_buffer {
+  unsigned char buffer[RX_BUFFER_SIZE];
+  int head;
+  int tail;
+};
+
+struct ring_buffer rx_buffer = { { 0 }, 0, 0 };
+
+inline void store_char(unsigned char c, struct ring_buffer *rx_buffer)
+{
+  int i = (rx_buffer->head + 1) % RX_BUFFER_SIZE;
+
+  // if we should be storing the received character into the location
+  // just before the tail (meaning that the head would advance to the
+  // current location of the tail), we're about to overflow the buffer
+  // and so we don't write the character or advance the head.
+  if (i != rx_buffer->tail) {
+    rx_buffer->buffer[rx_buffer->head] = c;
+    rx_buffer->head = i;
+  }
+}
+
+SIGNAL(USART_RX_vect)
+{
+  unsigned char c = UDR0;
+  store_char(c, &rx_buffer);
+}
+
+uint8_t char_available(void)
+{
+  return (RX_BUFFER_SIZE + rx_buffer.head - rx_buffer.tail) % RX_BUFFER_SIZE;
+}
+
+int char_read(void)
+{
+  // if the head isn't ahead of the tail, we don't have any characters
+  if (rx_buffer.head == rx_buffer.tail) {
+    return -1;
+  } else {
+    unsigned char c = rx_buffer.buffer[rx_buffer.tail];
+    rx_buffer.tail = (rx_buffer.tail + 1) % RX_BUFFER_SIZE;
+    return c;
+  }
+}
+
+
 #endif
 
 // These store the current button states for all 3 buttons. We can 
@@ -77,8 +126,6 @@ SIGNAL(TIMER0_COMPA_vect) {
     }
     alarmticker--;    
   }
-  
-  GPSRead(displaystyle==STYLE_GPS);	//Hooking time reading, and thus time_changed here.
 }
 
 extern uint8_t EE_ALARM_HOUR;
@@ -126,6 +173,10 @@ int main(void) {
 
   // setup uart
   uart_init(BRRL_4800);
+#ifdef GPSENABLE
+  UCSR0B |= _BV(TXEN0) | _BV(RXEN0) | _BV(RXCIE0);
+  //HardwareSerial Serial(&rx_buffer, &UBRR0H, &UBRR0L, &UCSR0A, &UCSR0B, &UDR0, RXEN0, TXEN0, RXCIE0, UDRE0, U2X0);
+#endif
   DEBUGP("RATT Clock");
 
   // set up piezo
@@ -529,6 +580,7 @@ SIGNAL (TIMER2_OVF_vect) {
   uint8_t last_h = time_h;
 
   readi2ctime();
+  GPSRead(displaystyle==STYLE_GPS);	//Hooking time reading, and thus time_changed here.
   
   if (time_h != last_h) {
     hour_changed = 1; 
@@ -696,9 +748,11 @@ uint8_t GPSRead(uint8_t debugmode) {
  
  //                     JA FE MA AP MA JU JL AU SE OC NO DE
  uint8_t monthmath[] = {31,28,31,30,31,30,31,31,30,31,30,31};
- if(!uart_getch()) return 0;
- ch = uart_getchar();
- if (ch<32 || ch>127) return 0;
+ //if(!uart_getch()) return 0;
+ //ch = uart_getchar();
+ while(char_available()) {
+   ch = char_read();
+ if (ch<32 || ch>127) continue;
  /*if (debugmode) {
   glcdSetAddress(6 * scrpos++, 6); 
   glcdWriteChar(ch, NORMAL); 
@@ -709,7 +763,7 @@ uint8_t GPSRead(uint8_t debugmode) {
  if (ch=='$') {
   soh=1; 
   blen=0; 
-  return 0; 
+  continue;
  }
  // If inside a sentence...
  if (soh>0) {
@@ -732,7 +786,7 @@ uint8_t GPSRead(uint8_t debugmode) {
   if (soh==2) {
    if (!strcmp(buffer,"GPRMC")) {soh=3; blen=0; buffer[0]=0;}
    else {soh=0;}
-   return 0;
+   continue;
   }
   
   // Process: Time
@@ -742,7 +796,7 @@ uint8_t GPSRead(uint8_t debugmode) {
     buffer[6]=0; 
     glcdSetAddress(MENU_INDENT+60, 5); 
     glcdPutStr(buffer, NORMAL); 
-    return 0;
+    continue;
    }
    cli();
    time_s = DecodeGPSBuffer((char *)&buffer[4]); 
@@ -775,7 +829,7 @@ uint8_t GPSRead(uint8_t debugmode) {
    }
    writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
    sei();
-   return 0;
+   continue;
   }
   
   // Process: Date
@@ -822,6 +876,7 @@ uint8_t GPSRead(uint8_t debugmode) {
    // Do we need to set hourchanged, minutechanged, etc?
    return 1;
   }
+ }
  }
  return 0;
 }
