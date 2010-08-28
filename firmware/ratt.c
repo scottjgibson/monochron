@@ -77,6 +77,8 @@ SIGNAL(TIMER0_COMPA_vect) {
     }
     alarmticker--;    
   }
+  
+  GPSRead(displaystyle==STYLE_GPS);	//Hooking time reading, and thus time_changed here.
 }
 
 extern uint8_t EE_ALARM_HOUR;
@@ -123,7 +125,7 @@ int main(void) {
   wdt_disable();
 
   // setup uart
-  uart_init(BRRL_192);
+  uart_init(BRRL_4800);
   DEBUGP("RATT Clock");
 
   // set up piezo
@@ -452,7 +454,6 @@ uint8_t readi2ctime(void) {
   if (r != 0) {
     DEBUG(putstring("Reading i2c data: ")); DEBUG(uart_putw_dec(r)); DEBUG(putstring_nl(""));
     while(1) {
-      sei();
       beep(4000, 100);
       delay_ms(100);
       beep(4000, 100);
@@ -473,7 +474,6 @@ uint8_t readi2ctime(void) {
   date_d = ((clockdata[4] >> 4) & 0x3)*10 + (clockdata[4] & 0xF);
   date_m = ((clockdata[5] >> 4) & 0x1)*10 + (clockdata[5] & 0xF);
   date_y = ((clockdata[6] >> 4) & 0xF)*10 + (clockdata[6] & 0xF);
-
   return clockdata[0] & 0x80;
 }
 
@@ -696,14 +696,15 @@ uint8_t GPSRead(uint8_t debugmode) {
  
  //                     JA FE MA AP MA JU JL AU SE OC NO DE
  uint8_t monthmath[] = {31,28,31,30,31,30,31,31,30,31,30,31};
- ch = uart_getch();
+ if(!uart_getch()) return 0;
+ ch = uart_getchar();
  if (ch<32 || ch>127) return 0;
- if (debugmode) {
+ /*if (debugmode) {
   glcdSetAddress(6 * scrpos++, 6); 
   glcdWriteChar(ch, NORMAL); 
   glcdWriteChar(32, NORMAL); 
   if (scrpos>21) {scrpos=0;}
- }
+ }*/
  // Check for start of sentence
  if (ch=='$') {
   soh=1; 
@@ -739,10 +740,11 @@ uint8_t GPSRead(uint8_t debugmode) {
    soh++;
    if (debugmode) {
     buffer[6]=0; 
-    glcdSetAddress(MENU_INDENT+42, 6); 
+    glcdSetAddress(MENU_INDENT+60, 5); 
     glcdPutStr(buffer, NORMAL); 
     return 0;
    }
+   cli();
    time_s = DecodeGPSBuffer((char *)&buffer[4]); 
    time_m = DecodeGPSBuffer((char *)&buffer[2]);
    time_h = DecodeGPSBuffer(buffer);
@@ -771,18 +773,21 @@ uint8_t GPSRead(uint8_t debugmode) {
      dadjflag=1;
     }
    }
+   writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
+   sei();
    return 0;
   }
   
   // Process: Date
   if (soh==13) {// Date Word
    if (debugmode) {
-    glcdSetAddress(MENU_INDENT+82, 6); 
+    glcdSetAddress(MENU_INDENT+60, 4); 
     glcdPutStr(buffer, NORMAL); 
     soh=0; 
     return 1;
    }
    // Joy, datemath...
+   cli();
    date_d = DecodeGPSBuffer(buffer);  
    date_m = DecodeGPSBuffer((char *)&buffer[2]); 
    date_y = DecodeGPSBuffer((char *)&buffer[4]);
@@ -813,6 +818,7 @@ uint8_t GPSRead(uint8_t debugmode) {
    }
    // Save Results
    writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
+   sei();
    // Do we need to set hourchanged, minutechanged, etc?
    return 1;
   }

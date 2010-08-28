@@ -3,9 +3,11 @@
 // Raw constants for the UART to make the bit timing nice
 
 #if (F_CPU == 16000000)
+#define BRRL_4800 206
 #define BRRL_9600 103    // for 16MHZ
 #define BRRL_192 52    // for 16MHZ
 #elif (F_CPU == 8000000)
+#define BRRL_4800 103
 #define BRRL_9600 52
 #define BRRL_192 26    
 #endif

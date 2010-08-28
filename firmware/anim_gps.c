@@ -29,7 +29,9 @@ void initanim_GPS(void){
  glcdSetAddress(MENU_INDENT, 2);
  glcdPutStr("Offset:" ,NORMAL);
  glcdSetAddress(MENU_INDENT, 4);
- glcdPutStr("Test: ",NORMAL);
+ glcdPutStr("GPS Date: ",NORMAL);
+ glcdSetAddress(MENU_INDENT, 5);
+ glcdPutStr("GPS Time:        UTC",NORMAL);
  glcdSetAddress(MENU_INDENT, 7);
  glcdPutStr("Menu=Exit, Set=-, +",NORMAL);
  while (1) {
@@ -59,7 +61,8 @@ void initanim_GPS(void){
    
   }
   // read gps 
-  GPSRead(1); //1 if debugging to screen on line 5
+  //GPSRead(1); //1 if debugging to screen on line 5
+  //Hooked GPSRead elsewhere, that is quick enough for actual use.
   // display
   //_delay_ms(500);
  }
