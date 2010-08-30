@@ -46,3 +46,9 @@ uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
 uint8_t sdtow(uint8_t dow, uint8_t ix);
 uint8_t smon(uint8_t date_m, uint8_t ix);
 uint8_t hours(uint8_t h);
+
+// 8 pixels high
+
+uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
+		      uint8_t x2, uint8_t y2, uint8_t w2, uint8_t h2);
+void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);

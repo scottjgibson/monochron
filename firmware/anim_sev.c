@@ -33,7 +33,6 @@ extern const uint8_t DOWText[];
 extern const uint8_t MonthText[]; 
 #endif
 
-uint8_t redraw_time = 0;
 uint8_t last_score_mode_sev = 0;
 
 //Prototypes:

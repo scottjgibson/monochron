@@ -16,6 +16,9 @@
 #endif
 
 #include "ratt.h"
+#ifdef DEATHCHRON
+  #include "deathclock.h"
+#endif
 
 //DO NOT set EE_INITIALIZED + EE_VERSION to 0xFF / 255,  as that is
 //the state the eeprom will be in, when totally erased.
@@ -34,11 +37,28 @@ uint8_t EEMEM EE_REGION=REGION_US;
 uint8_t EEMEM EE_TIME_FORMAT=TIME_12H;
 uint8_t EEMEM EE_SNOOZE=10;
 uint8_t EEMEM EE_STYLE=STYLE_RANDOM;
+#ifdef DEATHCHRON
+  uint8_t EEMEM EE_DOB_MONTH = 11; //Death Clock variables are preserved in the event of an extended power outage.
+  uint8_t EEMEM EE_DOB_DAY = 14;
+  uint8_t EEMEM EE_DOB_YEAR = 80;
+  uint8_t EEMEM EE_SET_MONTH = 7;
+  uint8_t EEMEM EE_SET_DAY = 28;
+  uint8_t EEMEM EE_SET_YEAR = 110;
+  uint8_t EEMEM EE_GENDER = DC_gender_male;
+  uint8_t EEMEM EE_DC_MODE = DC_mode_normal;
+  uint8_t EEMEM EE_BMI_UNIT = BMI_Imperial;
+  uint16_t EEMEM EE_BMI_WEIGHT = 400;
+  uint16_t EEMEM EE_BMI_HEIGHT = 78;
+  uint8_t EEMEM EE_SMOKER = DC_non_smoker;
+  uint8_t EEMEM EE_SET_HOUR = 20;
+  uint8_t EEMEM EE_SET_MIN = 05;
+  uint8_t EEMEM EE_SET_SEC = 25;
+#endif
 #ifdef GPSENABLE
   uint8_t EEMEM EE_TIMEZONE=-32;	//Both CaitSith2 and Dataman reside at timezone -8:00. :)
 #endif
 
-#ifdef RATTCHRON
+#ifdef RATTDEATH
 unsigned char EEMEM BigFont[] = {
 	0xFF, 0x81, 0x81, 0xFF,// 0
 	0x00, 0x00, 0x00, 0xFF,// 1
@@ -51,6 +71,13 @@ unsigned char EEMEM BigFont[] = {
 	0xFF, 0x91, 0x91, 0xFF,// 8 
 	0xF1, 0x91, 0x91, 0xFF,// 9
 	0x00, 0x00, 0x00, 0x00,// SPACE
+#ifdef DEATHCHRON
+    0xFF, 0x90, 0x90, 0xFF,// A
+    0xFF, 0x90, 0x90, 0xF0,// P
+    0x9F, 0x90, 0x90, 0x9F,// M
+    0x00, 0x60, 0x60, 0x00,// High . of :
+    0x00, 0x06, 0x06, 0x00,// Low . of :
+#endif
 };
 #endif
 
@@ -234,7 +261,7 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
                              "\x0b" "Version 1.1"
                                   // 123456789ABCDEF0123456
-                             "\x01" "-"
+                             "\x00"
                                   // 123456789ABCDEF0123456
                              "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
@@ -249,7 +276,10 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
 	                         "\x12" "http://crjones.com"	//These lines don't fit with OPTION_DOW_DATELONG :(
 	                       #endif
                                   // 123456789ABCDEF0123456
-                             "\x01" "-"
+                             "\x00"
+                           #ifdef DEATHCHRON
+                             "\x0a" "DeathChron"
+                           #endif
                                   // 123456789ABCDEF0123456
                              "\x0c" "Optimization"
                                   // 123456789ABCDEF0123456
@@ -262,7 +292,7 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                              "\x14" "http://caitsith2.com"
                             #endif
                                   // 123456789ABCDEF0123456
-                             "\x01" "-"
+                             "\x00"
                                   // 123456789ABCDEF0123456
                          #ifdef RATTCHRON
 	                         "\x09" "RATTChron"
@@ -282,7 +312,16 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
 			                 "\x10" "Simply The Best!"
                                   // 123456789ABCDEF0123456
-                             "\x01" "-"
+                             "\x00"
+                         #ifdef DEATHCHRON
+                             "\x05" "Skull"
+                             "\x09" "Tombstone"
+                             "\x0F" "The Grim Reaper"
+                             "\x11" "The Adafruit logo"
+                             "\x12" "by Phillip Torrone"
+                             "\x0C" "Very Awesome"
+                             "\x00"
+                         #endif
                                   // 123456789ABCDEF0123456
 	                         "\x13" "Adafruit Industries" 
                                   // 123456789ABCDEF0123456

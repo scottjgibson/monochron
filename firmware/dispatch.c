@@ -46,9 +46,15 @@ void initanim(void){
  case STYLE_XDA: initanim_xda();
                 break;
 #endif
+#ifdef DEATHCHRON
+ case STYLE_DEATH: initanim_death(); break;
+#endif
  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
  case STYLE_RANDOM: init_crand(); displaystyle = (STYLE_BASE + 1) + (crand(0) % (STYLE_RANDOM - (STYLE_BASE + 1))); initanim();
                 break;
+#ifdef DEATHCHRON
+ case STYLE_DEATHCFG: initanim_deathcfg(); break;
+#endif
 #ifdef GPSENABLE
  case STYLE_GPS: initanim_GPS();
                break;
@@ -76,6 +82,9 @@ void initdisplay(uint8_t inverted) {
 #ifdef XDALICHRON
  case STYLE_XDA: initdisplay_xda(inverted);
                  break;
+#endif
+#ifdef DEATHCHRON
+ case STYLE_DEATH: initdisplay_death(inverted); break;
 #endif
  }
 }
@@ -109,6 +118,9 @@ void drawdisplay(uint8_t inverted) {
  case STYLE_XDA: drawdisplay_xda(inverted);
                  break;
 #endif
+#ifdef DEATHCHRON
+ case STYLE_DEATH: drawdisplay_death(inverted); break;
+#endif
  }
 }
 
@@ -130,6 +142,9 @@ void step(void) {
 #ifdef XDALICHRON
  case STYLE_XDA: step_xda();
                  break;
+#endif
+#ifdef DEATHCHRON
+ case STYLE_DEATH: step_death(); break;
 #endif
  }
 }

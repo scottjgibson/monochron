@@ -14,7 +14,7 @@ OPT = s
 
 # List C source files here. (C dependencies are automatically generated.)
 
-SRC = anim_abo.c anim_gps.c anim_int.c anim_rat.c anim_sev.c anim_xda.c buttons.c config.c dispatch.c eeprom.c glcd.c i2c.c ks0108.c ratt.c rle.c util.c
+SRC = anim_abo.c anim_death.c anim_deathcfg.c anim_gps.c anim_int.c anim_rat.c anim_sev.c anim_xda.c buttons.c config.c deathclock.c dispatch.c eeprom.c glcd.c i2c.c ks0108.c ratt.c rle.c util.c
 
 # Ok, so i alphabetized, was previously: ratt.c config.c buttons.c dispatch.c anim_rat.c anim_sev.c anim_int.c anim_xda.c anim_abo.c anim_gps.c util.c glcd.c ks0108.c i2c.c rle.c eeprom.c
 

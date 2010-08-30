@@ -14,6 +14,12 @@
 #include "glcd.h"
 
 extern volatile uint8_t displaystyle;
+extern volatile uint8_t time_s;
+
+#ifdef DEATHCHRON
+extern const uint8_t adafruit[];
+PGM_P logo_p PROGMEM = adafruit;
+#endif
                                   
 extern uint8_t about[];
 //Definition of about[] is in eeprom.c.  Change it there.
@@ -22,6 +28,12 @@ void initanim_abo(void){
  uint8_t k, b, line, eof;
  uint16_t ix, lineix;
  ix=0;
+#ifdef DEATHCHRON
+ glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+ death_blitsegs_rom(36,0,logo_p, 57, 64, 1);
+ uint8_t i = (time_s + 5) % 60;
+ while(i != time_s);
+#endif
  while (1) {
   glcdClearScreen();
   for (eof=0, lineix=0, line=0; line<8; line++) {

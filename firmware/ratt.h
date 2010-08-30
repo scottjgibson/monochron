@@ -12,6 +12,31 @@
 //Like " sat","0807","2010", or " aug","  07","2010" or " sat"," aug","  07","2010".
 //#define OPTION_DOW_DATELONG 1
 
+// Undefine to disable GPS
+#define GPSENABLE 1
+
+// Undefine the following to disable these clock modes
+#define INTRUDERCHRON 1
+#define SEVENCHRON 1
+#define RATTCHRON 1
+#define XDALICHRON 1
+//#define DEATHCHRON 1
+
+#ifndef XDALICHRON
+	//The compiler is feeding me bullshit, about STYLE_XDA being undefined in ratt.c, 
+	//despite there being no references to STYLE_XDA in ratt.c
+	#define	STYLE_XDA 1
+#endif
+	
+#ifdef RATTCHRON
+  #define RATTDEATH 1
+#endif
+#ifdef DEATHCHRON
+  #ifndef RATTDEATH
+    #define RATTDEATH 1
+  #endif
+#endif
+
 // This is a tradeoff between sluggish and too fast to see
 //#define MAX_BALL_SPEED 5 // note this is in vector arith.
 #define MAX_BALL_SPEED 500 // fixed point math rewrite. We are keeping 2 significant places, so real speed is 5.00.
@@ -70,6 +95,34 @@
 #define DISPLAY_M1_X_RAT 85
 #define DISPLAY_TIME_Y_RAT 4
 
+#define DIGIT_PIXEL_SIZE_Y_DEATH 5
+
+#define DISPLAY_H10_X_DEATH 0 + 5
+#define DISPLAY_H1_X_DEATH 15 + 5
+#define DISPLAY_HM_X_DEATH 30 + 5
+#define DISPLAY_M10_X_DEATH 45 + 5
+#define DISPLAY_M1_X_DEATH 60 + 5
+#define DISPLAY_MS_X_DEATH 75 + 5
+#define DISPLAY_S10_X_DEATH 90 + 5
+#define DISPLAY_S1_X_DEATH 105 + 5
+
+#define DISPLAY_DL1_X_DEATH 0 + 5
+#define DISPLAY_DL2_X_DEATH 15 + 5
+#define DISPLAY_DL3_X_DEATH 30 + 5
+#define DISPLAY_DL4_X_DEATH 45 + 5
+#define DISPLAY_DR1_X_DEATH 60 + 5
+#define DISPLAY_DR2_X_DEATH 75 + 5
+#define DISPLAY_DR3_X_DEATH 90 + 5
+#define DISPLAY_DR4_X_DEATH 105 + 5
+
+
+
+// buffer space from the top
+#define DISPLAY_TIME_Y_DEATH 12
+
+// how big are the pixels (for math purposes)
+#define DISPLAY_DIGITW_DEATH 16
+#define DISPLAY_DIGITH_DEATH 40
 
 /* not used
 #define ALARMBOX_X 20
@@ -97,25 +150,39 @@
 // Whether we are displaying time (99% of the time)
 // alarm (for a few sec when alarm switch is flipped)
 // date/year (for a few sec when + is pressed)
-#define SCORE_MODE_TIME 0
-#define SCORE_MODE_DATE 1
-#define SCORE_MODE_YEAR 2
-#define SCORE_MODE_ALARM 3
-#define SCORE_MODE_DOW 4
-#define SCORE_MODE_DATELONG_MON 5
-#define SCORE_MODE_DATELONG_DAY 6
+enum {
+	SCORE_MODE_TIME=0,
+	SCORE_MODE_DATE,
+	SCORE_MODE_YEAR,
+	SCORE_MODE_ALARM,
+#ifdef DEATHCHRON
+	SCORE_MODE_DEATH_TIME,
+	SCORE_MODE_DEATH_DATE,
+	SCORE_MODE_DEATH_YEAR,
+	SCORE_MODE_DEATH_ALARM,
+#endif
+#ifdef OPTION_DOW_DATELONG
+	SCORE_MODE_DOW,
+	SCORE_MODE_DATELONG_MON,
+	SCORE_MODE_DATELONG_DAY,
+#endif
+};
 
 #define SCORE_MODE_TIMEOUT ((displaystyle == STYLE_XDA)?5:3)
 
 // Constants for how to display time & date
-#define REGION_US 0
-#define REGION_EU 1
-#define DOW_REGION_US 2
-#define DOW_REGION_EU 3
-#define DATELONG 4
-#define DATELONG_DOW 5
-#define TIME_12H 0
-#define TIME_24H 1
+enum {
+	REGION_US = 0, 
+	REGION_EU,
+	DOW_REGION_US, 
+	DOW_REGION_EU,
+	DATELONG, 
+	DATELONG_DOW,
+};
+enum {
+	TIME_12H = 0, TIME_24H,
+};
+
 
 //Contstants for calcualting the Timer2 interrupt return rate.
 //Desired rate, is to have the i2ctime read out about 6 times
@@ -127,64 +194,47 @@
 //#define TIMER2_RETURN (8000000 / (OCR2A_VALUE * 1024 * 6))
 
 // displaymode
-#define NONE 99
-#define SHOW_TIME 0
-#define SHOW_DATE 1
-#define SHOW_ALARM 2
-#define SET_TIME 3
-#define SET_ALARM 4
-#define SET_DATE 5
-#define SET_BRIGHTNESS 6
-#define SET_VOLUME 7
-#define SET_REGION 8
-#define SHOW_SNOOZE 9
-#define SET_SNOOZE 10
-
-#define SET_MONTH 11
-#define SET_DAY 12
-#define SET_YEAR 13
-
-#define SET_HOUR 101
-#define SET_MIN 102
-#define SET_SEC 103
-
-#define SET_REG 104
-
-#define SET_BRT 105
-
-#define SET_STYLE 200
-#define SET_STL   201
-/*
-#define STYLE_INT 210
-#define STYLE_SEV 211
-#define STYLE_RAT 212
-#define STYLE_XDA 213
-#define STYLE_RANDOM 214
-#define STYLE_ROTATE 215
-
-#ifdef GPSENABLE
- #define STYLE_GPS 216
- #define STYLE_ABOUT 217
- #define TIMEZONEHOUR abs(timezone)>>2
- #define TIMEZONEMIN (abs(timezone)&3)*15
-#else
- #define STYLE_ABOUT 216
-#endif*/
-
-// Undefine to disable GPS
-#define GPSENABLE 1
-
-// Undefine the following to disable these clock modes
-#define INTRUDERCHRON 1
-#define SEVENCHRON 1
-#define RATTCHRON 1
-#define XDALICHRON 1
-
-#ifndef XDALICHRON
-	//The compiler is feeding me bullshit, about STYLE_XDA being undefined in ratt.c, 
-	//despite there being no references to STYLE_XDA in ratt.c
-	#define	STYLE_XDA 1
+enum {
+	NONE = 99,
+	SHOW_TIME = 0,
+	SHOW_DATE,
+	SHOW_ALARM,
+	SET_TIME,
+	SET_ALARM,
+	SET_DATE,
+	SET_BRIGHTNESS,
+	SET_VOLUME,
+	SET_REGION,
+	SHOW_SNOOZE,
+	SET_SNOOZE,
+#ifdef DEATHCHRON
+	SET_DEATHCLOCK_DOB,
+	SET_DEATHCLOCK_GENDER,
+	SET_DEATHCLOCK_MODE,
+	SET_DEATHCLOCK_BMI,
+	SET_DEATHCLOCK_SMOKER,
 #endif
+	SET_MONTH,
+	SET_DAY,
+	SET_YEAR,
+	SET_HOUR = 101,
+	SET_MIN,
+	SET_SEC,
+	SET_REG,
+	SET_BRT,
+#ifdef DEATHCHRON
+	SET_DCGENDER,
+	SET_DCMODE,
+	SET_BMI_UNIT,
+	SET_BMI_WT,
+	SET_BMI_HT,
+	SET_DCSMOKER,
+#endif
+	SET_STYLE = 200,
+	SET_STL,
+};
+
+
 
 #ifdef GPSENABLE
  #define TIMEZONEHOUR abs(timezone)>>2
@@ -205,8 +255,14 @@ enum {
 #ifdef XDALICHRON
 	STYLE_XDA,
 #endif
+#ifdef DEATHCHRON
+	STYLE_DEATH,
+#endif
 	STYLE_RANDOM,
 	STYLE_ROTATE,
+#ifdef DEATHCHRON	//DeathChron needs its own configuration menu.
+	STYLE_DEATHCFG,
+#endif
 #ifdef GPSENABLE
 	STYLE_GPS,
 #endif
@@ -237,6 +293,24 @@ extern uint8_t EE_TIME_FORMAT;
 extern uint8_t EE_SNOOZE;
 extern uint8_t EE_STYLE;
 extern uint8_t EE_TIMEZONE;
+
+#ifdef DEATHCHRON
+extern uint8_t EE_DOB_MONTH; //Death Clock variables are preserved in the event of an extended power outage.
+extern uint8_t EE_DOB_DAY;
+extern uint8_t EE_DOB_YEAR;
+extern uint8_t EE_SET_MONTH;
+extern uint8_t EE_SET_DAY;
+extern uint8_t EE_SET_YEAR;
+extern uint8_t EE_GENDER;
+extern uint8_t EE_DC_MODE;
+extern uint8_t EE_BMI_UNIT;
+extern uint16_t EE_BMI_WEIGHT;
+extern uint16_t EE_BMI_HEIGHT;
+extern uint8_t EE_SMOKER;
+extern uint8_t EE_SET_HOUR;
+extern uint8_t EE_SET_MIN;
+extern uint8_t EE_SET_SEC;
+#endif
 
 /*************************** FUNCTION PROTOTYPES */
 
@@ -352,6 +426,13 @@ void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
 #define DIGIT_WIDTH 28
 #define DIGIT_HEIGHT 64
 #define MAX_STEPS 32
+
+// ====================
+// DEATHCHRON SPECIFIC
+#define SKULL 0
+#define REAPER 1
+#define RIP 2
+#define REAPER_TOW_RIP 3
 
 #ifdef GPSENABLE
 char uart_getch(void);

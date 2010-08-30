@@ -279,4 +279,38 @@ uint16_t crand(uint8_t type) {
   return (rval[0]^rval[1])&RAND_MAX; 
 }
 
+#ifdef RATTDEATH
+extern unsigned char BigFont[];
+void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
+  uint8_t i, j;
+  
+  for (i = 0; i < 4; i++) {
+    uint8_t d = eeprom_read_byte(&BigFont[(n*4)+i]);
+    for (j=0; j<8; j++) {
+      if (d & _BV(7-j)) {
+	glcdFillRectangle(x+i*2, y+j*2, 2, 2, !inverted);
+      } else {
+	glcdFillRectangle(x+i*2, y+j*2, 2, 2, inverted);
+      }
+    }
+  }
+}
 
+uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
+		      uint8_t x2, uint8_t y2, uint8_t w2, uint8_t h2) {
+  // yer everyday intersection tester
+  // check x coord first
+  if (x1+w1 < x2)
+    return 0;
+  if (x2+w2 < x1)
+    return 0;
+
+  // check the y coord second
+  if (y1+h1 < y2)
+    return 0;
+  if (y2+h2 < y1)
+    return 0;
+
+  return 1;
+}
+#endif
