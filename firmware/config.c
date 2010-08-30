@@ -35,9 +35,12 @@ void print_region_setting(uint8_t inverted);
 void print_menu_advance(void);
 void print_menu_change(void);
 void print_menu_exit(void);
-void print_menu_opts(char *Opt1, char *Opt2);
-void print_menu(char*, char*, char*, char*);
-void print_menu_line(uint8_t line, char *Button, char *Opt);
+void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2);
+#define print_menu_opts(a,b) PRINT_MENU_OPTS(PSTR(a),PSTR(b))
+void PRINT_MENU(const char*, const char*, const char*, const char*);
+#define print_menu(a,b,c,d) PRINT_MENU(PSTR(a),PSTR(b),PSTR(c),PSTR(d))
+void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Opt);
+#define print_menu_line(a,b,c) PRINT_MENU_LINE(a,PSTR(b),PSTR(c))
 //
 
 void print_alarmline(uint8_t mode)
@@ -706,10 +709,18 @@ glcdSetAddress(43, 0);
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
 #endif
+#ifdef DEATHCHRON
+  case STYLE_DEATH: glcdPutStr("DeathChron", inverted);
+                break;
+#endif
   case STYLE_RANDOM: glcdPutStr("Random",inverted);
   				break;
   case STYLE_ROTATE: glcdPutStr("Rotate",inverted);
   				break;
+#ifdef DEATHCHRON
+  case STYLE_DEATHCFG: glcdPutStr("DeathChron Cfg", inverted);
+                break;
+#endif
 #ifdef GPSENABLE
   case STYLE_GPS: glcdPutStr("GPS Setup",inverted);
   				break;
@@ -737,27 +748,23 @@ void print_menu_change(){
  // Press SET to save
 }
 
-void print_menu_opts(char *Opt1, char *Opt2){
- print_menu("+",Opt1,"SET",Opt2);
+void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2){
+ PRINT_MENU(PSTR("+"),Opt1,PSTR("SET"),Opt2);
  // Press + to X
  // Press SET to X
 }
 
-void print_menu(char *Button1, char *Opt1, char *Button2, char *Opt2){
+void PRINT_MENU(const char *Button1, const char *Opt1, const char *Button2, const char *Opt2){
  glcdFillRectangle(0, 48, GLCD_XPIXELS, 16, NORMAL);
- print_menu_line(6,Button1,Opt1);
- print_menu_line(7,Button2,Opt2);
+ PRINT_MENU_LINE(6,Button1,Opt1);
+ PRINT_MENU_LINE(7,Button2,Opt2);
 }
 
-void print_menu_line(uint8_t line, char *Button, char *Action){
+void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Action){
   glcdSetAddress(0, line);
   glcdPutStr("Press ",NORMAL);
-  glcdPutStr(Button,NORMAL);
+  glcdPutStr_rom(Button,NORMAL);
   glcdPutStr(" to ",NORMAL);
-  glcdPutStr(Action,NORMAL);
+  glcdPutStr_rom(Action,NORMAL);
 }
-
-
-
-
 

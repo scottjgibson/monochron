@@ -9,6 +9,7 @@
 #include "util.h"
 
 extern volatile uint8_t time_format;
+extern volatile uint8_t displaystyle;
 
 // Creates a 8N1 UART connect
 // remember that the BBR is #defined for each F_CPU in util.h
@@ -283,14 +284,22 @@ uint16_t crand(uint8_t type) {
 extern unsigned char BigFont[];
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
   uint8_t i, j;
+  uint8_t sizex=2, sizey=2;
+  
+#ifdef DEATHCHRON
+  if(displaystyle == STYLE_DEATH)
+  {
+  	  sizex = 3; sizey = 5;
+  }
+#endif
   
   for (i = 0; i < 4; i++) {
     uint8_t d = eeprom_read_byte(&BigFont[(n*4)+i]);
     for (j=0; j<8; j++) {
       if (d & _BV(7-j)) {
-	glcdFillRectangle(x+i*2, y+j*2, 2, 2, !inverted);
+	glcdFillRectangle(x+i*sizex, y+j*sizey, sizex, sizey, !inverted);
       } else {
-	glcdFillRectangle(x+i*2, y+j*2, 2, 2, inverted);
+	glcdFillRectangle(x+i*sizex, y+j*sizey, sizex, sizey, inverted);
       }
     }
   }

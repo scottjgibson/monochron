@@ -73,14 +73,14 @@ void menu_advance_set_exit(uint8_t exit)
 }
 
 #define PLUS_TO_CHANGE(x,y) plus_to_change(PSTR(x),PSTR(y))
-void plus_to_change(char *str1, char *str2)
+void plus_to_change(const char *str1, const char *str2)
 {
 	glcdSetAddress(0, 6);
 	glcdPutStr("Press + to change", NORMAL);
-	glcdPutStr(str1,NORMAL);
+	glcdPutStr_rom(str1,NORMAL);
 	glcdSetAddress(0, 7);
 	glcdPutStr("Press SET to", NORMAL);
-	glcdPutStr(str2,NORMAL);
+	glcdPutStr_rom(str2,NORMAL);
 }
 
 void plus_to_change_default(void)
@@ -697,11 +697,15 @@ int initanim_deathcfg(void) {
 	set_deathclock_smoker();
 	break;
       default:
-	displaymode = SHOW_TIME;
+    just_pressed = 1;	//Exit, returning to the main cfg menu.
+	displaymode = CFG_MENU;
 	displaystyle=eeprom_read_byte(&EE_STYLE);
+	glcdClearScreen();
+	return;
       }
     }
   } while (displaymode != SHOW_TIME);
+  
 }
 
 #endif

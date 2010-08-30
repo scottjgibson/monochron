@@ -89,7 +89,15 @@ void glcdWriteChar(unsigned char c, uint8_t inverted);
 void glcdWriteCharGr(u08 grCharIndex, uint8_t inverted);
 
 // ***** Private Functions ***** (or depricated)
-void glcdPutStr(char *data, uint8_t inverted);
+//Strings stuck into rom by default, to save space.
+#define glcdPutStr(x,y) glcdPutStr_rom(PSTR(x), y)
+void glcdPutStr_ram(char *data, uint8_t inverted);
+void glcdPutStr_rom(const char *data, uint8_t inverted);
+
+/*
+	#define putstring(x) ROM_putstring(PSTR(x), 0)
+#define putstring_nl(x) ROM_putstring(PSTR(x), 1)
+*/
 
 uint8_t get_font(uint16_t addr);
 

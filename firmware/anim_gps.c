@@ -18,6 +18,7 @@ extern volatile uint8_t gpsenable;
 extern volatile int8_t timezone;
 extern volatile uint8_t just_pressed;
 extern volatile uint8_t displaystyle;
+extern volatile uint8_t displaymode;
 
 
 
@@ -45,7 +46,7 @@ void initanim_GPS(void){
     case 2: if (--timezone<-48) {timezone=-48;}
             UpdateTZ=1;
             break;
-    case 1: displaystyle=eeprom_read_byte(&EE_STYLE); return;
+    case 1: displaystyle=eeprom_read_byte(&EE_STYLE); glcdClearScreen(); displaymode = CFG_MENU; return;
    }
    just_pressed=0;
   }
@@ -54,7 +55,11 @@ void initanim_GPS(void){
    UpdateTZ=0;
    eeprom_write_byte(&EE_TIMEZONE, timezone);
    glcdSetAddress(45+MENU_INDENT,2);
-   glcdPutStr((timezone<0 ? "-" : "+"),NORMAL);
+   if(timezone<0)
+   	   glcdPutStr("-",NORMAL);
+   else
+   	   glcdPutStr("+",NORMAL);
+   //glcdPutStr((timezone<0 ? "-" : "+"),NORMAL);
    printnumber(TIMEZONEHOUR,NORMAL);
    glcdPutStr(":",NORMAL);
    printnumber(TIMEZONEMIN,NORMAL);

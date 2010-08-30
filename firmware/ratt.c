@@ -346,6 +346,7 @@ int main(void) {
       //drawdisplay();
       switch(displaymode) {
       case (SHOW_TIME):
+      case (CFG_MENU):	//Returning from a configuration menu module.
 	// DATAMAN - ADD STYLE MENU
 	displaymode = SET_STYLE;
 	set_style();
@@ -797,7 +798,7 @@ uint8_t GPSRead(uint8_t debugmode) {
    if (debugmode) {
     buffer[6]=0; 
     glcdSetAddress(MENU_INDENT+60, 5); 
-    glcdPutStr(buffer, NORMAL); 
+    glcdPutStr_ram(buffer, NORMAL); 
     continue;
    }
    cli();
@@ -838,7 +839,7 @@ uint8_t GPSRead(uint8_t debugmode) {
   if (soh==13) {// Date Word
    if (debugmode) {
     glcdSetAddress(MENU_INDENT+60, 4); 
-    glcdPutStr(buffer, NORMAL); 
+    glcdPutStr_ram(buffer, NORMAL); 
     soh=0; 
     return 1;
    }

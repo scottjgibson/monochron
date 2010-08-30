@@ -196,6 +196,7 @@ enum {
 // displaymode
 enum {
 	NONE = 99,
+	CFG_MENU = 98,
 	SHOW_TIME = 0,
 	SHOW_DATE,
 	SHOW_ALARM,

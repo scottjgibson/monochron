@@ -196,15 +196,16 @@ void death_setscore(void)
 }
 
 void initanim_death(void) {
-  int16_t scroller;
-  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
-  for(scroller=-84;scroller<138;scroller++)
+  static int16_t scroller = -84;
+  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, scroller==-84);
+  for(;scroller<138;scroller++)
   {
     render_image (SKULL,scroller,1);
     delay_ms(16);
     if(scroller==26)
     	delay_ms(2000);
   }
+  score_mode = SCORE_MODE_DEATH_DATE;
   load_etd();
   initdisplay(0);
 }

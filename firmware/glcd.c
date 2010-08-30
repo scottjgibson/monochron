@@ -349,12 +349,21 @@ void glcdWriteCharGr(u08 grCharIdx, uint8_t inverted)
 	}
 }
 
-void glcdPutStr(char *data, uint8_t inverted)
+void glcdPutStr_ram(char *data, uint8_t inverted)
 {
   while (*data) {
     glcdWriteChar(*data, inverted);
     data++;
   }
+}
+
+void glcdPutStr_rom(const char *data, uint8_t inverted)
+{
+	uint8_t i;
+
+	for (i=0; pgm_read_byte(&data[i]); i++) {
+		glcdWriteChar(pgm_read_byte(&data[i]),inverted);
+	}
 }
 
 uint8_t get_font(uint16_t addr)
