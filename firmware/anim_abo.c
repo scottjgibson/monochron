@@ -18,7 +18,8 @@ extern volatile uint8_t time_s;
 
 #ifdef DEATHCHRON
 extern const uint8_t adafruit[];
-PGM_P logo_p PROGMEM = adafruit;
+PGM_P logo_p PROGMEM = (prog_char *) adafruit;
+void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t height, uint8_t inverted);
 #endif
                                   
 extern uint8_t about[];

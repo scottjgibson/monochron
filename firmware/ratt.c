@@ -87,6 +87,10 @@ int char_read(void)
 
 #endif
 
+#ifdef DEATHCHRON
+extern volatile uint8_t border_tick;
+#endif
+
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
 // This allows for 'high speed incrementing' when setting the time
@@ -245,11 +249,20 @@ int main(void) {
 	  just_pressed = 0;
 	  setsnooze();
 	}
-
+	
 	if(display_date==3 && !score_mode_timeout)
 	{
 		display_date=0;
-		score_mode = SCORE_MODE_YEAR;
+#ifdef DEATHCHRON
+	  if (displaystyle == STYLE_DEATH) {
+	    if(score_mode >= SCORE_MODE_DEATH_TIME)
+	      score_mode = SCORE_MODE_DEATH_YEAR;
+	    else
+	      score_mode = SCORE_MODE_YEAR;
+	  }
+	  else
+#endif
+		   score_mode = SCORE_MODE_YEAR;
 	    score_mode_timeout = SCORE_MODE_TIMEOUT;
 	    //drawdisplay();
 	}
@@ -312,12 +325,36 @@ int main(void) {
     //accounted for, If the alarm was turned on, and ONLY the set button was pushed since then,
     //the alarm would not sound at alarm time, but go into a snooze immediately after going off.
     //This could potentially make you late for work, and had to be fixed.
-	if (just_pressed & 0x6) {
+
+    if(just_pressed & 0x4) {
+#ifdef DEATHCHRON
+	  if (displaystyle == STYLE_DEATH) {
+	    just_pressed = 0;
+	    if(score_mode < SCORE_MODE_DEATH_TIME)
+	      score_mode = SCORE_MODE_DEATH_TIME;
+	    else
+	      score_mode = SCORE_MODE_TIME;
+	  }
+	  else
+#endif
+	    just_pressed = 2;
+	}
+    
+	if (just_pressed & 0x2) {
 	  just_pressed = 0;
 #ifdef OPTION_DOW_DATELONG
 	  if((region == REGION_US) || (region == REGION_EU)) {
 #endif
 	  	display_date = 3;
+#ifdef DEATHCHRON
+	  if (displaystyle == STYLE_DEATH) {
+	    if(score_mode >= SCORE_MODE_DEATH_TIME)
+	      score_mode = SCORE_MODE_DEATH_DATE;
+	    else
+	      score_mode = SCORE_MODE_DATE;
+	  }
+	  else
+#endif
 	  	score_mode = SCORE_MODE_DATE;
 #ifdef OPTION_DOW_DATELONG
 	  }
@@ -458,7 +495,16 @@ void setalarmstate(void) {
       alarm_on = 1;
       // reset snoozing
       snoozetimer = 0;
-	  score_mode = SCORE_MODE_ALARM;
+#ifdef DEATHCHRON
+	  if (displaystyle == STYLE_DEATH) {
+	    if(score_mode >= SCORE_MODE_DEATH_TIME)
+	      score_mode = SCORE_MODE_DEATH_ALARM;
+	    else
+	      score_mode = SCORE_MODE_ALARM;
+	  }
+	  else
+#endif
+	    score_mode = SCORE_MODE_ALARM;
 	  score_mode_timeout = SCORE_MODE_TIMEOUT;
 	  //drawdisplay();
       DEBUGP("alarm on");
@@ -584,6 +630,9 @@ SIGNAL (TIMER2_OVF_vect) {
 #ifdef GPSENABLE
   GPSRead((displaystyle==STYLE_GPS) && (displaymode == SHOW_TIME));	//Hooking time reading, and thus time_changed here.
 #endif
+#ifdef DEATHCHRON
+  border_tick++;
+#endif
   
   if (time_h != last_h) {
     hour_changed = 1; 
@@ -606,6 +655,15 @@ SIGNAL (TIMER2_OVF_vect) {
 	  score_mode_timeout--;
 	  if(!score_mode_timeout) {
 	  	last_score_mode = score_mode;
+#ifdef DEATHCHRON
+	  if (displaystyle == STYLE_DEATH) {
+	    if(score_mode >= SCORE_MODE_DEATH_TIME)
+	      score_mode = SCORE_MODE_DEATH_TIME;
+	    else
+	      score_mode = SCORE_MODE_TIME;
+	  }
+	  else
+#endif
 	    score_mode = SCORE_MODE_TIME;
 	    if(hour_changed) {
 	      time_h = old_h;

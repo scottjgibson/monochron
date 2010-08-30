@@ -7,6 +7,7 @@
 #include <stdlib.h>
 #include "ratt.h"
 #include "util.h"
+#include "glcd.h"
 
 extern volatile uint8_t time_format;
 extern volatile uint8_t displaystyle;

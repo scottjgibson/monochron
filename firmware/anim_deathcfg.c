@@ -668,7 +668,7 @@ void set_deathclock_smoker(void) {
   }
 }
 
-int initanim_deathcfg(void) {
+void initanim_deathcfg(void) {
 
   load_etd();	//Only need to do this once at power on, and once if Death Clock settings are changed, and refresh if date/time is changed.
   just_pressed = 1;

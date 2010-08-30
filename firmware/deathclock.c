@@ -217,14 +217,13 @@ uint32_t ETD ( uint8_t DOB_month,
                uint8_t sec)
 {
   int y,i,bmi;
-  uint32_t diff, v[2];
+  uint32_t diff;
   uint32_t random;
   int32_t days;
   
   if((Mode == DC_mode_optimistic) || (Mode == DC_mode_pessimistic))
   {
-    v[0] = ((uint32_t)day << 24) | ((uint32_t)year << 16) | 0x1900 | (uint32_t)month;
-    v[1] = ((uint32_t)sec << 24) | 0xB20000 | ((uint32_t)hour << 8) | (uint32_t)min;
+    init_crand();
   }
   
   diff = date_diff(DOB_month,DOB_day,DOB_year,month,day,year);
@@ -332,18 +331,14 @@ uint32_t ETD ( uint8_t DOB_month,
   if(Mode == DC_mode_optimistic)
   {
     days += 36525;
-    v[0] ^= days;
-    encipher(v);
-    random = ((v[0] & 0x7FFF) * 1000) / 0x7FFF;
+    random = (crand(0) * 1000) / 0x7FFF;
     days += (uint32_t)((54790 * random) / 1000);
     //days += random(0,5479)*100;
   }
   if(Mode == DC_mode_pessimistic)
   {
     days -= 54788;
-    v[1] ^= days;
-    encipher(v);
-    random = ((v[1] & 0x7FFF) * 1000) / 0x7FFF;
+    random = (crand(0) * 1000) / 0x7FFF;
     days -= (uint32_t)((36530 * random) / 1000);
     //days -= random(0,3653)*100;
   }

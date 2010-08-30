@@ -54,12 +54,14 @@ extern const uint8_t rip_on_white[];
 
 
 // special pointer for reading from ROM memory
-PGM_P skull0_p PROGMEM = skull_on_white;
-PGM_P reaper0_p PROGMEM = reaper_on_white;
-PGM_P rip0_p PROGMEM = rip_on_white;
+PGM_P skull0_p PROGMEM = (prog_char *) skull_on_white;
+PGM_P reaper0_p PROGMEM = (prog_char *) reaper_on_white;
+PGM_P rip0_p PROGMEM = (prog_char *) rip_on_white;
+
+void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t height, uint8_t inverted);
+void drawdisplay_death(uint8_t inverted);
 
 
-//void death_blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted)
 void render_image (uint8_t image, int16_t x, uint8_t inverted)
 {
   switch(image)
@@ -205,7 +207,7 @@ void initanim_death(void) {
     if(scroller==26)
     	delay_ms(2000);
   }
-  score_mode = SCORE_MODE_DEATH_DATE;
+  score_mode = SCORE_MODE_DEATH_TIME;
   load_etd();
   initdisplay(0);
 }
@@ -351,16 +353,19 @@ int16_t reaper_x;
 #define reaper_h 64
 void step_death(void) {
   uint8_t i;
+  death_setscore();
   if((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_DEATH_TIME))
   {
     if(minute_changed) 
     {
       redraw_time = 1;
+      minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
       minute_changed = 0;
       death_setscore();
     }
     if(hour_changed) 
     {
+      minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
       initdisplay_death(1);
       for(reaper_x = -52;reaper_x<138;reaper_x++)
       {
@@ -496,8 +501,8 @@ void drawdisplay_death(uint8_t inverted) {
   redraw_digits = 0;
 }
 
-#define DIGIT_WIDTH 76
-#define DIGIT_HEIGHT 64
+#define DIGIT_WIDTH_DEATH 76
+#define DIGIT_HEIGHT_DEATH 64
 
 void death_bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t width, uint8_t *bitmap_p, uint16_t size, uint8_t inverted) {
   uint8_t xx,y, p;
@@ -537,15 +542,15 @@ void death_bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t width, uint8_
 #define SEGMENTS 2
 
 void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t height, uint8_t inverted) {
-  uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
+  uint8_t bitmap[DIGIT_WIDTH_DEATH * DIGIT_HEIGHT_DEATH / 8] = {0};
   
-  if(width > DIGIT_WIDTH)
+  if(width > DIGIT_WIDTH_DEATH)
   	  return;
   if((x_origin + width) < 0)
     return;
   if(x_origin >= 128)
     return;
-  if((y_origin + DIGIT_HEIGHT) < 0)
+  if((y_origin + DIGIT_HEIGHT_DEATH) < 0)
     return;
   if(y_origin >= 64)
     return;
@@ -564,6 +569,6 @@ void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint
       }
     }
   }
-  death_bitblit_ram(x_origin, y_origin, width, bitmap, DIGIT_HEIGHT*width/8, inverted);
+  death_bitblit_ram(x_origin, y_origin, width, bitmap, DIGIT_HEIGHT_DEATH*width/8, inverted);
 }
 #endif

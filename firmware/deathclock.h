@@ -51,3 +51,7 @@ uint32_t ETD ( uint8_t DOB_month,
                uint8_t hour,
                uint8_t min,
                uint8_t sec);
+
+uint32_t load_raw_etd(void);
+void load_etd(void);
+void calc_death_date(void);
