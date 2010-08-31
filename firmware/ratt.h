@@ -8,6 +8,23 @@
 //BACKLIGHT_ADJUST - Allows software control of backlight, assuming you mounted your 100ohm resistor in R2'.
 #define BACKLIGHT_ADJUST 1
 
+//STORE_IN_EEPROM - If you need just a bit more code space, uncomment this line. In order to program the clock following this,
+//                  use "make eeprom" for the first time.
+//#define STORE_IN_EEPROM 1
+
+//Definitions for storing data in eeprom, rather than rom.
+#ifdef STORE_IN_EEPROM
+  #define STORAGE EEMEM
+  #define storage_read_byte eeprom_read_byte
+  #define storage_read_word eeprom_read_word
+  #define EE_INITIALIZED 0x25
+#else
+  #define STORAGE PROGMEM
+  #define storage_read_byte pgm_read_byte
+  #define storage_read_word pgm_read_word
+  #define EE_INITIALIZED 0x26
+#endif
+
 // how fast to proceed the animation, note that the redrawing
 // takes some time too so you dont want this too small or itll
 // 'hiccup' and appear jittery

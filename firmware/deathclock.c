@@ -30,8 +30,9 @@ THE SOFTWARE.
 #include <avr/wdt.h>     // Watchdog timer to repair lockups
 
 #include "deathclock.h"
+#include "ratt.h"
 
-const uint8_t normal_bmi_male[6][23] PROGMEM = {
+const uint8_t normal_bmi_male[6][23] STORAGE = {
   { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
   { 40,0,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,4,5,5,6,6,8 },
   { 50,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,4,4,4,5,5,5,7 },
@@ -40,7 +41,7 @@ const uint8_t normal_bmi_male[6][23] PROGMEM = {
   { 200,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5 }
 };
 
-const uint8_t normal_bmi_female[7][23] PROGMEM = {
+const uint8_t normal_bmi_female[7][23] STORAGE = {
   { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
   { 30,0,0,0,1,1,1,1,2,2,3,3,3,4,4,5,5,6,6,7,7,8,13 },
   { 40,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,5,5,6,6,6,7,11 },
@@ -50,18 +51,18 @@ const uint8_t normal_bmi_female[7][23] PROGMEM = {
   { 200,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2 }
 };
 
-const uint8_t sadistic_bmi_male[2][23] EEMEM = {
+const uint8_t sadistic_bmi_male[2][23] STORAGE = {
   { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
   { 200,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,3,3,4 }
 };
 
-const uint8_t sadistic_bmi_female[3][23] EEMEM = {
+const uint8_t sadistic_bmi_female[3][23] STORAGE = {
   { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
   { 30,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,3,4,6 },
   { 200,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,3,5 }
 };
 
-const uint16_t normal_smoking_male[11][2] EEMEM = {
+const uint16_t normal_smoking_male[11][2] STORAGE = {
   { 25,0 },
   { 30,2739 },
   { 35,2703 },
@@ -75,7 +76,7 @@ const uint16_t normal_smoking_male[11][2] EEMEM = {
   { 200,1205 }
 };
 
-const uint16_t normal_smoking_female[10][2] EEMEM = {
+const uint16_t normal_smoking_female[10][2] STORAGE = {
   { 25, 0 },
   { 30, 2367 },
   { 45, 2331 },
@@ -88,20 +89,20 @@ const uint16_t normal_smoking_female[10][2] EEMEM = {
   { 200, 1096 }
 };
 
-const uint16_t sadistic_smoking_male[3][2] EEMEM = {
+const uint16_t sadistic_smoking_male[3][2] STORAGE = {
   { 25, 0 },
   { 30, 1278 },
   { 200, 1242 }
 };
 
-const uint16_t sadistic_smoking_female[3][2] EEMEM = {
+const uint16_t sadistic_smoking_female[3][2] STORAGE = {
   { 25, 0 },
   { 30, 1424 },
   { 200, 1388 }
 };
 
 
-const uint8_t day_in_month[12] EEMEM = {31,28,31,30,31,30,31,31,30,31,30,31};
+const uint8_t day_in_month[12] STORAGE = {31,28,31,30,31,30,31,31,30,31,30,31};
 
 uint8_t is_leap_year ( uint16_t year )
 {
@@ -126,24 +127,24 @@ uint32_t date_diff ( uint8_t month1, uint8_t day1, uint8_t year1, uint8_t month2
     return day2 - day1;
   if(year1==year2)
   {
-    diff = eeprom_read_byte(&day_in_month[month1-1]) - day1;
+    diff = storage_read_byte(&day_in_month[month1-1]) - day1;
     if(month1 == 2)
       diff += is_leap_year(year1);
     for(i=month1+1;i<month2;i++)
     {
-      diff+=eeprom_read_byte(&day_in_month[i-1]);
+      diff+=storage_read_byte(&day_in_month[i-1]);
       if(i==2)
         diff+=is_leap_year(year1);
     }
     diff += day2;
     return diff;
   }
-  diff = eeprom_read_byte(&day_in_month[month1-1]) - day1;
+  diff = storage_read_byte(&day_in_month[month1-1]) - day1;
   if(month1 == 2)
       diff+=is_leap_year(year1);
   for(i=month1+1;i<=12;i++)
   {
-    diff+=eeprom_read_byte(&day_in_month[i-1]);
+    diff+=storage_read_byte(&day_in_month[i-1]);
     if(i==2)
       diff+=is_leap_year(year1);
   }
@@ -151,7 +152,7 @@ uint32_t date_diff ( uint8_t month1, uint8_t day1, uint8_t year1, uint8_t month2
     diff+=365+is_leap_year(i);
   for(i=1;i<month2;i++)
   {
-    diff+=eeprom_read_byte(&day_in_month[i-1]);
+    diff+=storage_read_byte(&day_in_month[i-1]);
     if(i==2)
       diff+=is_leap_year(year2);
   }
@@ -247,17 +248,17 @@ uint32_t ETD ( uint8_t DOB_month,
       if ( Smoker == DC_smoker )
         for(i=0;i<3;i++)
         {
-          if( y < eeprom_read_word(&sadistic_smoking_male[i][0]) )
+          if( y < storage_read_word(&sadistic_smoking_male[i][0]) )
           {
-            days -= (uint16_t)(eeprom_read_word(&sadistic_smoking_male[i][1])*10);
+            days -= (uint16_t)(storage_read_word(&sadistic_smoking_male[i][1])*10);
             break;
           }
         }
       for(i=0;i<2;i++)
       {
-        if ( y < eeprom_read_byte(&sadistic_bmi_male[i][0]) )
+        if ( y < storage_read_byte(&sadistic_bmi_male[i][0]) )
         {
-          days -= (uint16_t)(eeprom_read_byte(&sadistic_bmi_male[i][bmi+1]) * 3653);
+          days -= (uint16_t)(storage_read_byte(&sadistic_bmi_male[i][bmi+1]) * 3653);
           break;
         }
       }
@@ -268,17 +269,17 @@ uint32_t ETD ( uint8_t DOB_month,
 
         for(i=0;i<3;i++)
         {
-          if( y < eeprom_read_word(&sadistic_smoking_female[i][0]) )
+          if( y < storage_read_word(&sadistic_smoking_female[i][0]) )
           {
-            days -= (uint16_t)(eeprom_read_word(&sadistic_smoking_female[i][1])*10);
+            days -= (uint16_t)(storage_read_word(&sadistic_smoking_female[i][1])*10);
             break;
           }
         }
       for(i=0;i<3;i++)
       {
-        if ( y < eeprom_read_byte(&sadistic_bmi_female[i][0]) )
+        if ( y < storage_read_byte(&sadistic_bmi_female[i][0]) )
         {
-          days -= (uint16_t)(eeprom_read_byte(&sadistic_bmi_female[i][bmi+1]) * 3653);
+          days -= (uint16_t)(storage_read_byte(&sadistic_bmi_female[i][bmi+1]) * 3653);
           break;
         }
       }
@@ -291,17 +292,17 @@ uint32_t ETD ( uint8_t DOB_month,
       if ( Smoker == DC_smoker )
         for(i=0;i<11;i++)
         {
-          if( y < eeprom_read_word(&normal_smoking_male[i][0]) )
+          if( y < storage_read_word(&normal_smoking_male[i][0]) )
           {
-            days -= (uint16_t)(eeprom_read_word(&normal_smoking_male[i][1])*10);
+            days -= (uint16_t)(storage_read_word(&normal_smoking_male[i][1])*10);
             break;
           }
         }
       for(i=0;i<6;i++)
       {
-        if ( y < pgm_read_byte(&normal_bmi_male[i][0]) )
+        if ( y < storage_read_byte(&normal_bmi_male[i][0]) )
         {
-          days -= (uint16_t)(pgm_read_byte(&normal_bmi_male[i][bmi+1]) * 3653);
+          days -= (uint16_t)(storage_read_byte(&normal_bmi_male[i][bmi+1]) * 3653);
           break;
         }
       }
@@ -311,17 +312,17 @@ uint32_t ETD ( uint8_t DOB_month,
       if ( Smoker == DC_smoker )
         for(i=0;i<10;i++)
         {
-          if( y < eeprom_read_word(&normal_smoking_female[i][0]) )
+          if( y < storage_read_word(&normal_smoking_female[i][0]) )
           {
-            days -= (uint16_t)(eeprom_read_word(&normal_smoking_female[i][1])*10);
+            days -= (uint16_t)(storage_read_word(&normal_smoking_female[i][1])*10);
             break;
           }
         }
       for(i=0;i<7;i++)
       {
-        if ( y < pgm_read_byte(&normal_bmi_female[i][0]) )
+        if ( y < storage_read_byte(&normal_bmi_female[i][0]) )
         {
-          days -= (uint16_t)(pgm_read_byte(&normal_bmi_female[i][bmi+1]) * 3653);
+          days -= (uint16_t)(storage_read_byte(&normal_bmi_female[i][bmi+1]) * 3653);
           break;
         }
       }

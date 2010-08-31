@@ -23,7 +23,6 @@
 // AVR specific includes
 	#include <avr/io.h>
 	#include <avr/pgmspace.h>
-	#include <avr/eeprom.h>
 #endif
 
 #include "glcd.h"
@@ -273,9 +272,9 @@ void glcdWriteChar(unsigned char c, uint8_t inverted)
 	for(i=0; i<5; i++)
 	{
 	  if (inverted) {
-	    glcdDataWrite(~ eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(~ pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  } else {
-	    glcdDataWrite(eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+	    glcdDataWrite(pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
 	  }
 	}
 

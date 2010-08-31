@@ -288,7 +288,7 @@ void prep_digits(void)
     }
 }
 
-uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
+uint8_t about[] STORAGE =      "\0\0\0\0\0\0\0\0"
 	                              // 123456789ABCDEF0123456
 	                         "\x0a" "DeathChron"
                                   // 123456789ABCDEF0123456
@@ -341,7 +341,7 @@ void initanim_abo(void) {
   glcdClearScreen();
   for (eof=0, lineix=0, line=0; line<8; line++) {
    if (!eof) {
-    b = eeprom_read_byte(&about[ix++]);
+    b = storage_read_byte(&about[ix++]);
     if (b==255) {
      eof = 1;
      if (!line) {return;}
@@ -352,7 +352,7 @@ void initanim_abo(void) {
     if (k<0) {k=0;}
     glcdSetAddress(k,line);
     for(;b>0;b--) {
-     glcdWriteChar(eeprom_read_byte(&about[ix++]),0);
+     glcdWriteChar(storage_read_byte(&about[ix++]),0);
     }
    }
   }

@@ -150,6 +150,7 @@ void calc_death_date(void)
       }
 }
 
+uint8_t EEMEM EE_INIT = EE_INITIALIZED;
 uint8_t EEMEM EE_ALARM_HOUR = 11;
 uint8_t EEMEM EE_ALARM_MIN = 0;
 uint8_t EEMEM EE_BRIGHT = OCR2A_VALUE;
@@ -171,6 +172,53 @@ uint8_t EEMEM EE_SMOKER = DC_non_smoker;
 uint8_t EEMEM EE_SET_HOUR = 20;
 uint8_t EEMEM EE_SET_MIN = 05;
 uint8_t EEMEM EE_SET_SEC = 25;
+
+void init_eeprom(void)
+{
+	if(eeprom_read_byte(&EE_INIT) != EE_INITIALIZED) {
+#ifdef STORE_IN_EEPROM
+		screenmutex++;
+		glcdClearScreen();
+		glcdSetAddress(0,0);
+		glcdPutStr("EEPROM not programmed",NORMAL);
+		glcdSetAddress(18,2);
+		glcdPutStr("comment out the",NORMAL);
+		glcdSetAddress(18,3);
+		glcdPutStr("STORE_IN_EEPROM",NORMAL);
+		glcdSetAddress(15,4);
+		glcdPutStr("define, or write",NORMAL);
+		glcdSetAddress(30,5);
+		glcdPutStr("eeprom with",NORMAL); 
+		glcdSetAddress(24,6);
+		glcdPutStr("\"make eeprom\"",NORMAL);
+		while(1) { beep(4000,100); delay_ms(100); beep(4000,100); delay_ms(100); beep(4000,100); delay_ms(1000); }
+#else
+		eeprom_write_byte(&EE_ALARM_HOUR,8);
+		eeprom_write_byte(&EE_ALARM_MIN,0);
+		eeprom_write_byte(&EE_BRIGHT,OCR2A_VALUE);
+		eeprom_write_byte(&EE_VOLUME, 1);
+		eeprom_write_byte(&EE_REGION, REGION_US);
+		eeprom_write_byte(&EE_TIME_FORMAT, TIME_12H);
+		eeprom_write_byte(&EE_DOB_MONTH, 11);
+		eeprom_write_byte(&EE_DOB_DAY,14);
+		eeprom_write_byte(&EE_DOB_YEAR,80);
+		eeprom_write_byte(&EE_SET_MONTH,7);
+		eeprom_write_byte(&EE_SET_DAY,28);
+		eeprom_write_byte(&EE_SET_YEAR,110);
+		eeprom_write_byte(&EE_SET_HOUR,20);
+		eeprom_write_byte(&EE_SET_MIN,5);
+		eeprom_write_byte(&EE_SET_SEC,25);
+		eeprom_write_byte(&EE_GENDER,DC_gender_male);
+		eeprom_write_byte(&EE_DC_MODE,DC_mode_normal);
+		eeprom_write_byte(&EE_BMI_UNIT,BMI_Imperial);
+		eeprom_write_word(&EE_BMI_WEIGHT,400);
+		eeprom_write_word(&EE_BMI_HEIGHT,78);
+		eeprom_write_byte(&EE_SMOKER,DC_non_smoker);
+		eeprom_write_byte(&EE_INIT,EE_INITIALIZED);
+		beep(4000,100); delay_ms(100);
+#endif
+	}
+}
 
 int main(void) {
   uint8_t inverted = 0;
@@ -227,6 +275,7 @@ int main(void) {
 #endif
 
   DDRB |= _BV(5);
+  
   beep(4000, 100);
   
   //glcdInit locks and disables interrupts in one of its functions.  If the LCD is not
@@ -235,6 +284,7 @@ int main(void) {
   //using a watch dog timer.  The lcd should initialized in way less than 500 ms.
   wdt_enable(WDTO_2S);
   glcdInit();
+  init_eeprom();
   glcdClearScreen();
   
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
