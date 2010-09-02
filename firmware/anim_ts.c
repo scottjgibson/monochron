@@ -42,7 +42,6 @@ void step_ts(void);
 //Support:
 void drawdot_ts(uint8_t x, uint8_t y, uint8_t inverted);
 void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted);
-uint8_t digitsize_ts(uint8_t d);
 uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted);
 void drawsegment_ts(uint8_t s, uint8_t x, uint8_t y, uint8_t inverted);
 void drawvseg_ts(uint8_t x, uint8_t y, uint8_t inverted);
@@ -100,16 +99,14 @@ void setstringdigits_ts(uint8_t cpos, uint8_t val)
 
 void drawdisplay_ts(uint8_t inverted) {
  static uint8_t loop=0;
- if (++loop<6) return;
+ if (++loop<3) return;
  loop=0; 
  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
  uint8_t tx=0;
  uint8_t cx=0;
- uint8_t dx=0;
  uint8_t sx=posstr;
  setstring_ts();
  while (tx < 128) {
-  dx = digitsize_ts(dispstring[sx]);
   cx = drawdigit_ts(tx, 0, dispstring[sx++], inverted);
   if (sx>17) sx=0;
   if (!tx) 
@@ -148,16 +145,6 @@ void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 		//else
 			//drawsegment_ts('a'+i, x, y, !inverted);
 	}
-}
-
-uint8_t digitsize_ts(uint8_t d)
-{
-	uint8_t rval = HSEGMENT_W+2;
-	if(d==':')
-		rval = DOTRADIUS + 2;
-	else if (d=='-')
-		rval = DOTRADIUS + 2;
-	return rval;
 }
 
 uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
