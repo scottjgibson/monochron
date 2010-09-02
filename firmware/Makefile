@@ -264,6 +264,9 @@ eeprom: $(TARGET).hex $(TARGET).eep
 program: $(TARGET).hex $(TARGET).eep
 	$(AVRDUDE) $(AVRDUDE_FLAGS) -B 1 -U flash:w:$(TARGET).hex
 
+size: $(TARGET).hex $(TARGET).eep
+	avr-size -C --mcu=$(MCU) $(TARGET).elf
+
 reset:
 	$(AVRDUDE) $(AVRDUDE_FLAGS) 
 
