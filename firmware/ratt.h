@@ -10,7 +10,7 @@
 
 //STORE_IN_EEPROM - If you need just a bit more code space, uncomment this line. In order to program the clock following this,
 //                  use "make eeprom" for the first time.
-#define STORE_IN_EEPROM 1
+//#define STORE_IN_EEPROM 1
 
 //Definitions for storing data in eeprom, rather than rom.
 #ifdef STORE_IN_EEPROM
