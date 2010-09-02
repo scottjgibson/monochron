@@ -334,16 +334,16 @@ void glcdWriteCharGr(u08 grCharIdx, uint8_t inverted)
 		// to get the startIdx of the next one
 		// 2010-03-03 BUG Dataman/CRJONES There's a bug here:  Have to add 1 for the byte-cout.
 		// grStartIdx += pgm_read_byte(FontGr+grStartIdx);
-		grStartIdx += eeprom_read_byte(&FontGr[grStartIdx])+1;
+		grStartIdx += pgm_read_byte(&FontGr[grStartIdx])+1;
 		
 	}
-	grLength = eeprom_read_byte(&FontGr[grStartIdx]);
+	grLength = pgm_read_byte(&FontGr[grStartIdx]);
 
 	// write the lines of the desired graphic to the display
 	for(idx=0; idx<grLength; idx++)
 	{
 		// write the line
-                line = eeprom_read_byte(&FontGr[(grStartIdx+1)+idx]);
+                line = pgm_read_byte(&FontGr[(grStartIdx+1)+idx]);
                 if (inverted == INVERTED) line = 255-line;
 		glcdDataWrite(line);
 	}

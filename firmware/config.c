@@ -32,15 +32,6 @@ volatile uint8_t screenmutex = 0;
 //Prototypes
 void print_style_setting(uint8_t inverted);
 void print_region_setting(uint8_t inverted);
-void print_menu_advance(void);
-void print_menu_change(void);
-void print_menu_exit(void);
-void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2);
-#define print_menu_opts(a,b) PRINT_MENU_OPTS(PSTR(a),PSTR(b))
-void PRINT_MENU(const char*, const char*, const char*, const char*);
-#define print_menu(a,b,c,d) PRINT_MENU(PSTR(a),PSTR(b),PSTR(c),PSTR(d))
-void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Opt);
-#define print_menu_line(a,b,c) PRINT_MENU_LINE(a,PSTR(b),PSTR(c))
 //
 
 void print_alarmline(uint8_t mode)
@@ -105,28 +96,6 @@ void display_menu(void) {
   print_menu_advance();
 
   screenmutex--;
-}
-
-uint8_t check_timeout(void)
-{
-	if(displaymode != SET_TIME)
-	{
-		screenmutex++;
-		print_time(time_h, time_m, time_s, SET_TIME);
-		screenmutex--;
-	}
-	if (just_pressed & 0x1) { // mode change
-      return 1;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return 2;
-    }
-    return 0;
 }
 
 uint8_t init_set_menu(uint8_t line)
@@ -219,37 +188,40 @@ void print_dow(uint8_t inverted, uint8_t mon, uint8_t day, uint8_t yr) {
 }  
 #endif
 
+void print_number_slash(uint8_t number, uint8_t inverted)
+{
+	printnumber(number, inverted);
+	glcdWriteChar('/', NORMAL);
+}
+#ifdef OPTION_DOW_DATELONG
+  #define MAX_ORDER 6
+#else
+  #define MAX_ORDER 2
+#endif
+
 void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
   glcdSetAddress(MENU_INDENT, 3);
   glcdPutStr("Date:", NORMAL);
   if (region == REGION_US) {
   	glcdPutStr("     ",NORMAL);
-    printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
-    printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
+  	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+  	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
   } else if (region == REGION_EU) {
   	glcdPutStr("     ",NORMAL);
-    printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
-    printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
+  	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+  	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
   }
 #ifdef OPTION_DOW_DATELONG 
   else if ( region == DOW_REGION_US) {
   	glcdWriteChar(' ', NORMAL);
   	print_dow(NORMAL,month,day,year);
-  	printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
-    printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
+  	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+  	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
   } else if ( region == DOW_REGION_EU) {
   	glcdWriteChar(' ', NORMAL);
   	print_dow(NORMAL,month,day,year);
-  	printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
-    printnumber(month, (mode == SET_MONTH)?INVERTED:NORMAL);
-    glcdWriteChar('/', NORMAL);
+  	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+  	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
   } else if ( region == DATELONG) {
   	glcdPutStr("   ",NORMAL);
   	print_month((mode == SET_MONTH)?INVERTED:NORMAL,month);
@@ -269,6 +241,52 @@ void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
   printnumber(year, (mode == SET_YEAR)?INVERTED:NORMAL);
 }
 
+void print_monthday_help(uint8_t mode)
+{
+	if(mode == SET_MONTH)
+		print_menu_opts("change mon","set mon.");
+	else if (mode == SET_DAY)
+		print_menu_opts("change day","set date");
+	else if (mode == SET_YEAR)
+		print_menu_opts("change yr.","set year");
+	else
+		print_menu_advance();
+}
+
+//Code optimization for set date / set deathchron date of birth.
+uint8_t next_mode_setdate[MAX_ORDER] = {
+	SET_MONTH,
+	SET_DAY,
+#ifdef OPTION_DOW_DATELONG
+	SET_MONTH,
+	SET_DAY,
+	SET_MONTH,
+	SET_MONTH
+#endif
+};
+
+uint8_t next_mode_setmonth[MAX_ORDER] = {
+	SET_DAY,
+	SET_YEAR,
+#ifdef OPTION_DOW_DATELONG
+	SET_DAY,
+	SET_YEAR,
+	SET_DAY,
+	SET_DAY
+#endif
+};
+
+uint8_t next_mode_setday[MAX_ORDER] = {
+	SET_YEAR,
+	SET_MONTH,
+#ifdef OPTION_DOW_DATELONG
+	SET_YEAR,
+	SET_MONTH,
+	SET_YEAR,
+	SET_YEAR
+#endif
+};
+
 void set_date(void) {
   uint8_t mode = init_set_menu(3);
   uint8_t day, month, year;
@@ -282,68 +300,31 @@ void set_date(void) {
       just_pressed = 0;
       screenmutex++;
 
-#ifdef OPTION_DOW_DATELONG
-      if ((mode == SET_DATE) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) {
-#else
-      if ((mode == SET_DATE) && (region == REGION_US)) {
-#endif
-	DEBUG(putstring("Set date month"));
+      if (mode == SET_DATE) {
+	DEBUG(putstring("Set date month/day, depending on region"));
 	// ok now its selected
-	mode = SET_MONTH;
-
-	// print the month inverted
-	// display instructions below
-	print_menu_opts("change mon","set mon.");
-      } else if ((mode == SET_DATE) && ((region == REGION_EU) || (region == DOW_REGION_EU))) {
-	DEBUG(putstring("Set date month"));
-	// ok now its selected
-	mode = SET_DAY;
-
-	// print the day inverted
-	// display instructions below
-	print_menu_opts("change day","set date");
-#ifdef OPTION_DOW_DATELONG
-      } else if ((mode == SET_MONTH) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) {
-#else
-      } else if ((mode == SET_MONTH) && (region == REGION_US)) {
-#endif
-	DEBUG(putstring("Set date day"));
-	mode = SET_DAY;
-
-	// display instructions below
-	print_menu_opts("change day","set date");
-      }else if ((mode == SET_DAY) && ((region == REGION_EU) || (region == DOW_REGION_EU))) {
-	DEBUG(putstring("Set date month"));
-	mode = SET_MONTH;
-
-	// display instructions below
-	print_menu_opts("change mon","set mon.");
-#ifdef OPTION_DOW_DATELONG
-      } else if ( ((mode == SET_DAY) && ((region == REGION_US) || (region == DOW_REGION_US) || (region == DATELONG) || (region == DATELONG_DOW))) ||
-		  ((mode == SET_MONTH) && ((region == REGION_EU) || (region == DOW_REGION_EU))) )  {
-#else
-      } else if ( ((mode == SET_DAY) && (region == REGION_US)) ||
-		  ((mode == SET_MONTH) && (region == REGION_EU)) )  {
-#endif
-	DEBUG(putstring("Set year"));
-	mode = SET_YEAR;
-	// print the date normal
-
-	// display instructions below
-	print_menu_opts("change yr.","set year");
+	mode = next_mode_setdate[region];
+	
+      } else if (mode == SET_MONTH) {
+	DEBUG(putstring("Set date day/year, depending on region"));
+	mode = next_mode_setmonth[region];
+      } else if (mode == SET_DAY) {
+	DEBUG(putstring("Set date month/year, depending on region"));
+	mode = next_mode_setday[region];
       } else {
 	// done!
 	DEBUG(putstring("done setting date"));
 	mode = SET_DATE;
-	// print the seconds normal
-	// display instructions below
-	print_menu_advance();
 	
+	//Update the DS1307 with set date.
 	date_y = year;
 	date_m = month;
 	date_d = day;
 	writei2ctime(time_s, time_m, time_h, 0, date_d, date_m, date_y);
       }
+      //Print the instructions below
+      print_monthday_help(mode);
+      //Refresh the date.
       print_date(month,day,year,mode);
       screenmutex--;
     }
@@ -353,37 +334,15 @@ void set_date(void) {
       screenmutex++;
 
       if (mode == SET_MONTH) {
-	month++;
-	if (month >= 13)
-	  month = 1;
-	if(month == 2) {
-	  if(leapyear(year) && (day > 29))
-	  	day = 29;
-	  else if (!leapyear(year) && (day > 28))
-	  	day = 28;
-	} else if ((month == 4) || (month == 6) || (month == 9) || (month == 11)) {
-      if(day > 30)
-      	day = 30;
-	}
-	
+      month++;
       }
       if (mode == SET_DAY) {
 	day++;
-	if (day > 31)
-	  day = 1;
-	if(month == 2) {
-	  if(leapyear(year) && (day > 29))
-	  	day = 1;
-	  else if (!leapyear(year) && (day > 28))
-	  	day = 1;
-	} else if ((month == 4) || (month == 6) || (month == 9) || (month == 11)) {
-      if(day > 30)
-      	day = 1;
-	}
       }
       if (mode == SET_YEAR) {
 	year = (year+1) % 100;
       }
+      add_month(&month, &day, year);
       print_date(month,day,year,mode);
       screenmutex--;
 
@@ -513,10 +472,8 @@ void set_region(void) {
           if(region > REGION_EU)
 #endif
 	        region = 0;
-		  time_format = !time_format;
-		} else {
-		  time_format = !time_format;
 		}
+		time_format = !time_format;
 	screenmutex++;
 	display_menu();
 	print_menu_change();
@@ -709,6 +666,10 @@ glcdSetAddress(43, 0);
   case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
                  break;
 #endif
+#ifdef TSCHRON
+  case STYLE_TS: glcdPutStr("TimesSqChron",inverted);
+                 break;
+#endif
 #ifdef DEATHCHRON
   case STYLE_DEATH: glcdPutStr("DeathChron", inverted);
                 break;
@@ -728,43 +689,5 @@ glcdSetAddress(43, 0);
   case STYLE_ABOUT:  glcdPutStr("About",inverted);
   				break;
   }
-}
-
-void print_menu_advance(){
-  print_menu("MENU","advance","SET","set");
-  // Press MENU to avance
-  // Press SET to set
-}
-
-void print_menu_exit(){
-  print_menu("MENU","exit","SET","save");
-  //Press MENU to exit
-  //Press SET to set
-}
-
-void print_menu_change(){
- print_menu_opts("change","save");
- // Press + to change
- // Press SET to save
-}
-
-void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2){
- PRINT_MENU(PSTR("+"),Opt1,PSTR("SET"),Opt2);
- // Press + to X
- // Press SET to X
-}
-
-void PRINT_MENU(const char *Button1, const char *Opt1, const char *Button2, const char *Opt2){
- glcdFillRectangle(0, 48, GLCD_XPIXELS, 16, NORMAL);
- PRINT_MENU_LINE(6,Button1,Opt1);
- PRINT_MENU_LINE(7,Button2,Opt2);
-}
-
-void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Action){
-  glcdSetAddress(0, line);
-  glcdPutStr("Press ",NORMAL);
-  glcdPutStr_rom(Button,NORMAL);
-  glcdPutStr(" to ",NORMAL);
-  glcdPutStr_rom(Action,NORMAL);
 }
 

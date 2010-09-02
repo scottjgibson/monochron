@@ -41,8 +41,7 @@ extern volatile uint8_t screenmutex;
 
 void printnumber_3d(uint16_t n, uint8_t inverted) {
   glcdWriteChar(n/100+'0', inverted);
-  glcdWriteChar((n%100)/10+'0', inverted);
-  glcdWriteChar(n%10+'0', inverted);
+  printnumber(n%100, inverted);
 }
 
 void deathclock_changed(void) //Any changes to the death clock neccesitates a recalculation of the death clock.
@@ -61,49 +60,22 @@ void deathclock_changed(void) //Any changes to the death clock neccesitates a re
 	load_etd();
 }
 
-void menu_advance_set_exit(uint8_t exit)
-{
-	glcdSetAddress(0, 6);
-  if(!exit)
-    glcdPutStr("Press MENU to advance", NORMAL);
-  else
-  	glcdPutStr("Press MENU to exit   ", NORMAL);
-  glcdSetAddress(0, 7);
-  glcdPutStr("Press SET to set     ", NORMAL);
-}
-
-#define PLUS_TO_CHANGE(x,y) plus_to_change(PSTR(x),PSTR(y))
-void plus_to_change(const char *str1, const char *str2)
-{
-	glcdSetAddress(0, 6);
-	glcdPutStr("Press + to change", NORMAL);
-	glcdPutStr_rom(str1,NORMAL);
-	glcdSetAddress(0, 7);
-	glcdPutStr("Press SET to", NORMAL);
-	glcdPutStr_rom(str2,NORMAL);
-}
-
-void plus_to_change_default(void)
-{
-	PLUS_TO_CHANGE("    "," save    ");
-}
-
-void display_dob(uint8_t inverted)
+void display_dob(uint8_t mode)
 {
   glcdSetAddress(MENU_INDENT, 1);
   glcdPutStr("Set DOB:  ",NORMAL);
    if (region == REGION_US) {
-    printnumber(cfg_dob_m, inverted&1);
+    printnumber(cfg_dob_m, (mode==SET_MONTH)?INVERTED:NORMAL);
     glcdWriteChar('/', NORMAL);
-    printnumber(cfg_dob_d, inverted&2);
+    printnumber(cfg_dob_d, (mode==SET_DAY)?INVERTED:NORMAL);
   } else {
-    printnumber(cfg_dob_d, inverted&2);
+    printnumber(cfg_dob_d, (mode==SET_DAY)?INVERTED:NORMAL);
     glcdWriteChar('/', NORMAL);
-    printnumber(cfg_dob_m, inverted&1);
+    printnumber(cfg_dob_m, (mode==SET_MONTH)?INVERTED:NORMAL);
   }
   glcdWriteChar('/', NORMAL);
-  printnumber((cfg_dob_y+1900)/100, inverted&4);
-  printnumber((cfg_dob_y+1900)%100, inverted&4);
+  printnumber((cfg_dob_y+1900)/100, (mode==SET_YEAR)?INVERTED:NORMAL);
+  printnumber((cfg_dob_y+1900)%100, (mode==SET_YEAR)?INVERTED:NORMAL);
 }
 
 void display_gender(uint8_t inverted)
@@ -195,7 +167,7 @@ void display_death_menu(void) {
   glcdPutStr("Menu", NORMAL);
   
   //DOB , render based on region setting, in mm/dd/yyyy or dd/mm/yyyy, range is 1900 - 2099.
-  display_dob(NORMAL);
+  display_dob(displaymode);
   
   //Gender, Male, Female
   display_gender(NORMAL);
@@ -210,96 +182,52 @@ void display_death_menu(void) {
   
   //Smoking Status.
   display_smoker(NORMAL);
-  
-  
-  
-  //Not finished yet.
-  /*glcdSetAddress(0, 6);
-  glcdPutStr("Not Finished Yet   :)",NORMAL);
-  glcdSetAddress(0, 7);
-  glcdPutStr("Press Menu to Exit",NORMAL);*/
-  menu_advance_set_exit(0);
+  print_menu_advance();
   
   screenmutex--;
 }
 
-void set_deathclock_dob(void) {
-   uint8_t mode = SET_DEATHCLOCK_DOB;
-   display_death_menu();
-   
-   screenmutex++;
-  // put a small arrow next to 'set date'
-  drawArrow(0, 11, MENU_INDENT -1);
-  screenmutex--;
+uint8_t init_set_death_menu(uint8_t line)
+{
+  display_death_menu();
   
-  timeoutcounter = INACTIVITYTIMEOUT;  
+  screenmutex++;
+  if(displaymode == SET_DCSMOKER)
+  	  print_menu_exit();
+  // put a small arrow next to 'set 12h/24h'
+  drawArrow(0, (line*8)+3, MENU_INDENT -1);
+  screenmutex--;
+   
+  timeoutcounter = INACTIVITYTIMEOUT;
+  return displaymode;
+}
 
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+extern uint8_t next_mode_setdate[];
+extern uint8_t next_mode_setmonth[];
+extern uint8_t next_mode_setday[];
+void print_monthday_help(uint8_t mode);
+
+
+void set_deathclock_dob(void) {
+   uint8_t mode = init_set_death_menu(1);
+
+  while (!check_timeout()) {
+
     if (just_pressed & 0x2) {
       just_pressed = 0;
       screenmutex++;
 
-      if ((mode == SET_DEATHCLOCK_DOB) && (region == REGION_US)) {
-	DEBUG(putstring("Set dob month"));
+      if (mode == SET_DEATHCLOCK_DOB) {
 	// ok now its selected
-	mode = SET_MONTH;
-
-	// print the month inverted
-	display_dob(1);
-	// display instructions below
-	PLUS_TO_CHANGE(" mon"," set mon.");
-      } else if ((mode == SET_DEATHCLOCK_DOB) && (region == REGION_EU)) {
-	DEBUG(putstring("Set date month"));
-	// ok now its selected
-	mode = SET_DAY;
-
-	// print the day inverted
-	display_dob(2);
-	// display instructions below
-	PLUS_TO_CHANGE(" day"," set date");
-      } else if ((mode == SET_MONTH) && (region == REGION_US)) {
-	DEBUG(putstring("Set date day"));
-	mode = SET_DAY;
-
-	// print the month normal
-	display_dob(2);
-	// display instructions below
-	PLUS_TO_CHANGE(" day"," set date");
-      }else if ((mode == SET_DAY) && (region == REGION_EU)) {
-	DEBUG(putstring("Set date month"));
-	mode = SET_MONTH;
-
-	display_dob(1);;
-	// display instructions below
-	PLUS_TO_CHANGE(" mon"," set mon.");
-      } else if ( ((mode == SET_DAY) && (region == REGION_US)) ||
-		  ((mode == SET_MONTH) && (region == REGION_EU)) )  {
-	DEBUG(putstring("Set year"));
-	mode = SET_YEAR;
-	// print the date normal
-
-	display_dob(4);
-	// display instructions below
-	PLUS_TO_CHANGE(" yr."," set year");
+	mode = next_mode_setdate[region];
+      } else if (mode == SET_MONTH) {
+	mode = next_mode_setmonth[region];
+      } else if (mode == SET_DAY) {
+	mode = next_mode_setday[region];
       } else {
 	// done!
 	DEBUG(putstring("done setting date"));
 	mode = SET_DEATHCLOCK_DOB;
-	// print the seconds normal
-	display_dob(NORMAL);
-	// display instructions below
-	menu_advance_set_exit(0);
 	
 	//date_y = year;
 	//date_m = month;
@@ -309,6 +237,8 @@ void set_deathclock_dob(void) {
     eeprom_write_byte(&EE_DOB_YEAR,cfg_dob_y);
     deathclock_changed();
       }
+      display_dob(mode);
+	  print_monthday_help(mode);
       screenmutex--;
     }
     if ((just_pressed & 0x4) || (pressed & 0x4)) {
@@ -317,40 +247,16 @@ void set_deathclock_dob(void) {
       screenmutex++;
 
       if (mode == SET_MONTH) {
-	cfg_dob_m++;
-	if (cfg_dob_m >= 13)
-	  cfg_dob_m = 1;
-	if(cfg_dob_m == 2) {
-	  if(leapyear(cfg_dob_y + 1900) && (cfg_dob_d > 29))
-	  	cfg_dob_d = 29;
-	  else if (!leapyear(cfg_dob_y + 1900) && (cfg_dob_d > 28))
-	  	cfg_dob_d = 28;
-	} else if ((cfg_dob_m == 4) || (cfg_dob_m == 6) || (cfg_dob_m == 9) || (cfg_dob_m == 11)) {
-      if(cfg_dob_d > 30)
-      	cfg_dob_d = 30;
-	}
-	display_dob(1);
-	
+    cfg_dob_m++;
       }
       if (mode == SET_DAY) {
 	cfg_dob_d++;
-	if (cfg_dob_d > 31)
-	  cfg_dob_d = 1;
-	if(cfg_dob_m == 2) {
-	  if(leapyear(cfg_dob_y + 1900) && (cfg_dob_d > 29))
-	  	cfg_dob_d = 1;
-	  else if (!leapyear(cfg_dob_y + 1900) && (cfg_dob_d > 28))
-	  	cfg_dob_d = 1;
-	} else if ((cfg_dob_m == 4) || (cfg_dob_m == 6) || (cfg_dob_m == 9) || (cfg_dob_m == 11)) {
-      if(cfg_dob_d > 30)
-      	cfg_dob_d = 1;
-	}
-	display_dob(2);
       }
       if (mode == SET_YEAR) {
 	cfg_dob_y = (cfg_dob_y+1) % 200;
-	display_dob(4);
       }
+      add_month(&cfg_dob_m,&cfg_dob_d,cfg_dob_d+1900);
+      display_dob(mode);
       screenmutex--;
 
       if (pressed & 0x4)
@@ -360,30 +266,9 @@ void set_deathclock_dob(void) {
 }
 
 void set_deathclock_gender(void) {
-  uint8_t mode = SET_DEATHCLOCK_GENDER;
+  uint8_t mode = init_set_death_menu(2);
 
-  display_death_menu();
-  
-  screenmutex++;
-
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 19, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -396,13 +281,13 @@ void set_deathclock_gender(void) {
 	// print the region 
 	display_gender(INVERTED);
 	// display instructions below
-	plus_to_change_default();
+	print_menu_change();
       } else {
 	mode = SET_DEATHCLOCK_GENDER;
 	// print the region normal
 	display_gender(NORMAL);
 
-	menu_advance_set_exit(0);
+	print_menu_advance();
       }
       screenmutex--;
     }
@@ -413,10 +298,10 @@ void set_deathclock_gender(void) {
 	    cfg_gender = !cfg_gender;
 	screenmutex++;
 	//display_death_menu();
-	plus_to_change_default();
+	//print_menu_change();
 
 	// put a small arrow next to 'set 12h/24h'
-	drawArrow(0, 19, MENU_INDENT -1);
+	//drawArrow(0, 19, MENU_INDENT -1);
 
 	display_gender(INVERTED);
 	screenmutex--;
@@ -429,30 +314,9 @@ void set_deathclock_gender(void) {
 }
 
 void set_deathclock_mode(void) {
-  uint8_t mode = SET_DEATHCLOCK_MODE;
+  uint8_t mode = init_set_death_menu(3);
 
-  display_death_menu();
-  
-  screenmutex++;
-
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 27, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -465,13 +329,13 @@ void set_deathclock_mode(void) {
 	// print the region 
 	display_dc_mode(INVERTED);
 	// display instructions below
-	plus_to_change_default();
+	print_menu_change();
       } else {
 	mode = SET_DEATHCLOCK_MODE;
 	// print the region normal
 	display_dc_mode(NORMAL);
 
-	menu_advance_set_exit(0);
+	print_menu_advance();
       }
       screenmutex--;
     }
@@ -493,27 +357,9 @@ void set_deathclock_mode(void) {
 }
 
 void set_deathclock_bmi(void) {
-  uint8_t mode = SET_DEATHCLOCK_BMI;
+  uint8_t mode = init_set_death_menu(4);
 
-  display_death_menu();
-  screenmutex++;
-  // put a small arrow next to 'set alarm'
-  drawArrow(0, 35, MENU_INDENT -1);
-  screenmutex--;
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
     if (just_pressed & 0x2) {
       just_pressed = 0;
       screenmutex++;
@@ -526,25 +372,29 @@ void set_deathclock_bmi(void) {
 	//Set BMI Unit
 	display_bmi_set(1);
 	// display instructions below
-	PLUS_TO_CHANGE(" ut."," set unit");
+	//PLUS_TO_CHANGE(" ut."," set unit");
+	print_menu_opts("change ut.","set unit");
       } else if (mode == SET_BMI_UNIT) {
 	DEBUG(putstring("Set bmi weight / bmi direct"));
 	mode = SET_BMI_WT;
 	display_bmi_set(2);
 	// display instructions below
 	if(cfg_bmi_unit != BMI_Direct)
-	  PLUS_TO_CHANGE(" wt."," set wt. ");
+	  //PLUS_TO_CHANGE(" wt."," set wt. ");
+	  print_menu_opts("change wt."," set wt.");
 	else
-	  PLUS_TO_CHANGE(" bmi"," set bmi ");
+	  //PLUS_TO_CHANGE(" bmi"," set bmi ");
+	  print_menu_opts("change bmi","set bmi");
 	  } else if ((mode == SET_BMI_WT) && (cfg_bmi_unit != BMI_Direct)) {
 	mode = SET_BMI_HT;
     display_bmi_set(4);
-    PLUS_TO_CHANGE(" ht."," set ht. ");
+    //PLUS_TO_CHANGE(" ht."," set ht. ");
+    print_menu_opts("change ht.","set ht.");
       } else {
 	mode = SET_DEATHCLOCK_BMI;
 	display_bmi_set(NORMAL);
 	// display instructions below
-	menu_advance_set_exit(0);
+	print_menu_advance();
       }
       screenmutex--;
     }
@@ -604,31 +454,9 @@ void set_deathclock_bmi(void) {
 }
 
 void set_deathclock_smoker(void) {
-  uint8_t mode = SET_DEATHCLOCK_SMOKER;
+  uint8_t mode = init_set_death_menu(5);
 
-  display_death_menu();
-  menu_advance_set_exit(1);
-  
-  screenmutex++;
-
-  // put a small arrow next to 'set 12h/24h'
-  drawArrow(0, 43, MENU_INDENT -1);
-  screenmutex--;
-  
-  timeoutcounter = INACTIVITYTIMEOUT;  
-
-  while (1) {
-    if (just_pressed & 0x1) { // mode change
-      return;
-    }
-    if (just_pressed || pressed) {
-      timeoutcounter = INACTIVITYTIMEOUT;  
-      // timeout w/no buttons pressed after 3 seconds?
-    } else if (!timeoutcounter) {
-      //timed out!
-      displaymode = SHOW_TIME;     
-      return;
-    }
+  while (!check_timeout()) {
   
     if (just_pressed & 0x2) {
       just_pressed = 0;
@@ -641,13 +469,13 @@ void set_deathclock_smoker(void) {
 	// print the region 
 	display_smoker(INVERTED);
 	// display instructions below
-	plus_to_change_default();
+	print_menu_change();
       } else {
 	mode = SET_DEATHCLOCK_SMOKER;
 	// print the region normal
 	display_smoker(NORMAL);
 
-	menu_advance_set_exit(1);
+	print_menu_exit();
       }
       screenmutex--;
     }
@@ -671,41 +499,30 @@ void set_deathclock_smoker(void) {
 void initanim_deathcfg(void) {
 
   load_etd();	//Only need to do this once at power on, and once if Death Clock settings are changed, and refresh if date/time is changed.
-  just_pressed = 1;
   do {
-    if (just_pressed & 0x1) {
-      just_pressed = 0;
-      switch(displaymode) {
-      case (SHOW_TIME):
-	displaymode = SET_DEATHCLOCK_DOB;
-	set_deathclock_dob();
-	break;
-	  case SET_DEATHCLOCK_DOB:
-	displaymode = SET_DEATHCLOCK_GENDER;
-	set_deathclock_gender();
-	break;
-	  case SET_DEATHCLOCK_GENDER:
-	displaymode = SET_DEATHCLOCK_MODE;
-	set_deathclock_mode();
-	break;
-	  case SET_DEATHCLOCK_MODE:
-	displaymode = SET_DEATHCLOCK_BMI;
-	set_deathclock_bmi();
-	break;
-	  case SET_DEATHCLOCK_BMI:
-	displaymode = SET_DEATHCLOCK_SMOKER;
-	set_deathclock_smoker();
-	break;
-      default:
-    just_pressed = 1;	//Exit, returning to the main cfg menu.
-	displaymode = CFG_MENU;
-	displaystyle=eeprom_read_byte(&EE_STYLE);
-	glcdClearScreen();
-	return;
-      }
-    }
-  } while (displaymode != SHOW_TIME);
-  
+  	if(just_pressed & 1)
+  		just_pressed = 0;
+  	if(displaymode == SHOW_TIME) {
+  		displaymode = SET_DEATHCLOCK_DOB;
+		set_deathclock_dob();
+  	} else if (displaymode == SET_DEATHCLOCK_DOB) {
+  		displaymode = SET_DEATHCLOCK_GENDER;
+		set_deathclock_gender();
+  	} else if (displaymode == SET_DEATHCLOCK_MODE) {
+  		displaymode = SET_DEATHCLOCK_BMI;
+		set_deathclock_bmi();
+  	} else if (displaymode == SET_DEATHCLOCK_GENDER) {
+  		displaymode = SET_DEATHCLOCK_MODE;
+		set_deathclock_mode();
+  	} else if (displaymode == SET_DEATHCLOCK_BMI) {
+  		displaymode = SET_DEATHCLOCK_SMOKER;
+		set_deathclock_smoker();
+  	}
+  } while ((displaymode != SHOW_TIME) && (displaymode != SET_DEATHCLOCK_SMOKER));
+  just_pressed = 1;	//Exit, returning to the main cfg menu.
+  displaymode = CFG_MENU;
+  displaystyle=eeprom_read_byte(&EE_STYLE);
+  glcdClearScreen();
 }
 
 #endif

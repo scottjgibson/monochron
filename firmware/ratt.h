@@ -20,6 +20,7 @@
 #define SEVENCHRON 1
 #define RATTCHRON 1
 #define XDALICHRON 1
+#define TSCHRON 1
 //#define DEATHCHRON 1
 
 #ifndef XDALICHRON
@@ -256,6 +257,9 @@ enum {
 #ifdef XDALICHRON
 	STYLE_XDA,
 #endif
+#ifdef TSCHRON
+	STYLE_TS,
+#endif
 #ifdef DEATHCHRON
 	STYLE_DEATH,
 #endif
@@ -269,6 +273,23 @@ enum {
 #endif
 	STYLE_ABOUT
 };
+
+
+//FontGr enums - if we add other chrons in the future, using the FontGr array, that is
+//defined in eeprom.c, we need to add an enum for each entry in that array.
+enum {
+	FontGr_BASE = -1,
+#ifdef INTRUDERCHRON
+	FontGr_INTRUDER_TRIANGLE_UP,
+	FontGr_INTRUDER_SQUARE_UP,
+	FontGr_INTRUEDER_CIRCLE_UP,
+	FontGr_INTRUDER_TRIANGLE_DOWN,
+	FontGr_INTRUDER_SQUARE_DOWN,
+	FontGr_INTRUEDER_CIRCLE_DOWN,
+	FontGr_INTRUDER_BASE,
+#endif
+};
+	
 
 
 // ROTATEPERIOD is the the wait period, in minutes, between screen rotations.
@@ -342,7 +363,6 @@ void printnumber(uint8_t n, uint8_t inverted);
 void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode);
 
 
-//float random_angle_rads(void);
 int8_t random_angle(void);
 
 void init_crand(void);

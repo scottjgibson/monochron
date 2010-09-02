@@ -54,3 +54,17 @@ uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void init_crand(void);
 uint16_t crand(uint8_t type);
+
+
+void print_menu_advance(void);
+void print_menu_change(void);
+void print_menu_exit(void);
+void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2);
+#define print_menu_opts(a,b) PRINT_MENU_OPTS(PSTR(a),PSTR(b))
+void PRINT_MENU(const char*, const char*, const char*, const char*);
+#define print_menu(a,b,c,d) PRINT_MENU(PSTR(a),PSTR(b),PSTR(c),PSTR(d))
+void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Opt);
+#define print_menu_line(a,b,c) PRINT_MENU_LINE(a,PSTR(b),PSTR(c))
+
+uint8_t check_timeout(void);
+void add_month(volatile uint8_t *month, volatile uint8_t *day, uint16_t year);

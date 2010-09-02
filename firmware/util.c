@@ -7,10 +7,16 @@
 #include <stdlib.h>
 #include "ratt.h"
 #include "util.h"
+#include "ks0108.h"
 #include "glcd.h"
 
 extern volatile uint8_t time_format;
 extern volatile uint8_t displaystyle;
+extern volatile uint8_t timeoutcounter;
+extern volatile uint8_t screenmutex;
+extern volatile uint8_t displaymode;
+extern volatile uint8_t last_buttonstate, just_pressed, pressed;
+
 
 // Creates a 8N1 UART connect
 // remember that the BBR is #defined for each F_CPU in util.h
@@ -324,3 +330,79 @@ uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1,
   return 1;
 }
 #endif
+
+//Config menu related functions
+void print_menu_advance(){
+  print_menu("MENU","advance","SET","set");
+  // Press MENU to avance
+  // Press SET to set
+}
+
+void print_menu_exit(){
+  print_menu("MENU","exit","SET","save");
+  //Press MENU to exit
+  //Press SET to set
+}
+
+void print_menu_change(){
+ print_menu_opts("change","save");
+ // Press + to change
+ // Press SET to save
+}
+
+void PRINT_MENU_OPTS(const char *Opt1, const char *Opt2){
+ PRINT_MENU(PSTR("+"),Opt1,PSTR("SET"),Opt2);
+ // Press + to X
+ // Press SET to X
+}
+
+void PRINT_MENU(const char *Button1, const char *Opt1, const char *Button2, const char *Opt2){
+ glcdFillRectangle(0, 48, GLCD_XPIXELS, 16, NORMAL);
+ PRINT_MENU_LINE(6,Button1,Opt1);
+ PRINT_MENU_LINE(7,Button2,Opt2);
+}
+
+void PRINT_MENU_LINE(uint8_t line, const char *Button, const char *Action){
+  glcdSetAddress(0, line);
+  glcdPutStr("Press ",NORMAL);
+  glcdPutStr_rom(Button,NORMAL);
+  glcdPutStr(" to ",NORMAL);
+  glcdPutStr_rom(Action,NORMAL);
+}
+
+uint8_t check_timeout(void)
+{
+	if((displaymode != SET_TIME)&&(displaystyle<=STYLE_ROTATE))
+	{
+		screenmutex++;
+		print_time(time_h, time_m, time_s, SET_TIME);
+		screenmutex--;
+	}
+	if (just_pressed & 0x1) { // mode change
+      return 1;
+    }
+    if (just_pressed || pressed) {
+      timeoutcounter = INACTIVITYTIMEOUT;  
+      // timeout w/no buttons pressed after 3 seconds?
+    } else if (!timeoutcounter) {
+      //timed out!
+      displaymode = SHOW_TIME;     
+      return 2;
+    }
+    return 0;
+}
+
+void add_month(volatile uint8_t *month, volatile uint8_t *day, uint16_t year)
+{
+	if (*month >= 13)
+	  *month = 1;
+	if(*month == 2) {
+	  if(leapyear(year) && (*day > 29))
+	  	*day = 29;
+	  else if (!leapyear(year) && (*day > 28))
+	    *day = 28;
+	} else if ((*month == 4) || (*month == 6) || (*month == 9) || (*month == 11)) {
+      if(*day > 30)
+      	*day = 30;
+  }
+}

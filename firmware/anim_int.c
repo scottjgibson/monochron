@@ -155,7 +155,7 @@ void WriteInvaders_int(uint8_t inverted) {
   for (i=0;i<6;i++){
    for (j=0;j<6;j++){
     glcdSetAddress(pInvaders + (j*16), 1+i);
-	glcdWriteCharGr((i/2)+(Frame*3),inverted);
+	glcdWriteCharGr(FontGr_INTRUDER_TRIANGLE_UP+(i/2)+(Frame*3),inverted);
    }
   }
 }
@@ -163,7 +163,7 @@ void WriteInvaders_int(uint8_t inverted) {
 void WriteBases_int(uint8_t inverted) {
   for (uint8_t i=0;i<4;i++) {
     glcdSetAddress(20 + (i*24), 7);
-    glcdWriteCharGr(6,inverted);
+    glcdWriteCharGr(FontGr_INTRUDER_BASE,inverted);
    }
 }
 

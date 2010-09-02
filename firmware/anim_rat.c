@@ -35,9 +35,6 @@ extern volatile uint8_t score_mode;
 
 uint8_t left_score, right_score;
 
-/*float ball_x, ball_y;
-float oldball_x, oldball_y;
-float ball_dx, ball_dy;*/
 int32_t ball_x, ball_y;
 int32_t oldball_x, oldball_y;
 int32_t ball_dx, ball_dy;
@@ -67,24 +64,24 @@ uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1, uint8_t x2
 void draw_score_rat(uint8_t redraw_digits, uint8_t inverted);
 void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
-//float random_angle_rads(void);
 int8_t random_angle(void);
-//uint8_t calculate_keepout(float theball_x, float theball_y, float theball_dx, float theball_dy, uint8_t *keepout1, uint8_t *keepout2);
 uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_dx, int32_t theball_dy, uint32_t *keepout1, uint32_t *keepout2);
 uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir);
 
 
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
 
-int16_t sine_table[64] = {
-	 0x0000,  0x0324,  0x0647,  0x096a,  0x0c8b,  0x0fab,  0x12c8,  0x15e2,
-	 0x18f8,  0x1c0b,  0x1f19,  0x2223,  0x2528,  0x2826,  0x2b1f,  0x2e11,
+int16_t sine_table[34] = {
+//	 0x0000,  0x0324,  0x0647,  0x096a,  0x0c8b,  0x0fab,  0x12c8,  0x15e2,
+//	 0x18f8,  0x1c0b,  0x1f19,  0x2223,  0x2528,  0x2826,  0x2b1f,  
+	 	                                                            0x2e11,
 	 0x30fb,  0x33de,  0x36ba,  0x398c,  0x3c56,  0x3f17,  0x41ce,  0x447a,
 	 0x471c,  0x49b4,  0x4c3f,  0x4ebf,  0x5133,  0x539b,  0x55f5,  0x5842,
 	 0x5a82,  0x5cb4,  0x5ed7,  0x60ec,  0x62f2,  0x64e8,  0x66cf,  0x68a6,
 	 0x6a6d,  0x6c24,  0x6dca,  0x6f5f,  0x70e2,  0x7255,  0x73b5,  0x7504,
-	 0x7641,  0x776c,  0x7884,  0x798a,  0x7a7d,  0x7b5d,  0x7c29,  0x7ce3,
-	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
+	 0x7641,  
+//	 	      0x776c,  0x7884,  0x798a,  0x7a7d,  0x7b5d,  0x7c29,  0x7ce3,
+//	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
 };
 
 int16_t sine(int8_t angle)
@@ -92,8 +89,8 @@ int16_t sine(int8_t angle)
 	if(angle == -128) return 0;
 	if(angle < 0) return -sine(-angle);
 	if(angle == 64) return 32767;
-	if(angle < 64) return sine_table[angle];
-	return sine_table[63-(angle-65)];
+	if(angle < 64) return sine_table[angle - 15];
+	return sine_table[63-(angle-65) - 15];
 }
 
 int16_t cosine(int8_t angle)

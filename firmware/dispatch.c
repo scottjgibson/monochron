@@ -46,6 +46,10 @@ void initanim(void){
  case STYLE_XDA: initanim_xda();
                 break;
 #endif
+#ifdef TSCHRON
+ case STYLE_TS: initanim_ts();
+                break;
+#endif
 #ifdef DEATHCHRON
  case STYLE_DEATH: initanim_death(); break;
 #endif
@@ -83,6 +87,10 @@ void initdisplay(uint8_t inverted) {
  case STYLE_XDA: initdisplay_xda(inverted);
                  break;
 #endif
+#ifdef TSCHRON
+ case STYLE_TS: initdisplay_ts(inverted);
+                break;
+#endif
 #ifdef DEATHCHRON
  case STYLE_DEATH: initdisplay_death(inverted); break;
 #endif
@@ -118,6 +126,10 @@ void drawdisplay(uint8_t inverted) {
  case STYLE_XDA: drawdisplay_xda(inverted);
                  break;
 #endif
+#ifdef TSCHRON
+ case STYLE_TS: drawdisplay_ts(inverted);
+                 break;
+#endif
 #ifdef DEATHCHRON
  case STYLE_DEATH: drawdisplay_death(inverted); break;
 #endif
@@ -141,6 +153,10 @@ void step(void) {
 #endif
 #ifdef XDALICHRON
  case STYLE_XDA: step_xda();
+                 break;
+#endif
+#ifdef TSCHRON
+ case STYLE_TS: step_ts();
                  break;
 #endif
 #ifdef DEATHCHRON

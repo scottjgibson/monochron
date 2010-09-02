@@ -184,7 +184,9 @@ unsigned char EEMEM Font5x7[] = {
 	0x08, 0x1C, 0x2A, 0x08, 0x08 // <-
 };
 
-unsigned char EEMEM FontGr[] =
+
+
+unsigned char PROGMEM FontGr[] =
 {
 // format is one character per line:
 // length, byte array[length]
