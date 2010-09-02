@@ -94,7 +94,7 @@ void setstring_ts()
 void setstringdigits_ts(uint8_t cpos, uint8_t val)
 {
  dispstring[cpos]=(val/10);
- dispstring[cpos+1]=(val&10);
+ dispstring[cpos+1]=(val%10);
 }
 
 void drawdisplay_ts(uint8_t inverted) {
