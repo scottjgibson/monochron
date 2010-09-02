@@ -24,6 +24,7 @@ extern volatile uint8_t alarming, alarm_h, alarm_m;
 extern volatile uint8_t time_format;
 extern volatile uint8_t region;
 extern volatile uint8_t score_mode;
+extern volatile uint8_t score_mode_timeout;
 extern volatile uint8_t RotateFlag;
 extern volatile uint8_t second_changed, minute_changed, hour_changed;
 
@@ -102,9 +103,20 @@ void drawdisplay_ts(uint8_t inverted) {
  if (++loop<3) return;
  loop=0; 
  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
+ uint8_t rx=0;
  uint8_t tx=0;
  uint8_t cx=0;
  uint8_t sx=posstr;
+ if((score_mode == SCORE_MODE_ALARM) && score_mode_timeout)
+ {
+ 	 score_mode_timeout = 0;
+ 	 rx=posstr-1;
+ 	 if(posstr == 0)
+ 	 	 rx=16;
+ } else if ((score_mode == SCORE_MODE_ALARM) && (rx == posstr))
+ {
+ 	 score_mode = SCORE_MODE_TIME;
+ }
  setstring_ts();
  while (tx < 128) {
   cx = drawdigit_ts(tx, 0, dispstring[sx++], inverted);
