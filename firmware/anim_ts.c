@@ -84,7 +84,7 @@ void setstring_ts()
 {
  // 01234567890123456789
  // 12:15:05x09-01-2010x 
- setstringdigits_ts(0,(score_mode == SCORE_MODE_ALARM ? alarm_h : time_h));
+ setstringdigits_ts(0,hours(score_mode == SCORE_MODE_ALARM ? alarm_h : time_h));
  setstringdigits_ts(3,(score_mode == SCORE_MODE_ALARM ? alarm_m : time_m));
  setstringdigits_ts(6,(score_mode == SCORE_MODE_ALARM ? 0 : time_s));
  setstringdigits_ts((region == REGION_US ? 9 : 12),date_m);
