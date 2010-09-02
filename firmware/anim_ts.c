@@ -100,9 +100,9 @@ void setstringdigits_ts(uint8_t cpos, uint8_t val)
 
 void drawdisplay_ts(uint8_t inverted) {
  static uint8_t loop=0;
- if (++loop<3) return;
+ //if (++loop<11) return;
  loop=0; 
- glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
+ //glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
  uint8_t rx=0;
  uint8_t tx=0;
  uint8_t cx=0;
@@ -162,19 +162,21 @@ void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
   scrx=x; // current start of char
   uint8_t rval = HSEGMENT_W+2;
+  if (d==':' || d=='-') rval= DOTRADIUS + 2;
+  if (!x) {rval -= posx; if (rval<=0) return 0;}
+  else if (x+rval>127) {rval=128-x;}
+  glcdFillRectangle(x, 0, rval, GLCD_YPIXELS, inverted); 
   if(d < 10) {
-  	  draw7seg_ts(x,y,eeprom_read_byte(&numbertable[d]),inverted);
+          draw7seg_ts(x,y,eeprom_read_byte(&numbertable[d]),inverted);
   }
   else if (d==':') {
   	  drawdot_ts(x,16,inverted);
           drawdot_ts(x,47,inverted);
-          rval= DOTRADIUS + 2;
   }
   else if (d=='-') {
+          glcdFillRectangle(x, 0, rval, GLCD_YPIXELS, inverted); 
           drawdot_ts(x,31,inverted);
-          rval= DOTRADIUS + 2;
   }
-  if (!scrx) rval-=posx;
   return rval;
 }
 
