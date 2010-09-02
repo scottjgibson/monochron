@@ -265,7 +265,7 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
 	                              // 123456789ABCDEF0123456
 	                         "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
-                             "\x0b" "Version 1.1"
+                             "\x0b" "Version 1.2"
                                   // 123456789ABCDEF0123456
                              "\x00"
                                   // 123456789ABCDEF0123456
@@ -273,6 +273,9 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                                   // 123456789ABCDEF0123456
                          #ifdef INTRUDERCHRON
 	                         "\x0d" "IntruderChron" 
+	                     #endif
+                         #ifdef TSCHRON
+	                         "\x10" "TimesSquareChron" 
 	                     #endif
                                   // 123456789ABCDEF0123456
 	                         "\x0a" "by Dataman"
