@@ -274,6 +274,9 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
                          #ifdef INTRUDERCHRON
 	                         "\x0d" "IntruderChron" 
 	                     #endif
+                         #ifdef TSCHRON
+	                         "\x10" "TimesSquareChron" 
+	                     #endif
                                   // 123456789ABCDEF0123456
 	                         "\x0a" "by Dataman"
                                   // 123456789ABCDEF0123456

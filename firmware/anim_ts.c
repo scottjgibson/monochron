@@ -52,9 +52,9 @@ void setstringdigits_ts(uint8_t, uint8_t);
 
 
 
-//                       01234567890123456789
-//                       12:15:05x09-01-2010x 
-volatile uint8_t dispstring[21]={"12:15:05  09-01-10  "};
+//                                0123456789012345678
+//                                12:15:05x09-01-10x 
+volatile uint8_t dispstring[19]={"12:15:05 09-01-10 "};
 volatile uint8_t posx=0;     // current x offset (negative)
 volatile uint8_t posstr=0;   // current 1st char visible
 volatile uint8_t scrx=0;     // our current screen display position, if 0, then first char could be a partial char.
@@ -86,9 +86,9 @@ void setstring_ts()
  setstringdigits_ts(0,(score_mode == SCORE_MODE_ALARM ? alarm_h : time_h));
  setstringdigits_ts(3,(score_mode == SCORE_MODE_ALARM ? alarm_m : time_m));
  setstringdigits_ts(6,(score_mode == SCORE_MODE_ALARM ? 0 : time_s));
- setstringdigits_ts((region == REGION_US ? 10 : 13),date_m);
- setstringdigits_ts((region == REGION_US ? 13 :10),date_d);
- setstringdigits_ts(16,date_y);
+ setstringdigits_ts((region == REGION_US ? 9 : 12),date_m);
+ setstringdigits_ts((region == REGION_US ? 12 : 9),date_d);
+ setstringdigits_ts(15,date_y);
 }
 
 void setstringdigits_ts(uint8_t cpos, uint8_t val)
@@ -99,8 +99,8 @@ void setstringdigits_ts(uint8_t cpos, uint8_t val)
 
 void drawdisplay_ts(uint8_t inverted) {
  static uint8_t loop=0;
- if (++loop<2) return;
- loop=0;
+ if (++loop<6) return;
+ loop=0; 
  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
  uint8_t tx=0;
  uint8_t cx=0;
@@ -108,15 +108,16 @@ void drawdisplay_ts(uint8_t inverted) {
  setstring_ts();
  while (tx < 115) {
   cx = drawdigit_ts(tx, 0, dispstring[sx++], inverted);
-  if (sx>19) sx=0;
-  if (tx==0) 
-   {
-   posx+=3;
-    if (posx > cx)
-     {
-     posx=0;
-     if (++posstr>19) posstr=0;
-     }
+  if (sx>17) sx=0;
+  if (!tx) 
+   { 
+   if (cx==0) 
+    {
+    posx=0;
+    if (++posstr>17) posstr=0;
+    }
+   else
+    posx+=2;
    }
   tx+=cx;
  }
@@ -206,16 +207,16 @@ void drawseg_ts(uint8_t px, uint8_t y, uint8_t inverted, uint8_t width, uint8_t 
   int16_t hSeg = width;
   if (!scrx)
   {
-    if (x + hSeg < posx) return;
+    //if (x + hSeg < posx) return;
     x-=posx;
     if (x<0) 
      {
      hSeg+=x;
-     if (hSeg<0) return;
+     if (hSeg<0) {return;}
      x=0;
      } 
   }
-  else if (x + hSeg>127) hSeg=128-x;
+  else if (x + hSeg>127) {hSeg=128-x;}
   glcdFillRectangle((uint8_t)x, y, (uint8_t)hSeg, height, !inverted);
 }
 
