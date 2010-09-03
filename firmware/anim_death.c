@@ -208,6 +208,7 @@ void initanim_death(void) {
     	delay_ms(2000);
   }
   score_mode = SCORE_MODE_DEATH_TIME;
+  minute_changed = hour_changed = 0;
   load_etd();
   initdisplay(0);
 }
