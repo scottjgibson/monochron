@@ -129,7 +129,7 @@ void drawdisplay_ts(uint8_t inverted) {
     if (++posstr>17) posstr=0;
     }
    else
-    posx+=2;
+    posx+=3;
    }
   tx+=cx;
  }
@@ -161,7 +161,7 @@ void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 
 uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
   scrx=x; // current start of char
-  uint8_t rval = HSEGMENT_W+2;
+  int8_t rval = HSEGMENT_W+2;
   if (d==':' || d=='-') rval= DOTRADIUS + 2;
   if (!x) {rval -= posx; if (rval<=0) return 0;}
   else if (x+rval>127) {rval=128-x;}
