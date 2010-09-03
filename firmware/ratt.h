@@ -29,6 +29,15 @@
 	#define	STYLE_XDA 1
 #endif
 	
+#ifdef SEVENCHRON
+  #define NUMBERTABLE 1
+#endif
+#ifdef TSCHRON
+  #ifndef NUMBERTABLE
+    #define NUMBERTABLE 1
+  #endif
+#endif
+
 #ifdef RATTCHRON
   #define RATTDEATH 1
 #endif

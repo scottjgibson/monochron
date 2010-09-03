@@ -233,7 +233,9 @@ uint8_t EEMEM alphatable[] = {
 	0xDA, //z
 	/* more */
 };
+#endif
 
+#ifdef NUMBERTABLE
 uint8_t EEMEM numbertable[] = { 
   0xFC /* 0 */, 
   0x60 /* 1 */,
