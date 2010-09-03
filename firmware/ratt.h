@@ -23,6 +23,9 @@
 #define TSCHRON 1
 //#define DEATHCHRON 1
 
+// Undefine to use Lady A's disambiguified 9 (vs g). (SEVENCHRON, TSCHRON)
+#define FEATURE_9 1
+
 #ifndef XDALICHRON
 	//The compiler is feeding me bullshit, about STYLE_XDA being undefined in ratt.c, 
 	//despite there being no references to STYLE_XDA in ratt.c
