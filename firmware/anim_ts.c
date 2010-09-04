@@ -100,9 +100,8 @@ void setstringdigits_ts(uint8_t cpos, uint8_t val)
 
 void drawdisplay_ts(uint8_t inverted) {
  static uint8_t loop=0;
- //if (++loop<11) return;
+ if (++loop<8) return;
  loop=0; 
- //glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted); 
  uint8_t rx=0;
  uint8_t tx=0;
  uint8_t cx=0;
@@ -129,7 +128,7 @@ void drawdisplay_ts(uint8_t inverted) {
     if (++posstr>17) posstr=0;
     }
    else
-    posx+=3;
+    posx+=4;
    }
   tx+=cx;
  }
