@@ -69,14 +69,13 @@ void initanim_ts(void) {
   DEBUG(uart_putw_dec(GLCD_YPIXELS));
   DEBUG(putstring_nl(""));
 #endif
-  initdisplay_ts(0);
+  posx=0; 
+  posstr=0;
+   initdisplay_ts(0);
 }
 
 void initdisplay_ts(uint8_t inverted) {
   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
-  posx=0; 
-  posstr=0;
-  //setstringdigits_ts(15,20);
   setstring_ts();
   drawdisplay_ts(inverted);
 }
@@ -147,7 +146,6 @@ void step_ts(void) {
 
 void drawdot_ts(uint8_t x, uint8_t y, uint8_t inverted) {
  drawseg_ts(x,y-(DOTRADIUS/2),inverted, DOTRADIUS, DOTRADIUS);
- //glcdFillCircle(x, y, DOTRADIUS, !inverted);
 }
 
 void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
