@@ -72,12 +72,15 @@ void initanim_ts(void) {
 }
 
 void initdisplay_ts(uint8_t inverted) {
-  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
-  posx=0; 
-  posstr=0;
-  //setstringdigits_ts(15,20);
-  setstring_ts();
-  drawdisplay_ts(inverted);
+  if(!alarming)
+  {
+  	glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
+    posx=0; 
+    posstr=0;
+    //setstringdigits_ts(15,20);
+    setstring_ts();
+    drawdisplay_ts(inverted);
+  }
 }
 
 void setstring_ts()
