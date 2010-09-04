@@ -147,7 +147,6 @@ void step_ts(void) {
 
 void drawdot_ts(uint8_t x, uint8_t y, uint8_t inverted) {
  drawseg_ts(x,y-(DOTRADIUS/2),inverted, DOTRADIUS, DOTRADIUS);
- //glcdFillCircle(x, y, DOTRADIUS, !inverted);
 }
 
 void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
