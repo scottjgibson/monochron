@@ -222,19 +222,21 @@ void drawsegment_ts(uint8_t s, uint8_t x, uint8_t y, uint8_t inverted) {
     break;    
   }*/
   if(!seg_location_ts[s][0])
-  	  drawhseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
+  	  drawseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted, HSEGMENT_W, HSEGMENT_H);
+  	  //drawhseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
   else
-  	  drawvseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
+  	  drawseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted, VSEGMENT_W, GLCD_YPIXELS/2);
+  	  //drawvseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
 }
 
-
+/*
 void drawvseg_ts(uint8_t x, uint8_t y, uint8_t inverted) {
  drawseg_ts(x,y,inverted, VSEGMENT_W, GLCD_YPIXELS/2);
 }
 
 void drawhseg_ts(uint8_t x, uint8_t y, uint8_t inverted) {   
  drawseg_ts(x,y,inverted, HSEGMENT_W, HSEGMENT_H);
-}
+}*/
 
 void drawseg_ts(uint8_t px, uint8_t y, uint8_t inverted, uint8_t width, uint8_t height)
 {
