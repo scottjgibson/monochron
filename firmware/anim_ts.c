@@ -153,7 +153,7 @@ void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 	for(uint8_t i=0;i<7;i++)
 	{
 		if(segs & (1 << (7 - i)))
-			drawsegment_ts('a'+i, x, y, inverted);
+			drawsegment_ts(i, x, y, inverted);
 		//else
 			//drawsegment_ts('a'+i, x, y, !inverted);
 	}
@@ -180,8 +180,20 @@ uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
   return rval;
 }
 
+#define SEGMENT_HORIZONTAL_TS 0
+#define SEGMENT_VERTICAL_TS 1
+uint8_t seg_location_ts[7][3] = {
+	{SEGMENT_HORIZONTAL_TS,0,0},
+	{SEGMENT_VERTICAL_TS,HSEGMENT_W-VSEGMENT_W,0},
+	{SEGMENT_VERTICAL_TS,HSEGMENT_W-VSEGMENT_W,GLCD_YPIXELS/2},
+	{SEGMENT_HORIZONTAL_TS,0,GLCD_YPIXELS-HSEGMENT_H},
+	{SEGMENT_VERTICAL_TS,0,GLCD_YPIXELS/2},
+	{SEGMENT_VERTICAL_TS,0,0},
+	{SEGMENT_HORIZONTAL_TS,0,(GLCD_YPIXELS/2)-(HSEGMENT_H/2)},
+};
+
 void drawsegment_ts(uint8_t s, uint8_t x, uint8_t y, uint8_t inverted) {
-  switch (s) {
+  /*switch (s) {
   case 'a':
     drawhseg_ts(x, y, inverted);
     break;
@@ -203,7 +215,11 @@ void drawsegment_ts(uint8_t s, uint8_t x, uint8_t y, uint8_t inverted) {
   case 'g':
     drawhseg_ts(x,(GLCD_YPIXELS/2)-(HSEGMENT_H/2), inverted);
     break;    
-  }
+  }*/
+  if(!seg_location_ts[s][0])
+  	  drawhseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
+  else
+  	  drawvseg_ts(x+seg_location_ts[s][1],y+seg_location_ts[s][2],inverted);
 }
 
 
