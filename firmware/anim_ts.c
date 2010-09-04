@@ -59,6 +59,7 @@ volatile uint8_t dispstring[19]={"12:15:05 09-01-10 "};
 volatile uint8_t posx=0;     // current x offset (negative)
 volatile uint8_t posstr=0;   // current 1st char visible
 volatile uint8_t scrx=0;     // our current screen display position, if 0, then first char could be a partial char.
+volatile uint8_t charwidth=0; // last charwidth we worked on.
 
 void initanim_ts(void) {
 #ifdef DEBUGF
@@ -100,7 +101,7 @@ void setstringdigits_ts(uint8_t cpos, uint8_t val)
 
 void drawdisplay_ts(uint8_t inverted) {
  static uint8_t loop=0;
- if (++loop<8) return;
+ if (++loop<6) return;
  loop=0; 
  uint8_t rx=0;
  uint8_t tx=0;
@@ -124,11 +125,13 @@ void drawdisplay_ts(uint8_t inverted) {
    { 
    if (cx==0) 
     {
-    posx=0;
+    if (posx>charwidth) posx-=charwidth;
+    else posx=0;
+ 
     if (++posstr>17) posstr=0;
     }
    else
-    posx+=4;
+    posx+=5;
    }
   tx+=cx;
  }
@@ -160,10 +163,14 @@ void draw7seg_ts(uint8_t x, uint8_t y, uint8_t segs, uint8_t inverted)
 
 uint8_t drawdigit_ts(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
   scrx=x; // current start of char
-  int8_t rval = HSEGMENT_W+2;
-  if (d==':' || d=='-') rval= DOTRADIUS + 2;
-  if (!x) {rval -= posx; if (rval<=0) return 0;}
-  else if (x+rval>127) {rval=128-x;}
+  charwidth = HSEGMENT_W + 2;
+  if (d==':' || d=='-')  charwidth = DOTRADIUS + 2;
+  int8_t rval = (int8_t)charwidth;
+  if (!x) {
+   rval -= (int8_t)posx; 
+   if (rval<=0) return 0;
+  }
+  else if ((int16_t)((int8_t)x+rval)>127) {rval=(int8_t)(128-x);}
   glcdFillRectangle(x, 0, rval, GLCD_YPIXELS, inverted); 
   if(d < 10) {
           draw7seg_ts(x,y,eeprom_read_byte(&numbertable[d]),inverted);
