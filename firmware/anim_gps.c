@@ -28,7 +28,9 @@ void initanim_GPS(void){
  glcdClearScreen();
  glcdPutStr("GPS Setup",NORMAL);
  glcdSetAddress(MENU_INDENT, 2);
- glcdPutStr("Offset:" ,NORMAL);
+ glcdPutStr("Offset  : " ,NORMAL);
+ glcdSetAddress(MENU_INDENT, 3);
+ glcdPutStr("Status  : NOLOCK",NORMAL);
  glcdSetAddress(MENU_INDENT, 4);
  glcdPutStr("GPS Date: ",NORMAL);
  glcdSetAddress(MENU_INDENT, 5);

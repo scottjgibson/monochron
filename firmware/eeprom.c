@@ -267,7 +267,7 @@ uint8_t about[] EEMEM =      "\0\0\0\0\0\0\0\0"
 	                              // 123456789ABCDEF0123456
 	                         "\x0a" "MultiChron"
                                   // 123456789ABCDEF0123456
-                             "\x0b" "Version 1.2"
+                             "\x0b" "Version 1.1"
                                   // 123456789ABCDEF0123456
                              "\x00"
                                   // 123456789ABCDEF0123456
