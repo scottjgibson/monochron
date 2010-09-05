@@ -628,7 +628,8 @@ SIGNAL (TIMER2_OVF_vect) {
 
   readi2ctime();
 #ifdef GPSENABLE
-  GPSRead((displaystyle==STYLE_GPS) && (displaymode == SHOW_TIME));	//Hooking time reading, and thus time_changed here.
+  //Hooking time reading, and thus time_changed here.
+  GPSCheck((displaystyle==STYLE_GPS) && (displaymode == SHOW_TIME));	
 #endif
 #ifdef DEATHCHRON
   border_tick++;
@@ -814,14 +815,14 @@ uint8_t GPSRead(uint8_t debugmode) {
  while(char_available()) {
    ch = char_read();
  if (ch<32 || ch>127) continue;
- /*if (debugmode) {
+ if (debugmode) {
   glcdSetAddress(6 * scrpos++, 6); 
   glcdWriteChar(ch, NORMAL); 
   glcdWriteChar(32, NORMAL); 
-  if (scrpos>21) {scrpos=0;}
- }*/
+  if (scrpos>19) {scrpos=0;}
+ }
  // Check for start of sentence
- if (ch=='$') {
+ if (ch=='$') { 
   soh=1; 
   blen=0; 
   continue;
@@ -888,9 +889,15 @@ uint8_t GPSRead(uint8_t debugmode) {
      dadjflag=1;
     }
    }
-   writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
-   sei();
    continue;
+  }
+
+  if (soh==6) { // LAT WORD
+    if (debugmode) {
+     glcdSetAddress(MENU_INDENT+60, 3); 
+     glcdPutStr_ram((!buffer[0] ? "NOLOCK" : "LOCKED"), NORMAL);
+    }
+    if (!buffer[0]) return 0;
   }
   
   // Process: Date
@@ -931,16 +938,21 @@ uint8_t GPSRead(uint8_t debugmode) {
      }
     }
    }
-   // Save Results
-   writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
-   sei();
-   // Do we need to set hourchanged, minutechanged, etc?
    return 1;
   }
+  }
  }
- }
+
  return 0;
 }
+
+void GPSCheck(uint8_t mode) {
+ if (GPSRead(mode) && !mode) {
+  writei2ctime(time_s, time_m, time_h, dotw(date_m, date_d, date_y), date_d, date_m, date_y);
+  sei();
+ } 
+}
+
 
 // Decodes a 2 char number to uint8
 uint8_t DecodeGPSBuffer(char *cBuffer) {
