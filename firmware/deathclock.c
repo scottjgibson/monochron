@@ -44,38 +44,61 @@ volatile int32_t old_minutes_left;
 volatile uint8_t dc_mode;
 volatile uint8_t reaper_tow_rip;
 
-const uint8_t normal_bmi_male[6][23] PROGMEM = {
-  { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 40,0,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,4,5,5,6,6,8 },
-  { 50,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,4,4,4,5,5,5,7 },
-  { 60,0,0,0,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,4,5,5,6 },
-  { 70,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,4,4,4,4,0,0 },
-  { 200,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5 }
+const uint8_t bmi_table_offset[] = {
+	0,5,	//normal
+	0,5,	//pessimistic
+	0,5,	//optimistic
+	11,12,	//Sadistic
 };
 
-const uint8_t normal_bmi_female[7][23] PROGMEM = {
-  { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 30,0,0,0,1,1,1,1,2,2,3,3,3,4,4,5,5,6,6,7,7,8,13 },
-  { 40,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,5,5,6,6,6,7,11 },
-  { 50,0,0,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,6,6,10 },
-  { 60,0,0,0,0,0,0,0,1,1,1,1,2,2,2,3,3,3,4,4,4,5,7 },
-  { 70,0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,3,3,3,3,5 },
-  { 200,0,0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,2,2 }
+const uint8_t bmi_table_count[] = {
+	5,6,	//normal
+	5,6,	//pessimistic
+	5,6,	//optimistic
+	1,2,	//Sadistic
 };
 
-const uint8_t sadistic_bmi_male[2][23] PROGMEM = {
-  { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 200,0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,2,3,3,4 }
+const uint8_t normal_bmi_male[5][11] PROGMEM = {
+  { 40,0x00,0x11,0x11,0x22,0x23,0x33,0x44,0x45,0x56,0x68 },
+  { 50,0x00,0x01,0x11,0x12,0x22,0x23,0x34,0x44,0x55,0x57 },
+  { 60,0x00,0x00,0x11,0x11,0x22,0x23,0x33,0x44,0x45,0x56 },
+  { 70,0x00,0x11,0x11,0x12,0x22,0x23,0x33,0x44,0x44,0x00 },
+  { 200,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x05 }
 };
 
-const uint8_t sadistic_bmi_female[3][23] PROGMEM = {
-  { 20,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 },
-  { 30,0,0,0,0,0,0,0,1,1,1,1,1,2,2,2,2,3,3,3,3,4,6 },
-  { 200,0,0,0,0,0,0,0,1,1,1,1,1,1,2,2,2,2,3,3,3,3,5 }
+const uint8_t normal_bmi_female[6][11] PROGMEM = {
+  { 30,0x01,0x11,0x12,0x23,0x33,0x44,0x55,0x66,0x77,0x8D },
+  { 40,0x01,0x11,0x12,0x22,0x33,0x34,0x45,0x56,0x66,0x7B },
+  { 50,0x00,0x01,0x11,0x22,0x23,0x33,0x44,0x45,0x56,0x6A },
+  { 60,0x00,0x00,0x01,0x11,0x12,0x22,0x33,0x34,0x44,0x57 },
+  { 70,0x00,0x00,0x00,0x11,0x11,0x22,0x22,0x23,0x33,0x35 },
+  { 200,0x00,0x00,0x00,0x00,0x00,0x11,0x11,0x11,0x11,0x22 }
 };
 
-const uint16_t normal_smoking_male[11][2] PROGMEM = {
-  { 25,0 },
+const uint8_t sadistic_bmi_male[1][11] PROGMEM = {
+  { 200,0x00,0x00,0x00,0x11,0x11,0x11,0x22,0x22,0x23,0x34 }
+};
+
+const uint8_t sadistic_bmi_female[2][11] PROGMEM = {
+  { 30,0x00,0x00,0x01,0x11,0x11,0x22,0x22,0x33,0x33,0x46 },
+  { 200,0x00,0x00,0x01,0x11,0x11,0x12,0x22,0x23,0x33,0x35 }
+};
+
+const uint8_t smoking_table_offset[] = {
+	0,10,	//normal
+	0,10,	//pessimistic
+	0,10,	//optimistic
+	19,21,	//Sadistic
+};
+
+const uint8_t smoking_table_count[] = {
+	10,9,	//normal
+	10,9,	//pessimistic
+	10,9,	//optimistic
+	2,2,	//Sadistic
+};
+
+const uint16_t normal_smoking_male[10][2] PROGMEM = {
   { 30,2739 },
   { 35,2703 },
   { 40,2557 },
@@ -88,8 +111,7 @@ const uint16_t normal_smoking_male[11][2] PROGMEM = {
   { 200,1205 }
 };
 
-const uint16_t normal_smoking_female[10][2] PROGMEM = {
-  { 25, 0 },
+const uint16_t normal_smoking_female[9][2] PROGMEM = {
   { 30, 2367 },
   { 45, 2331 },
   { 50, 2294 },
@@ -101,14 +123,12 @@ const uint16_t normal_smoking_female[10][2] PROGMEM = {
   { 200, 1096 }
 };
 
-const uint16_t sadistic_smoking_male[3][2] PROGMEM = {
-  { 25, 0 },
+const uint16_t sadistic_smoking_male[2][2] PROGMEM = {
   { 30, 1278 },
   { 200, 1242 }
 };
 
-const uint16_t sadistic_smoking_female[3][2] PROGMEM = {
-  { 25, 0 },
+const uint16_t sadistic_smoking_female[2][2] PROGMEM = {
   { 30, 1424 },
   { 200, 1388 }
 };
@@ -202,6 +222,21 @@ uint8_t BodyMassIndex ( uint8_t unit, uint16_t height, uint16_t weight )
   }
 }
 
+uint32_t random_days(uint8_t hour, uint8_t min, uint8_t sec, uint32_t base_days)
+{
+	init_crand_consistent(hour,min,sec);
+	uint32_t random = (crand(0) * 1000) / 0x7FFF;
+	return (uint32_t)((base_days * random) / 1000);
+}
+
+uint32_t days_table[] = {
+//  male,   female
+	269450, 289590,	//normal
+	214662, 234802, //pessimistic
+	305975, 326115, //optimistic
+	134307, 143490, //sadistic
+};
+
 uint32_t ETD ( uint8_t DOB_month, 
                uint8_t DOB_day, 
                uint8_t DOB_year, 
@@ -221,131 +256,52 @@ uint32_t ETD ( uint8_t DOB_month,
   uint32_t random;
   int32_t days;
   
-  if((Mode == DC_mode_optimistic) || (Mode == DC_mode_pessimistic))
-  {
-    init_crand();
-  }
-  
   diff = date_diff(DOB_month,DOB_day,DOB_year,month,day,year);
   y = (diff * 10) / 3653;
-  if (Gender == DC_gender_male)
-    days = 269450;  //Divide by 100 at the end.
-  else
-    days = 289590;
+  
+  days = days_table[(Mode * 2) + Gender];
   days -= diff*10;
   bmi = BMI;
   if(bmi > 45)
     bmi = 45;
-  if(bmi < 24)
-    bmi = 24;
-  bmi -= 24;
-  if(Mode == DC_mode_sadistic)
-  {
-    if (Gender == DC_gender_male)
-    {
-      days -= 135143;  //Divide by 100 at the end.
-      if ( Smoker == DC_smoker )
-        for(i=0;i<3;i++)
-        {
-          if( y < pgm_read_word(&sadistic_smoking_male[i][0]) )
-          {
-            days -= (uint16_t)(pgm_read_word(&sadistic_smoking_male[i][1])*10);
-            break;
-          }
-        }
-      for(i=0;i<2;i++)
-      {
-        if ( y < pgm_read_byte(&sadistic_bmi_male[i][0]) )
-        {
-          days -= (uint16_t)(pgm_read_byte(&sadistic_bmi_male[i][bmi+1]) * 3653);
-          break;
-        }
-      }
-    }
-    else
-    {
-      days -= 146100;
-
-        for(i=0;i<3;i++)
-        {
-          if( y < pgm_read_word(&sadistic_smoking_female[i][0]) )
-          {
-            days -= (uint16_t)(pgm_read_word(&sadistic_smoking_female[i][1])*10);
-            break;
-          }
-        }
-      for(i=0;i<3;i++)
-      {
-        if ( y < pgm_read_byte(&sadistic_bmi_female[i][0]) )
-        {
-          days -= (uint16_t)(pgm_read_byte(&sadistic_bmi_female[i][bmi+1]) * 3653);
-          break;
-        }
-      }
-}
-  }
-  else
-  {
-    if (Gender == DC_gender_male)
-    {
-      if ( Smoker == DC_smoker )
-        for(i=0;i<11;i++)
-        {
-          if( y < pgm_read_word(&normal_smoking_male[i][0]) )
-          {
-            days -= (uint16_t)(pgm_read_word(&normal_smoking_male[i][1])*10);
-            break;
-          }
-        }
-      for(i=0;i<6;i++)
-      {
-        if ( y < pgm_read_byte(&normal_bmi_male[i][0]) )
-        {
-          days -= (uint16_t)(pgm_read_byte(&normal_bmi_male[i][bmi+1]) * 3653);
-          break;
-        }
-      }
-    }
-    else
-    {
-      if ( Smoker == DC_smoker )
-        for(i=0;i<10;i++)
-        {
-          if( y < pgm_read_word(&normal_smoking_female[i][0]) )
-          {
-            days -= (uint16_t)(pgm_read_word(&normal_smoking_female[i][1])*10);
-            break;
-          }
-        }
-      for(i=0;i<7;i++)
-      {
-        if ( y < pgm_read_byte(&normal_bmi_female[i][0]) )
-        {
-          days -= (uint16_t)(pgm_read_byte(&normal_bmi_female[i][bmi+1]) * 3653);
-          break;
-        }
-      }
-    }
+  if(bmi < 26)
+    bmi = 26;
+  bmi -= 26;
+  if (Mode == DC_mode_optimistic) {
+    days += random_days(hour,min,sec,54790);
+  } else if (Mode == DC_mode_pessimistic) {
+    days -= random_days(hour,min,sec,36530);
   }
   
-  if(Mode == DC_mode_optimistic)
+  if(y>=20)
   {
-    days += 36525;
-    random = (crand(0) * 1000) / 0x7FFF;
-    days += (uint32_t)((54790 * random) / 1000);
-    //days += random(0,5479)*100;
+  	  for(i=0;i<bmi_table_count[(Mode * 2) + Gender];i++)
+  	  {
+  	  	  if ( y < pgm_read_byte(&normal_bmi_male[bmi_table_offset[(Mode * 2) + Gender]+i][0]) )
+          {
+          	uint8_t temp = pgm_read_byte(&normal_bmi_male[bmi_table_offset[(Mode * 2) + Gender]+i][(bmi/2)+1]);
+          	if(bmi&1)
+          		temp &= 0x0F;
+          	else
+          		temp >>= 4;
+            days -= (uint16_t)(temp * 3653);
+            break;
+          }
+  	  }
   }
-  if(Mode == DC_mode_pessimistic)
+  if((y>=25)&&(Smoker == DC_smoker))
   {
-    days -= 54788;
-    random = (crand(0) * 1000) / 0x7FFF;
-    days -= (uint32_t)((36530 * random) / 1000);
-    //days -= random(0,3653)*100;
+      for(i=0;i<smoking_table_count[(Mode * 2) + Gender];i++)
+      {
+        if( y < pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][0]) )
+        {
+          days -= (uint16_t)(pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][1])*10);
+          break;
+        }
+      }
   }
   if (days < 0) return 0;
-  //days *= 864;  //Convert days left into seconds left.
-  //days /= 10;
-  days *= 144;
+  days *= 144;	//Convert Days into Minutes left.
   return days;
 }
 
