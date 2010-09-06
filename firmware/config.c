@@ -397,37 +397,32 @@ void set_backlight(void) {
 }
 #endif
 
+
+#ifdef OPTION_DOW_DATELONG
+uint8_t region_setting_table[12][13] PROGMEM = {
+#else
+uint8_t region_setting_table[4][13] PROGMEM = {
+#endif
+	"     US 12hr",
+	"     US 24hr",
+	"     EU 12hr",
+	"     EU 24hr",
+#ifdef OPTION_DOW_DATELONG
+	" US 12hr DOW",
+	" US 24hr DOW",
+	" EU 12hr DOW",
+	" EU 24hr DOW",
+	"   12hr LONG",
+	"   24hr LONG",
+	"12h LONG DOW",
+	"24h LONG DOW"
+#endif
+};
+
 void print_region_setting(uint8_t inverted) {
   glcdSetAddress(MENU_INDENT, 4);
   glcdPutStr("Region: ", NORMAL);
-  if ((region == REGION_US) && (time_format == TIME_12H)) {
-    glcdPutStr("     US 12hr", inverted);
-  } else if ((region == REGION_US) && (time_format == TIME_24H)) {
-    glcdPutStr("     US 24hr", inverted);
-  } else if ((region == REGION_EU) && (time_format == TIME_12H)) {
-    glcdPutStr("     EU 12hr", inverted);
-  } else if ((region == REGION_EU) && (time_format == TIME_24H)){
-    glcdPutStr("     EU 24hr", inverted);
-  } 
-#ifdef OPTION_DOW_DATELONG
-  else if ((region == DOW_REGION_US) && (time_format == TIME_12H)) {
-    glcdPutStr(" US 12hr DOW", inverted);
-  } else if ((region == DOW_REGION_US) && (time_format == TIME_24H)) {
-    glcdPutStr(" US 24hr DOW", inverted);
-  } else if ((region == DOW_REGION_EU) && (time_format == TIME_12H)) {
-    glcdPutStr(" EU 12hr DOW", inverted);
-  } else if ((region == DOW_REGION_EU) && (time_format == TIME_24H)){
-    glcdPutStr(" EU 24hr DOW", inverted);
-  } else if ((region == DATELONG) && (time_format == TIME_12H)) {
-    glcdPutStr("   12hr LONG", inverted);
-  } else if ((region == DATELONG) && (time_format == TIME_24H)) {
-    glcdPutStr("   24hr LONG", inverted);
-  } else if ((region == DATELONG_DOW) && (time_format == TIME_12H)) {
-    glcdPutStr("12h LONG DOW", inverted);
-  } else if ((region == DATELONG_DOW) && (time_format == TIME_24H)){
-    glcdPutStr("24h LONG DOW", inverted);
-  }
-#endif
+  glcdPutStr_rom(&region_setting_table[(region * 2) + time_format][0], inverted);
 }
 
 void set_region(void) {
