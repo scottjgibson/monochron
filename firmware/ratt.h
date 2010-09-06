@@ -367,7 +367,7 @@ void set_date(void);
 void set_backlight(void);
 void print_timehour(uint8_t h, uint8_t inverted);
 void print_alarmhour(uint8_t h, uint8_t inverted);
-void display_menu(void);
+void display_menu(uint8_t line);
 void drawArrow(uint8_t x, uint8_t y, uint8_t l);
 void setalarmstate(void);
 void beep(uint16_t freq, uint8_t duration);

@@ -69,7 +69,7 @@ void print_backlight(uint8_t mode)
   printnumber(OCR2B>>OCR2B_BITSHIFT,((mode==SET_BRT)?INVERTED:NORMAL));
 }
 
-void display_menu(void) {
+void display_menu(uint8_t line) {
   DEBUGP("display menu");
   
   screenmutex++;
@@ -91,28 +91,22 @@ void display_menu(void) {
   
 #ifdef BACKLIGHT_ADJUST
   print_backlight(SET_BRIGHTNESS);
-#endif
-  
-  print_menu_advance();
 
-  screenmutex--;
-}
-
-uint8_t init_set_menu(uint8_t line)
-{
-  display_menu();
-  
-  screenmutex++;
-#ifdef BACKLIGHT_ADJUST
   if(displaymode == SET_BRIGHTNESS)
 #else
   if(displaymode == SET_REGION)
 #endif
   	  print_menu_exit();
-  // put a small arrow next to 'set 12h/24h'
+  else
+  	print_menu_advance();
+
   drawArrow(0, (line*8)+3, MENU_INDENT -1);
   screenmutex--;
-   
+}
+
+uint8_t init_set_menu(uint8_t line)
+{
+  display_menu(line);
   timeoutcounter = INACTIVITYTIMEOUT;
   return displaymode;
 }
@@ -157,11 +151,10 @@ void set_style(void) {
 	    displaystyle ++;
 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_BASE + 1;
 	screenmutex++;
-	display_menu();
+	display_menu(0);
 	print_menu_change();
 
 	// put a small arrow next to 'set 12h/24h'
-	drawArrow(0, 3, MENU_INDENT -1);
 	print_style_setting(INVERTED);
  	
 	screenmutex--;
@@ -317,10 +310,11 @@ void set_date(void) {
 	mode = SET_DATE;
 	
 	//Update the DS1307 with set date.
+	writei2ctime(time_s, time_m, time_h, 0, day, month, year);
 	date_y = year;
 	date_m = month;
 	date_d = day;
-	writei2ctime(time_s, time_m, time_h, 0, date_d, date_m, date_y);
+	
       }
       //Print the instructions below
       print_monthday_help(mode);
@@ -470,11 +464,8 @@ void set_region(void) {
 		}
 		time_format = !time_format;
 	screenmutex++;
-	display_menu();
+	display_menu(4);
 	print_menu_change();
-
-	// put a small arrow next to 'set 12h/24h'
-	drawArrow(0, 35, MENU_INDENT -1);
 
 	print_region_setting(INVERTED);
 	screenmutex--;
@@ -567,7 +558,7 @@ void set_time(void) {
 	DEBUG(putstring("Set time sec"));
 	mode = SET_SEC;
 	// display instructions below
-        print_menu_opts("sec","set secs");
+        print_menu_opts("change sec","set secs");
       } else {
 	// done!
 	DEBUG(putstring("done setting time"));
@@ -575,10 +566,11 @@ void set_time(void) {
 	// display instructions below
 	print_menu_advance();
 	
+	writei2ctime(sec, min, hour, 0, date_d, date_m, date_y);
 	time_h = hour;
 	time_m = min;
 	time_s = sec;
-	writei2ctime(time_s, time_m, time_h, 0, date_d, date_m, date_y);
+	
       }
       print_time(hour,min,sec,mode);
       screenmutex--;
