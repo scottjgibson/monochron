@@ -21,7 +21,7 @@
 #define RATTCHRON 1
 #define XDALICHRON 1
 #define TSCHRON 1
-#define DEATHCHRON 1
+//#define DEATHCHRON 1
 
 // Undefine to use Lady A's disambiguified 9 (vs g). (SEVENCHRON, TSCHRON)
 #define FEATURE_9 1
