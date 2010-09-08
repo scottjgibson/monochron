@@ -158,6 +158,8 @@ void set_style(void) {
 	print_style_setting(INVERTED);
  	
 	screenmutex--;
+	if(pressed & 4)
+		delay_ms(200);
 
 	//eeprom_write_byte(&EE_BRIGHT, OCR2B);
       }
@@ -634,47 +636,45 @@ void print_alarmhour(uint8_t h, uint8_t inverted) {
   }
 }
 
-void print_style_setting(uint8_t inverted) {
-glcdSetAddress(43, 0);
-  switch (displaystyle) {
+uint8_t style_setting_str[] PROGMEM = { 
 #ifdef RATTCHRON
-  case STYLE_RAT: glcdPutStr("RATTChron",inverted);
-                break;
+	STYLE_RAT,'R','A','T','T','C','h','r','o','n',0,
 #endif
 #ifdef INTRUDERCHRON
-  case STYLE_INT: glcdPutStr("IntruderChron",inverted);
-				break;
+	STYLE_INT,'I','n','t','r','u','d','e','r','C','h','r','o','n',0,
 #endif
 #ifdef SEVENCHRON
-  case STYLE_SEV: glcdPutStr("SevenChron",inverted);
- 				break;
+  STYLE_SEV, 'S','e','v','e','n','C','h','r','o','n',0,
 #endif
 #ifdef XDALICHRON
-  case STYLE_XDA: glcdPutStr("XDALIChron",inverted);
-                 break;
+  STYLE_XDA, 'X','D','A','L','I','C','h','r','o','n',0,
 #endif
 #ifdef TSCHRON
-  case STYLE_TS: glcdPutStr("TimesSqChron",inverted);
-                 break;
+  STYLE_TS, 'T','i','m','e','s','S','q','C','h','r','o','n',0,
 #endif
 #ifdef DEATHCHRON
-  case STYLE_DEATH: glcdPutStr("DeathChron", inverted);
-                break;
+  STYLE_DEATH, 'D','e','a','t','h','C','h','r','o','n',0,
 #endif
-  case STYLE_RANDOM: glcdPutStr("Random",inverted);
-  				break;
-  case STYLE_ROTATE: glcdPutStr("Rotate",inverted);
-  				break;
+  STYLE_RANDOM, 'R','a','n','d','o','m',0,
+  STYLE_ROTATE, 'R','o','t','a','t','e',0,
 #ifdef DEATHCHRON
-  case STYLE_DEATHCFG: glcdPutStr("DeathChron Cfg", inverted);
-                break;
+  STYLE_DEATHCFG, 'D','e','a','t','h','C','h','r','o','n',' ','C','f','g',0,
 #endif
 #ifdef GPSENABLE
-  case STYLE_GPS: glcdPutStr("GPS Setup",inverted);
-  				break;
+  STYLE_GPS, 'G','P','S',' ','S','e','t','u','p',0,
 #endif
-  case STYLE_ABOUT:  glcdPutStr("About",inverted);
-  				break;
-  }
+  STYLE_ABOUT, 'A','b','o','u','t',0,
+  0xFF,
+};
+
+void print_style_setting(uint8_t inverted) {
+glcdSetAddress(43, 0);
+  uint16_t i=0;
+  uint8_t j=0;
+  while((j!=displaystyle)&&(j!=0xFF))
+  	  j=pgm_read_byte(&style_setting_str[i++]);
+  if(j==0xFF)
+  	  return;
+  glcdPutStr_rom(&style_setting_str[i],inverted);
 }
 

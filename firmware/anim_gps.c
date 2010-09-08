@@ -20,23 +20,27 @@ extern volatile uint8_t just_pressed;
 extern volatile uint8_t displaystyle;
 extern volatile uint8_t displaymode;
 
-
+uint8_t GPS_Text[] PROGMEM = "\x0A" "GPS Setup\0"
+	                 "\x01" "\0"
+	                 "\x0B" "Offset  : \0"
+	                 "\x11" "Status  : NOLOCK\0"
+	                 "\x0B" "GPS Date: \0"
+	                 "\x15" "GPS Time:        UTC\0"
+	                 "\x01" "\0"
+	                 "\x14" "Menu=Exit, Set=-, +";
+	                 
 
 void initanim_GPS(void){
  uint8_t UpdateTZ =1;
+ uint8_t i,j;
  timezone=(int8_t)eeprom_read_byte(&EE_TIMEZONE);
  glcdClearScreen();
- glcdPutStr("GPS Setup",NORMAL);
- glcdSetAddress(MENU_INDENT, 2);
- glcdPutStr("Offset  : " ,NORMAL);
- glcdSetAddress(MENU_INDENT, 3);
- glcdPutStr("Status  : NOLOCK",NORMAL);
- glcdSetAddress(MENU_INDENT, 4);
- glcdPutStr("GPS Date: ",NORMAL);
- glcdSetAddress(MENU_INDENT, 5);
- glcdPutStr("GPS Time:        UTC",NORMAL);
- glcdSetAddress(MENU_INDENT, 7);
- glcdPutStr("Menu=Exit, Set=-, +",NORMAL);
+ for(i=0,j=0;i<8;i++)
+ {
+ 	 if(i) glcdSetAddress(MENU_INDENT, i);
+     glcdPutStr_rom(&GPS_Text[j+1] ,NORMAL);
+     j+=pgm_read_byte(&GPS_Text[j])+1;
+ }
  while (1) {
   // Must get a good test to enable gps
   // read buttons

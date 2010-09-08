@@ -19,7 +19,7 @@
 // These store the current button states for all 3 buttons. We can 
 // then query whether the buttons are pressed and released or pressed
 // This allows for 'high speed incrementing' when setting the time
-volatile uint8_t last_buttonstate = 0, just_pressed = 0, pressed = 0;
+volatile uint8_t last_buttonstate = 0, debounce = 0, just_pressed = 0, pressed = 0;
 volatile uint8_t buttonholdcounter = 0;
 
 // whether hte alarm is going off
@@ -69,7 +69,7 @@ SIGNAL(ADC_vect) {
     return;
   } else if (reading > 610) {
     // button 3 "+" pressed
-    if (! (last_buttonstate & 0x4)) { // was not pressed before
+    if (!last_buttonstate) { // was not pressed before
       // debounce by taking a second reading 
       delay_ms(10);
       reading2 = readADC();
@@ -78,29 +78,25 @@ SIGNAL(ADC_vect) {
 	ADCSRA |= _BV(ADIE) | _BV(ADSC); // start next conversion  	
 	return;
       }
-
-      buttonholdcounter = 2;          // see if we're press-and-holding
-      // the buttonholdcounter is decremented by a timer!
-      while (buttonholdcounter) {
-	reading2 = readADC();
-	if ( (reading2 > 735) || (reading2 < 610)) {
-	  // button was released
-	  last_buttonstate &= ~0x4;
-  
-	  DEBUG(putstring_nl("b3"));
-	  just_pressed |= 0x4;
+      buttonholdcounter = 2;
+      last_buttonstate = 0x4;
+      just_pressed = 0x4;
 	  ADCSRA |= _BV(ADIE) | _BV(ADSC); // start next conversion  	
 	  return;
-	}
+    } else {
+
+      // the buttonholdcounter is decremented by a timer!
+      if (buttonholdcounter) {
+	     ADCSRA |= _BV(ADIE) | _BV(ADSC); // start next conversion  	
+	     return;
       }
       // 2 seconds later...
-      last_buttonstate |= 0x4;
-      pressed |= 0x4;                 // The button was held down (fast advance)
+      pressed = 0x4;                 // The button was held down (fast advance)
     }
 
   } else if (reading > 270) {
     // button 2 "SET" pressed
-    if (! (last_buttonstate & 0x2)) { // was not pressed before
+    if (!last_buttonstate) { // was not pressed before
       // debounce by taking a second reading 
       delay_ms(10);
       reading2 = readADC();
@@ -110,14 +106,13 @@ SIGNAL(ADC_vect) {
 	return;
       }
       DEBUG(putstring_nl("b2"));
-      just_pressed |= 0x2;
+      just_pressed = 0x2;
+      last_buttonstate = 0x2;
+      pressed = 0x2;                 // held down
     }
-    last_buttonstate |= 0x2;
-    pressed |= 0x2;                 // held down
-
   } else {
     // button 1 "MENU" pressed
-    if (! (last_buttonstate & 0x1)) { // was not pressed before
+    if (!last_buttonstate) { // was not pressed before
       // debounce by taking a second reading 
       delay_ms(10);
       reading2 = readADC();
@@ -127,11 +122,10 @@ SIGNAL(ADC_vect) {
 	return;
       }
       DEBUG(putstring_nl("b1"));
-      just_pressed |= 0x1;
+      just_pressed = 0x1;
+      last_buttonstate = 0x1;
+      pressed = 0x1;                 // held down
     }
-    last_buttonstate |= 0x1;
-    pressed |= 0x1;                 // held down
-
   }
   ADCSRA |= _BV(ADIE) | _BV(ADSC); // start next conversion  
 }

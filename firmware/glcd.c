@@ -57,7 +57,7 @@ void glcdSetDot(u08 x, u08 y)
 	glcdDataWrite(temp | (1 << (y % 8)));
 	glcdStartLine(0);
 }
-
+/*
 // clear dot
 void glcdClearDot(u08 x, u08 y)
 {
@@ -94,12 +94,12 @@ void glcdRectangle(u08 x, u08 y, u08 w, u08 h)
   }
 */
   // optimized!
-  
+  /*
   glcdFillRectangle(x, y, 1, h, ON);
   glcdFillRectangle(x+w-1, y, 1, h, ON);
   glcdFillRectangle(x, y, w, 1, ON);
   glcdFillRectangle(x, y+h-1, w, 1, ON);
-}
+}*/
 
 
 // draw filled rectangle
@@ -232,7 +232,7 @@ void glcdFillRectangle(u08 x, u08 y, u08 a, u08 b, u08 color)
   glcdStartLine(0);
 }
 
-
+/*
 // draw circle
 void glcdCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
 {
@@ -261,13 +261,12 @@ void glcdCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
     }
     x++;
   }
-}
+}*/
 
 
 // draw circle
 void glcdFillCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
 {
-
   int tswitch, y, x = 0;
   unsigned char d;
 
@@ -293,15 +292,14 @@ void glcdFillCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
 // write a character at the current position
 void glcdWriteChar(unsigned char c, uint8_t inverted)
 {
-	u08 i = 0;
+	u08 i = 0, j;
 
 	for(i=0; i<5; i++)
 	{
-	  if (inverted) {
-	    glcdDataWrite(~ eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
-	  } else {
-	    glcdDataWrite(eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
-	  }
+	  j = get_font(((c - 0x20) * 5) + i);
+	  if (inverted)
+	    j = ~j;
+	  glcdDataWrite(j);
 	}
 
 	// write a spacer line
@@ -359,7 +357,7 @@ void glcdPutStr_ram(char *data, uint8_t inverted)
 
 void glcdPutStr_rom(const char *data, uint8_t inverted)
 {
-	uint8_t i;
+	uint8_t i,j;
 
 	for (i=0; pgm_read_byte(&data[i]); i++) {
 		glcdWriteChar(pgm_read_byte(&data[i]),inverted);
