@@ -169,19 +169,11 @@ void WriteBases_int(uint8_t inverted) {
 
 void WriteTime_int(uint8_t inverted) {
  	 glcdSetAddress(0,0);
-	 WriteDigits_int(left_score,inverted);
-     WriteDigits_int(left_score2,inverted);
+	 printnumber(left_score,inverted);
+     printnumber(left_score2,inverted);
      glcdSetAddress(102,0);
-	 WriteDigits_int(right_score,inverted);
-	 WriteDigits_int(right_score2,inverted);
-}
-
-void WriteDigits_int(uint8_t t, uint8_t inverted)
-{
-    uint8_t i = t/10;
-	uint8_t j = t - i * 10;
-	glcdWriteChar(48 + i,inverted);
-	glcdWriteChar(48 + j,inverted);
+	 printnumber(right_score,inverted);
+	 printnumber(right_score2,inverted);
 }
 
 #endif
