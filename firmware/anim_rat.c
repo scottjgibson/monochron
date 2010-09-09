@@ -71,34 +71,32 @@ uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint
 
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
 
-uint8_t sine_table[32] = {
-	//Values derived from a 1/4 256 angle sine table.
-	//These are used to determine how fast the ball moves in each direction
-	//within one quadrant.  The other quadrants are derived by multiplying dx/dy by -1.
-	
-	 //0x0000,  0x0324,  0x0647,  0x096a,  0x0c8b,  0x0fab,  0x12c8,  0x15e2,
-	 //0x18f8,  0x1c0b,  0x1f19,  0x2223,  0x2528,  0x2826,   
-	 //	                                                   0x2b1f,  0x2e11,
-	 (uint32_t) 0x30fb * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x33de * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x36ba * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x398c * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x3c56 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x3f17 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x41ce * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x447a * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x471c * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x49b4 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x4c3f * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x4ebf * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x5133 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x539b * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x55f5 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x5842 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x5a82 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x5cb4 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x5ed7 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x60ec * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x62f2 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x64e8 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x66cf * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x68a6 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x6a6d * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x6c24 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x6dca * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x6f5f * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x70e2 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x7255 * MAX_BALL_SPEED / 0x7FFF / 2,
-	 (uint32_t) 0x73b5 * MAX_BALL_SPEED / 0x7FFF / 2, (uint32_t) 0x7504 * MAX_BALL_SPEED / 0x7FFF / 2,
-//	 0x7641,  0x776c,  
-//	 	               0x7884,  0x798a,  0x7a7d,  0x7b5d,  0x7c29,  0x7ce3,
-//	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
+int16_t sine_table[64] = {
+	 0x0000,  0x0324,  0x0647,  0x096a,  0x0c8b,  0x0fab,  0x12c8,  0x15e2,
+	 0x18f8,  0x1c0b,  0x1f19,  0x2223,  0x2528,  0x2826,   
+	 	                                                   0x2b1f,  0x2e11,
+	 0x30fb,  0x33de,  0x36ba,  0x398c,  0x3c56,  0x3f17,  0x41ce,  0x447a,
+	 0x471c,  0x49b4,  0x4c3f,  0x4ebf,  0x5133,  0x539b,  0x55f5,  0x5842,
+	 0x5a82,  0x5cb4,  0x5ed7,  0x60ec,  0x62f2,  0x64e8,  0x66cf,  0x68a6,
+	 0x6a6d,  0x6c24,  0x6dca,  0x6f5f,  0x70e2,  0x7255,  0x73b5,  0x7504,
+	 0x7641,  0x776c,  
+	 	               0x7884,  0x798a,  0x7a7d,  0x7b5d,  0x7c29,  0x7ce3,
+	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
 };
+
+int16_t sine(int8_t angle)
+{
+	if(angle == -128) return 0;
+	if(angle < 0) return -sine(-angle);
+	if(angle == 64) return 32767;
+	if(angle < 64) return sine_table[angle];
+	return sine_table[63-(angle-65)];
+}
+
+int16_t cosine(int8_t angle)
+{
+	return sine(angle+64);
+}
 
 void setscore_rat(void)
 {
@@ -302,21 +300,12 @@ void step_rat(void) {
     ball_y = (SCREEN_H_FIXED / 2) - FIXED_MATH;
 
     int8_t angle = random_angle();
-    //ball_dx = MAX_BALL_SPEED;
-    //ball_dy = MAX_BALL_SPEED;
-    //ball_dx *= sine_table[31-angle];
-    //ball_dy *= sine_table[angle];
-    //ball_dx *= cosine(angle);
-    //ball_dy *= sine(angle);
-    //ball_dx /= 0x7FFF;
-    //ball_dy /= 0x7FFF;
-    ball_dx = sine_table[31-angle]*2;
-    ball_dy = sine_table[angle]*2;
-    uint8_t quadrant = crand(1) % 4;
-    if(quadrant & 1)
-    	ball_dx *= -1;
-    if(quadrant & 2)
-    	ball_dy *= -1;
+    ball_dx = MAX_BALL_SPEED;
+    ball_dy = MAX_BALL_SPEED;
+    ball_dx *= cosine(angle);
+    ball_dy *= sine(angle);
+    ball_dx /= 0x7FFF;
+    ball_dy /= 0x7FFF;
     
 
     glcdFillRectangle(LEFTPADDLE_X, left_keepout_top, PADDLE_W, left_keepout_bot - left_keepout_top, 0);
@@ -594,13 +583,12 @@ void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
 
 int8_t random_angle(void) {
 	uint32_t angle = crand(0);
-	//angle *= (64 - MIN_BALL_ANGLE*2);
-	//angle *= 36;
-	//angle /= RAND_MAX;
-	//angle += MIN_BALL_ANGLE;
-	//uint8_t quadrant = (crand(1)) % 4;
-	//angle += quadrant*64;
-	return angle & 0x1F;
+	angle *= (64 - MIN_BALL_ANGLE*2);
+	angle /= RAND_MAX;
+	angle += MIN_BALL_ANGLE;
+	uint8_t quadrant = (crand(1)) % 4;
+	angle += quadrant*64;
+	return angle & 0xFF;
 }
 
 
