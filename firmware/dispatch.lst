@@ -1,0 +1,439 @@
+   1               		.file	"dispatch.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 107               	.global	step
+ 109               	step:
+ 110               		.stabd	46,0,0
+   0:dispatch.c    **** /* ***************************************************************************
+   1:dispatch.c    **** // dispatch.c - Provides switchting between the different chrons
+   2:dispatch.c    **** //
+   3:dispatch.c    **** // Pretty tricky, just substitutes for the current routine.
+   4:dispatch.c    **** // Slides right into the logic without adjustment, sneaky Mr. Data!
+   5:dispatch.c    **** //
+   6:dispatch.c    **** // This code is distributed under the GNU Public License
+   7:dispatch.c    **** // Which can be found at http://www.gnu.org/licenses/gpl.txt
+   8:dispatch.c    **** //
+   9:dispatch.c    **** **************************************************************************** */
+  10:dispatch.c    **** 
+  11:dispatch.c    **** #include <avr/io.h>      // this contains all the IO port definitions
+  12:dispatch.c    **** #include <avr/interrupt.h>
+  13:dispatch.c    **** #include <util/delay.h>
+  14:dispatch.c    **** #include <avr/pgmspace.h>
+  15:dispatch.c    **** #include <avr/eeprom.h>
+  16:dispatch.c    **** #include <avr/wdt.h>
+  17:dispatch.c    **** #include <string.h>
+  18:dispatch.c    **** #include <stdlib.h>
+  19:dispatch.c    **** #include <math.h>
+  20:dispatch.c    ****  
+  21:dispatch.c    **** #include "ratt.h"
+  22:dispatch.c    **** #include "dispatch.h"
+  23:dispatch.c    **** 
+  24:dispatch.c    **** // 2010-08-07 Version 1 - Dataman
+  25:dispatch.c    **** 
+  26:dispatch.c    **** extern volatile uint8_t displaystyle;
+  27:dispatch.c    **** extern volatile uint8_t RotateFlag;
+  28:dispatch.c    **** extern volatile uint8_t minute_changed, hour_changed;
+  29:dispatch.c    **** 
+  30:dispatch.c    **** void initanim(void){
+  31:dispatch.c    ****  switch (displaystyle) {
+  32:dispatch.c    **** #ifdef RATTCHRON
+  33:dispatch.c    ****  case STYLE_RAT: initanim_rat();
+  34:dispatch.c    ****                 break;
+  35:dispatch.c    **** #endif
+  36:dispatch.c    **** #ifdef INTRUDERCHRON
+  37:dispatch.c    ****  case STYLE_INT: initanim_int();
+  38:dispatch.c    **** 				break;
+  39:dispatch.c    **** #endif
+  40:dispatch.c    **** #ifdef SEVENCHRON
+  41:dispatch.c    ****  case STYLE_SEV: initanim_sev();
+  42:dispatch.c    **** 				break;
+  43:dispatch.c    **** #endif
+  44:dispatch.c    **** #ifdef XDALICHRON
+  45:dispatch.c    ****  case STYLE_XDA: initanim_xda();
+  46:dispatch.c    ****                 break;
+  47:dispatch.c    **** #endif
+  48:dispatch.c    **** #ifdef TSCHRON
+  49:dispatch.c    ****  case STYLE_TS: initanim_ts();
+  50:dispatch.c    ****                 break;
+  51:dispatch.c    **** #endif
+  52:dispatch.c    **** #ifdef DEATHCHRON
+  53:dispatch.c    ****  case STYLE_DEATH: initanim_death(); break;
+  54:dispatch.c    **** #endif
+  55:dispatch.c    ****  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
+  56:dispatch.c    ****  case STYLE_RANDOM: init_crand(); displaystyle = (STYLE_BASE + 1) + (crand(0) % (STYLE_RANDOM - (ST
+  57:dispatch.c    ****                 break;
+  58:dispatch.c    **** #ifdef DEATHCHRON
+  59:dispatch.c    ****  case STYLE_DEATHCFG: initanim_deathcfg(); break;
+  60:dispatch.c    **** #endif
+  61:dispatch.c    **** #ifdef GPSENABLE
+  62:dispatch.c    ****  case STYLE_GPS: initanim_GPS();
+  63:dispatch.c    ****                break;
+  64:dispatch.c    **** #endif
+  65:dispatch.c    ****  case STYLE_ABOUT: initanim_abo();
+  66:dispatch.c    ****                 break;
+  67:dispatch.c    ****  }
+  68:dispatch.c    **** }
+  69:dispatch.c    **** 
+  70:dispatch.c    **** 
+  71:dispatch.c    **** void initdisplay(uint8_t inverted) {
+  72:dispatch.c    ****  switch (displaystyle) {
+  73:dispatch.c    **** #ifdef RATTCHRON
+  74:dispatch.c    ****  case STYLE_RAT: initdisplay_rat(inverted);
+  75:dispatch.c    ****                 break;
+  76:dispatch.c    **** #endif
+  77:dispatch.c    **** #ifdef INTRUDERCHRON
+  78:dispatch.c    ****  case STYLE_INT: initdisplay_int(inverted);
+  79:dispatch.c    **** 				break;
+  80:dispatch.c    **** #endif
+  81:dispatch.c    **** #ifdef SEVENCHRON
+  82:dispatch.c    ****  case STYLE_SEV: initdisplay_sev(inverted); 
+  83:dispatch.c    **** 				break;
+  84:dispatch.c    **** #endif
+  85:dispatch.c    **** #ifdef XDALICHRON
+  86:dispatch.c    ****  case STYLE_XDA: initdisplay_xda(inverted);
+  87:dispatch.c    ****                  break;
+  88:dispatch.c    **** #endif
+  89:dispatch.c    **** #ifdef TSCHRON
+  90:dispatch.c    ****  case STYLE_TS: initdisplay_ts(inverted);
+  91:dispatch.c    ****                 break;
+  92:dispatch.c    **** #endif
+  93:dispatch.c    **** #ifdef DEATHCHRON
+  94:dispatch.c    ****  case STYLE_DEATH: initdisplay_death(inverted); break;
+  95:dispatch.c    **** #endif
+  96:dispatch.c    ****  }
+  97:dispatch.c    **** }
+  98:dispatch.c    **** 
+  99:dispatch.c    **** void drawdisplay(uint8_t inverted) {
+ 100:dispatch.c    ****  if (RotateFlag && ((minute_changed==1)||(hour_changed==1))) {
+ 101:dispatch.c    ****   if(minute_changed)
+ 102:dispatch.c    ****     minute_changed = 2;
+ 103:dispatch.c    ****   if(hour_changed)
+ 104:dispatch.c    ****   	hour_changed = 2;
+ 105:dispatch.c    ****   if (!--RotateFlag) {
+ 106:dispatch.c    ****    RotateFlag = ROTATEPERIOD;
+ 107:dispatch.c    ****    if (++displaystyle==STYLE_RANDOM) {displaystyle=STYLE_BASE+1;}
+ 108:dispatch.c    ****    initanim();
+ 109:dispatch.c    ****   }
+ 110:dispatch.c    ****  }
+ 111:dispatch.c    ****  switch (displaystyle) {
+ 112:dispatch.c    **** #ifdef RATTCHRON
+ 113:dispatch.c    ****  case STYLE_RAT: drawdisplay_rat(inverted);
+ 114:dispatch.c    ****                 break;
+ 115:dispatch.c    **** #endif
+ 116:dispatch.c    **** #ifdef INTRUDERCHRON
+ 117:dispatch.c    ****  case STYLE_INT: drawdisplay_int(inverted);
+ 118:dispatch.c    **** 				break;
+ 119:dispatch.c    **** #endif
+ 120:dispatch.c    **** #ifdef SEVENCHRON
+ 121:dispatch.c    ****  case STYLE_SEV: drawdisplay_sev(inverted); 
+ 122:dispatch.c    ****  				break;
+ 123:dispatch.c    **** #endif
+ 124:dispatch.c    **** #ifdef XDALICHRON
+ 125:dispatch.c    ****  case STYLE_XDA: drawdisplay_xda(inverted);
+ 126:dispatch.c    ****                  break;
+ 127:dispatch.c    **** #endif
+ 128:dispatch.c    **** #ifdef TSCHRON
+ 129:dispatch.c    ****  case STYLE_TS: drawdisplay_ts(inverted);
+ 130:dispatch.c    ****                  break;
+ 131:dispatch.c    **** #endif
+ 132:dispatch.c    **** #ifdef DEATHCHRON
+ 133:dispatch.c    ****  case STYLE_DEATH: drawdisplay_death(inverted); break;
+ 134:dispatch.c    **** #endif
+ 135:dispatch.c    ****  }
+ 136:dispatch.c    **** }
+ 137:dispatch.c    **** 
+ 138:dispatch.c    **** 
+ 139:dispatch.c    **** void step(void) {
+ 112               	.LM0:
+ 113               	.LFBB1:
+ 114               	/* prologue: function */
+ 115               	/* frame size = 0 */
+ 140:dispatch.c    ****  switch (displaystyle) {
+ 117               	.LM1:
+ 118 0000 8091 0000 		lds r24,displaystyle
+ 119 0004 823D      		cpi r24,lo8(-46)
+ 120 0006 01F0      		breq .L3
+ 121 0008 833D      		cpi r24,lo8(-45)
+ 122 000a 01F4      		brne .L5
+ 123 000c 00C0      		rjmp .L6
+ 124               	.L3:
+ 141:dispatch.c    **** #ifdef RATTCHRON
+ 142:dispatch.c    ****  case STYLE_RAT: step_rat();
+ 126               	.LM2:
+ 127 000e 0E94 0000 		call step_rat
+ 128 0012 0895      		ret
+ 129               	.L6:
+ 143:dispatch.c    ****                 break;
+ 144:dispatch.c    **** #endif
+ 145:dispatch.c    **** #ifdef INTRUDERCHRON
+ 146:dispatch.c    ****  case STYLE_INT: step_int();
+ 147:dispatch.c    **** 				break;
+ 148:dispatch.c    **** #endif
+ 149:dispatch.c    **** #ifdef SEVENCHRON
+ 150:dispatch.c    ****  case STYLE_SEV: step_sev(); 
+ 151:dispatch.c    ****  				break;
+ 152:dispatch.c    **** #endif
+ 153:dispatch.c    **** #ifdef XDALICHRON
+ 154:dispatch.c    ****  case STYLE_XDA: step_xda();
+ 155:dispatch.c    ****                  break;
+ 156:dispatch.c    **** #endif
+ 157:dispatch.c    **** #ifdef TSCHRON
+ 158:dispatch.c    ****  case STYLE_TS: step_ts();
+ 159:dispatch.c    ****                  break;
+ 160:dispatch.c    **** #endif
+ 161:dispatch.c    **** #ifdef DEATHCHRON
+ 162:dispatch.c    ****  case STYLE_DEATH: step_death(); break;
+ 131               	.LM3:
+ 132 0014 0E94 0000 		call step_death
+ 133               	.L5:
+ 134 0018 0895      		ret
+ 136               	.Lscope1:
+ 138               		.stabd	78,0,0
+ 141               	.global	initdisplay
+ 143               	initdisplay:
+ 144               		.stabd	46,0,0
+  72:dispatch.c    **** void initdisplay(uint8_t inverted) {
+ 146               	.LM4:
+ 147               	.LFBB2:
+ 148               	/* prologue: function */
+ 149               	/* frame size = 0 */
+  73:dispatch.c    ****  switch (displaystyle) {
+ 151               	.LM5:
+ 152 001a 9091 0000 		lds r25,displaystyle
+ 153 001e 923D      		cpi r25,lo8(-46)
+ 154 0020 01F0      		breq .L9
+ 155 0022 933D      		cpi r25,lo8(-45)
+ 156 0024 01F4      		brne .L11
+ 157 0026 00C0      		rjmp .L12
+ 158               	.L9:
+  75:dispatch.c    ****  case STYLE_RAT: initdisplay_rat(inverted);
+ 160               	.LM6:
+ 161 0028 0E94 0000 		call initdisplay_rat
+ 162 002c 0895      		ret
+ 163               	.L12:
+  95:dispatch.c    ****  case STYLE_DEATH: initdisplay_death(inverted); break;
+ 165               	.LM7:
+ 166 002e 0E94 0000 		call initdisplay_death
+ 167               	.L11:
+ 168 0032 0895      		ret
+ 170               	.Lscope2:
+ 172               		.stabd	78,0,0
+ 174               	.global	initanim
+ 176               	initanim:
+ 177               		.stabd	46,0,0
+  31:dispatch.c    **** void initanim(void){
+ 179               	.LM8:
+ 180               	.LFBB3:
+ 181 0034 1F93      		push r17
+ 182               	/* prologue: function */
+ 183               	/* frame size = 0 */
+  56:dispatch.c    ****  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
+ 185               	.LM9:
+ 186 0036 1FE0      		ldi r17,lo8(15)
+ 187               	.L23:
+  32:dispatch.c    ****  switch (displaystyle) {
+ 189               	.LM10:
+ 190 0038 8091 0000 		lds r24,displaystyle
+ 191 003c 853D      		cpi r24,lo8(-43)
+ 192 003e 01F0      		breq .L18
+ 193 0040 863D      		cpi r24,lo8(-42)
+ 194 0042 00F4      		brsh .L22
+ 195 0044 833D      		cpi r24,lo8(-45)
+ 196 0046 01F0      		breq .L16
+ 197 0048 843D      		cpi r24,lo8(-44)
+ 198 004a 00F4      		brsh .L17
+ 199 004c 823D      		cpi r24,lo8(-46)
+ 200 004e 01F4      		brne .L24
+ 201 0050 00C0      		rjmp .L25
+ 202               	.L22:
+ 203 0052 873D      		cpi r24,lo8(-41)
+ 204 0054 01F0      		breq .L20
+ 205 0056 873D      		cpi r24,lo8(-41)
+ 206 0058 00F0      		brlo .L19
+ 207 005a 883D      		cpi r24,lo8(-40)
+ 208 005c 01F4      		brne .L24
+ 209 005e 00C0      		rjmp .L26
+ 210               	.L25:
+  34:dispatch.c    ****  case STYLE_RAT: initanim_rat();
+ 212               	.LM11:
+ 213 0060 0E94 0000 		call initanim_rat
+ 214 0064 00C0      		rjmp .L24
+ 215               	.L16:
+  54:dispatch.c    ****  case STYLE_DEATH: initanim_death(); break;
+ 217               	.LM12:
+ 218 0066 0E94 0000 		call initanim_death
+ 219 006a 00C0      		rjmp .L24
+ 220               	.L18:
+  56:dispatch.c    ****  case STYLE_ROTATE: RotateFlag = ROTATEPERIOD;	//And fall into STYLE_RANDOM code next.
+ 222               	.LM13:
+ 223 006c 1093 0000 		sts RotateFlag,r17
+ 224               	.L17:
+  57:dispatch.c    ****  case STYLE_RANDOM: init_crand(); displaystyle = (STYLE_BASE + 1) + (crand(0) % (STYLE_RANDOM - (ST
+ 226               	.LM14:
+ 227 0070 0E94 0000 		call init_crand
+ 228 0074 80E0      		ldi r24,lo8(0)
+ 229 0076 0E94 0000 		call crand
+ 230 007a 8170      		andi r24,lo8(1)
+ 231 007c 8E52      		subi r24,lo8(-(-46))
+ 232 007e 8093 0000 		sts displaystyle,r24
+ 233 0082 00C0      		rjmp .L23
+ 234               	.L19:
+  60:dispatch.c    ****  case STYLE_DEATHCFG: initanim_deathcfg(); break;
+ 236               	.LM15:
+ 237 0084 0E94 0000 		call initanim_deathcfg
+ 238 0088 00C0      		rjmp .L24
+ 239               	.L20:
+  63:dispatch.c    ****  case STYLE_GPS: initanim_GPS();
+ 241               	.LM16:
+ 242 008a 0E94 0000 		call initanim_GPS
+ 243 008e 00C0      		rjmp .L24
+ 244               	.L26:
+  66:dispatch.c    ****  case STYLE_ABOUT: initanim_abo();
+ 246               	.LM17:
+ 247 0090 0E94 0000 		call initanim_abo
+ 248               	.L24:
+ 249               	/* epilogue start */
+  69:dispatch.c    **** }
+ 251               	.LM18:
+ 252 0094 1F91      		pop r17
+ 253 0096 0895      		ret
+ 255               	.Lscope3:
+ 257               		.stabd	78,0,0
+ 260               	.global	drawdisplay
+ 262               	drawdisplay:
+ 263               		.stabd	46,0,0
+ 100:dispatch.c    **** void drawdisplay(uint8_t inverted) {
+ 265               	.LM19:
+ 266               	.LFBB4:
+ 267 0098 1F93      		push r17
+ 268               	/* prologue: function */
+ 269               	/* frame size = 0 */
+ 270 009a 182F      		mov r17,r24
+ 101:dispatch.c    ****  if (RotateFlag && ((minute_changed==1)||(hour_changed==1))) {
+ 272               	.LM20:
+ 273 009c 8091 0000 		lds r24,RotateFlag
+ 274 00a0 8823      		tst r24
+ 275 00a2 01F0      		breq .L28
+ 276 00a4 8091 0000 		lds r24,minute_changed
+ 277 00a8 8130      		cpi r24,lo8(1)
+ 278 00aa 01F0      		breq .L29
+ 279 00ac 8091 0000 		lds r24,hour_changed
+ 280 00b0 8130      		cpi r24,lo8(1)
+ 281 00b2 01F4      		brne .L28
+ 282               	.L29:
+ 102:dispatch.c    ****   if(minute_changed)
+ 284               	.LM21:
+ 285 00b4 8091 0000 		lds r24,minute_changed
+ 286 00b8 8823      		tst r24
+ 287 00ba 01F0      		breq .L30
+ 103:dispatch.c    ****     minute_changed = 2;
+ 289               	.LM22:
+ 290 00bc 82E0      		ldi r24,lo8(2)
+ 291 00be 8093 0000 		sts minute_changed,r24
+ 292               	.L30:
+ 104:dispatch.c    ****   if(hour_changed)
+ 294               	.LM23:
+ 295 00c2 8091 0000 		lds r24,hour_changed
+ 296 00c6 8823      		tst r24
+ 297 00c8 01F0      		breq .L31
+ 105:dispatch.c    ****   	hour_changed = 2;
+ 299               	.LM24:
+ 300 00ca 82E0      		ldi r24,lo8(2)
+ 301 00cc 8093 0000 		sts hour_changed,r24
+ 302               	.L31:
+ 106:dispatch.c    ****   if (!--RotateFlag) {
+ 304               	.LM25:
+ 305 00d0 8091 0000 		lds r24,RotateFlag
+ 306 00d4 8150      		subi r24,lo8(-(-1))
+ 307 00d6 8093 0000 		sts RotateFlag,r24
+ 308 00da 8091 0000 		lds r24,RotateFlag
+ 309 00de 8823      		tst r24
+ 310 00e0 01F4      		brne .L28
+ 107:dispatch.c    ****    RotateFlag = ROTATEPERIOD;
+ 312               	.LM26:
+ 313 00e2 8FE0      		ldi r24,lo8(15)
+ 314 00e4 8093 0000 		sts RotateFlag,r24
+ 108:dispatch.c    ****    if (++displaystyle==STYLE_RANDOM) {displaystyle=STYLE_BASE+1;}
+ 316               	.LM27:
+ 317 00e8 8091 0000 		lds r24,displaystyle
+ 318 00ec 8F5F      		subi r24,lo8(-(1))
+ 319 00ee 8093 0000 		sts displaystyle,r24
+ 320 00f2 8091 0000 		lds r24,displaystyle
+ 321 00f6 843D      		cpi r24,lo8(-44)
+ 322 00f8 01F4      		brne .L32
+ 323 00fa 82ED      		ldi r24,lo8(-46)
+ 324 00fc 8093 0000 		sts displaystyle,r24
+ 325               	.L32:
+ 109:dispatch.c    ****    initanim();
+ 327               	.LM28:
+ 328 0100 0E94 0000 		call initanim
+ 329               	.L28:
+ 112:dispatch.c    ****  switch (displaystyle) {
+ 331               	.LM29:
+ 332 0104 8091 0000 		lds r24,displaystyle
+ 333 0108 823D      		cpi r24,lo8(-46)
+ 334 010a 01F0      		breq .L34
+ 335 010c 833D      		cpi r24,lo8(-45)
+ 336 010e 01F4      		brne .L36
+ 337 0110 00C0      		rjmp .L37
+ 338               	.L34:
+ 114:dispatch.c    ****  case STYLE_RAT: drawdisplay_rat(inverted);
+ 340               	.LM30:
+ 341 0112 812F      		mov r24,r17
+ 342 0114 0E94 0000 		call drawdisplay_rat
+ 343 0118 00C0      		rjmp .L36
+ 344               	.L37:
+ 134:dispatch.c    ****  case STYLE_DEATH: drawdisplay_death(inverted); break;
+ 346               	.LM31:
+ 347 011a 812F      		mov r24,r17
+ 348 011c 0E94 0000 		call drawdisplay_death
+ 349               	.L36:
+ 350               	/* epilogue start */
+ 137:dispatch.c    **** }
+ 352               	.LM32:
+ 353 0120 1F91      		pop r17
+ 354 0122 0895      		ret
+ 356               	.Lscope4:
+ 358               		.stabd	78,0,0
+ 360               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 dispatch.c
+     /tmp/ccorGgHf.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccorGgHf.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccorGgHf.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccorGgHf.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccorGgHf.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccorGgHf.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccorGgHf.s:109    .text:00000000 step
+     /tmp/ccorGgHf.s:143    .text:0000001a initdisplay
+     /tmp/ccorGgHf.s:176    .text:00000034 initanim
+     /tmp/ccorGgHf.s:262    .text:00000098 drawdisplay
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+displaystyle
+step_rat
+step_death
+initdisplay_rat
+initdisplay_death
+initanim_rat
+initanim_death
+RotateFlag
+init_crand
+crand
+initanim_deathcfg
+initanim_GPS
+initanim_abo
+minute_changed
+hour_changed
+drawdisplay_rat
+drawdisplay_death

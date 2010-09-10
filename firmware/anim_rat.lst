@@ -1,0 +1,3395 @@
+   1               		.file	"anim_rat.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 137               	.global	sine
+ 139               	sine:
+ 140               		.stabd	46,0,0
+   0:anim_rat.c    **** /* ***************************************************************************
+   1:anim_rat.c    **** // anim.c - the main animation and drawing code for MONOCHRON
+   2:anim_rat.c    **** // This code is distributed under the GNU Public License
+   3:anim_rat.c    **** //		which can be found at http://www.gnu.org/licenses/gpl.txt
+   4:anim_rat.c    **** //
+   5:anim_rat.c    **** **************************************************************************** */
+   6:anim_rat.c    **** 
+   7:anim_rat.c    **** #include <avr/io.h>      // this contains all the IO port definitions
+   8:anim_rat.c    **** #include <avr/interrupt.h>
+   9:anim_rat.c    **** #include <util/delay.h>
+  10:anim_rat.c    **** #include <avr/pgmspace.h>
+  11:anim_rat.c    **** #include <avr/eeprom.h>
+  12:anim_rat.c    **** #include <avr/wdt.h>
+  13:anim_rat.c    **** #include <string.h>
+  14:anim_rat.c    **** #include <stdlib.h>
+  15:anim_rat.c    **** //#include <math.h>	//For the sin/cos functions.
+  16:anim_rat.c    **** 
+  17:anim_rat.c    **** #include "util.h"
+  18:anim_rat.c    **** #include "ratt.h"
+  19:anim_rat.c    **** #include "ks0108.h"
+  20:anim_rat.c    **** #include "glcd.h"
+  21:anim_rat.c    **** 
+  22:anim_rat.c    **** #ifdef RATTCHRON
+  23:anim_rat.c    **** 
+  24:anim_rat.c    **** extern volatile uint8_t time_s, time_m, time_h;
+  25:anim_rat.c    **** extern volatile uint8_t old_m, old_h;
+  26:anim_rat.c    **** extern volatile uint8_t date_m, date_d, date_y;
+  27:anim_rat.c    **** extern volatile uint8_t alarming, alarm_h, alarm_m;
+  28:anim_rat.c    **** extern volatile uint8_t time_format;
+  29:anim_rat.c    **** extern volatile uint8_t region;
+  30:anim_rat.c    **** extern volatile uint8_t score_mode;
+  31:anim_rat.c    **** 
+  32:anim_rat.c    **** 
+  33:anim_rat.c    **** 
+  34:anim_rat.c    **** 
+  35:anim_rat.c    **** uint8_t left_score, right_score;
+  36:anim_rat.c    **** 
+  37:anim_rat.c    **** int32_t ball_x, ball_y;
+  38:anim_rat.c    **** int32_t oldball_x, oldball_y;
+  39:anim_rat.c    **** int32_t ball_dx, ball_dy;
+  40:anim_rat.c    **** 
+  41:anim_rat.c    **** int32_t rightpaddle_y, leftpaddle_y;
+  42:anim_rat.c    **** int32_t oldleftpaddle_y, oldrightpaddle_y;
+  43:anim_rat.c    **** int32_t rightpaddle_dy, leftpaddle_dy;
+  44:anim_rat.c    **** 
+  45:anim_rat.c    **** extern volatile uint8_t minute_changed, hour_changed;
+  46:anim_rat.c    **** 
+  47:anim_rat.c    **** uint8_t redraw_time_rat = 0;
+  48:anim_rat.c    **** uint8_t last_score_mode_rat = 0;
+  49:anim_rat.c    **** 
+  50:anim_rat.c    **** // Prototypes
+  51:anim_rat.c    **** // Called by dispatcher
+  52:anim_rat.c    **** void initamin_rat(void);
+  53:anim_rat.c    **** void initdisplay_rat(uint8_t);
+  54:anim_rat.c    **** void drawdisplay_rat(uint8_t);
+  55:anim_rat.c    **** void step_rat(void);
+  56:anim_rat.c    **** //Support
+  57:anim_rat.c    **** void encipher(void);
+  58:anim_rat.c    **** void init_crand(void);
+  59:anim_rat.c    **** uint16_t crand(uint8_t);
+  60:anim_rat.c    **** void setscore_rat(void);
+  61:anim_rat.c    **** void drawmidline(uint8_t);
+  62:anim_rat.c    **** uint8_t intersectrect(uint8_t x1, uint8_t y1, uint8_t w1, uint8_t h1, uint8_t x2, uint8_t y2, uint8
+  63:anim_rat.c    **** void draw_score_rat(uint8_t redraw_digits, uint8_t inverted);
+  64:anim_rat.c    **** void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
+  65:anim_rat.c    **** void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
+  66:anim_rat.c    **** int8_t random_angle(void);
+  67:anim_rat.c    **** uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_dx, int32_t theball
+  68:anim_rat.c    **** uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir);
+  69:anim_rat.c    **** 
+  70:anim_rat.c    **** 
+  71:anim_rat.c    **** uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
+  72:anim_rat.c    **** 
+  73:anim_rat.c    **** int16_t sine_table[64] = {
+  74:anim_rat.c    **** 	 0x0000,  0x0324,  0x0647,  0x096a,  0x0c8b,  0x0fab,  0x12c8,  0x15e2,
+  75:anim_rat.c    **** 	 0x18f8,  0x1c0b,  0x1f19,  0x2223,  0x2528,  0x2826,   
+  76:anim_rat.c    **** 	 	                                                   0x2b1f,  0x2e11,
+  77:anim_rat.c    **** 	 0x30fb,  0x33de,  0x36ba,  0x398c,  0x3c56,  0x3f17,  0x41ce,  0x447a,
+  78:anim_rat.c    **** 	 0x471c,  0x49b4,  0x4c3f,  0x4ebf,  0x5133,  0x539b,  0x55f5,  0x5842,
+  79:anim_rat.c    **** 	 0x5a82,  0x5cb4,  0x5ed7,  0x60ec,  0x62f2,  0x64e8,  0x66cf,  0x68a6,
+  80:anim_rat.c    **** 	 0x6a6d,  0x6c24,  0x6dca,  0x6f5f,  0x70e2,  0x7255,  0x73b5,  0x7504,
+  81:anim_rat.c    **** 	 0x7641,  0x776c,  
+  82:anim_rat.c    **** 	 	               0x7884,  0x798a,  0x7a7d,  0x7b5d,  0x7c29,  0x7ce3,
+  83:anim_rat.c    **** 	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
+  84:anim_rat.c    **** };
+  85:anim_rat.c    **** 
+  86:anim_rat.c    **** int16_t sine(int8_t angle)
+  87:anim_rat.c    **** {
+ 142               	.LM0:
+ 143               	.LFBB1:
+ 144               	/* prologue: function */
+ 145               	/* frame size = 0 */
+  88:anim_rat.c    **** 	if(angle == -128) return 0;
+ 147               	.LM1:
+ 148 0000 8038      		cpi r24,lo8(-128)
+ 149 0002 01F4      		brne .L2
+ 150 0004 E0E0      		ldi r30,lo8(0)
+ 151 0006 F0E0      		ldi r31,hi8(0)
+ 152 0008 00C0      		rjmp .L3
+ 153               	.L2:
+  89:anim_rat.c    **** 	if(angle < 0) return -sine(-angle);
+ 155               	.LM2:
+ 156 000a 87FF      		sbrs r24,7
+ 157 000c 00C0      		rjmp .L4
+ 158 000e 8195      		neg r24
+ 159 0010 0E94 0000 		call sine
+ 160 0014 EE27      		clr r30
+ 161 0016 FF27      		clr r31
+ 162 0018 E81B      		sub r30,r24
+ 163 001a F90B      		sbc r31,r25
+ 164 001c 00C0      		rjmp .L3
+ 165               	.L4:
+  90:anim_rat.c    **** 	if(angle == 64) return 32767;
+ 167               	.LM3:
+ 168 001e 8034      		cpi r24,lo8(64)
+ 169 0020 01F4      		brne .L5
+ 170 0022 EFEF      		ldi r30,lo8(32767)
+ 171 0024 FFE7      		ldi r31,hi8(32767)
+ 172 0026 00C0      		rjmp .L3
+ 173               	.L5:
+ 174 0028 A82F      		mov r26,r24
+ 175 002a BB27      		clr r27
+ 176 002c A7FD      		sbrc r26,7
+ 177 002e B095      		com r27
+  91:anim_rat.c    **** 	if(angle < 64) return sine_table[angle];
+ 179               	.LM4:
+ 180 0030 8034      		cpi r24,lo8(64)
+ 181 0032 04F4      		brge .L6
+ 182 0034 AA0F      		lsl r26
+ 183 0036 BB1F      		rol r27
+ 184 0038 A050      		subi r26,lo8(-(sine_table))
+ 185 003a B040      		sbci r27,hi8(-(sine_table))
+ 186 003c ED91      		ld r30,X+
+ 187 003e FC91      		ld r31,X
+ 188 0040 00C0      		rjmp .L3
+ 189               	.L6:
+  92:anim_rat.c    **** 	return sine_table[63-(angle-65)];
+ 191               	.LM5:
+ 192 0042 E0E8      		ldi r30,lo8(128)
+ 193 0044 F0E0      		ldi r31,hi8(128)
+ 194 0046 EA1B      		sub r30,r26
+ 195 0048 FB0B      		sbc r31,r27
+ 196 004a EE0F      		lsl r30
+ 197 004c FF1F      		rol r31
+ 198 004e E050      		subi r30,lo8(-(sine_table))
+ 199 0050 F040      		sbci r31,hi8(-(sine_table))
+ 200 0052 0190      		ld __tmp_reg__,Z+
+ 201 0054 F081      		ld r31,Z
+ 202 0056 E02D      		mov r30,__tmp_reg__
+ 203               	.L3:
+  93:anim_rat.c    **** }
+ 205               	.LM6:
+ 206 0058 CF01      		movw r24,r30
+ 207               	/* epilogue start */
+ 208 005a 0895      		ret
+ 210               	.Lscope1:
+ 212               		.stabd	78,0,0
+ 215               	.global	cosine
+ 217               	cosine:
+ 218               		.stabd	46,0,0
+  94:anim_rat.c    **** 
+  95:anim_rat.c    **** int16_t cosine(int8_t angle)
+  96:anim_rat.c    **** {
+ 220               	.LM7:
+ 221               	.LFBB2:
+ 222               	/* prologue: function */
+ 223               	/* frame size = 0 */
+  97:anim_rat.c    **** 	return sine(angle+64);
+ 225               	.LM8:
+ 226 005c 805C      		subi r24,lo8(-(64))
+ 227 005e 0E94 0000 		call sine
+ 228               	/* epilogue start */
+  98:anim_rat.c    **** }
+ 230               	.LM9:
+ 231 0062 0895      		ret
+ 233               	.Lscope2:
+ 235               		.stabd	78,0,0
+ 239               	.global	move_paddle
+ 241               	move_paddle:
+ 242               		.stabd	46,0,0
+  99:anim_rat.c    **** 
+ 100:anim_rat.c    **** void setscore_rat(void)
+ 101:anim_rat.c    **** {
+ 102:anim_rat.c    ****   if(score_mode != last_score_mode_rat) {
+ 103:anim_rat.c    ****     redraw_time_rat = 1;
+ 104:anim_rat.c    ****     last_score_mode_rat = score_mode;
+ 105:anim_rat.c    ****   }
+ 106:anim_rat.c    ****   switch(score_mode) {
+ 107:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 108:anim_rat.c    ****   	case SCORE_MODE_DOW:
+ 109:anim_rat.c    ****   	  break;
+ 110:anim_rat.c    ****   	case SCORE_MODE_DATELONG:
+ 111:anim_rat.c    ****   	  right_score = date_d;
+ 112:anim_rat.c    ****   	  break;
+ 113:anim_rat.c    **** #endif
+ 114:anim_rat.c    ****     case SCORE_MODE_TIME:
+ 115:anim_rat.c    ****       if((minute_changed || hour_changed)) {
+ 116:anim_rat.c    ****       	if(hour_changed) {
+ 117:anim_rat.c    **** 	      left_score = hours(old_h);
+ 118:anim_rat.c    **** 	      right_score = old_m;
+ 119:anim_rat.c    **** 	    } else if (minute_changed) {
+ 120:anim_rat.c    **** 	      right_score = old_m;
+ 121:anim_rat.c    **** 	    }
+ 122:anim_rat.c    ****       } else {
+ 123:anim_rat.c    ****         left_score = hours(time_h);
+ 124:anim_rat.c    ****         right_score = time_m;
+ 125:anim_rat.c    ****       }
+ 126:anim_rat.c    ****       break;
+ 127:anim_rat.c    ****     case SCORE_MODE_DATE:
+ 128:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 129:anim_rat.c    ****       if((region == REGION_US)||(region == DOW_REGION_US)) {
+ 130:anim_rat.c    **** #else
+ 131:anim_rat.c    ****       if(region == REGION_US) {
+ 132:anim_rat.c    **** #endif
+ 133:anim_rat.c    ****         left_score = date_m;
+ 134:anim_rat.c    ****         right_score = date_d;
+ 135:anim_rat.c    ****       } else {
+ 136:anim_rat.c    ****         left_score = date_d;
+ 137:anim_rat.c    ****         right_score = date_m;
+ 138:anim_rat.c    ****       }
+ 139:anim_rat.c    ****       break;
+ 140:anim_rat.c    ****     case SCORE_MODE_YEAR:
+ 141:anim_rat.c    ****       left_score = 20;
+ 142:anim_rat.c    ****       right_score = date_y;
+ 143:anim_rat.c    ****       break;
+ 144:anim_rat.c    ****     case SCORE_MODE_ALARM:
+ 145:anim_rat.c    ****       left_score = hours(alarm_h);
+ 146:anim_rat.c    ****       right_score = alarm_m;
+ 147:anim_rat.c    ****       break;
+ 148:anim_rat.c    ****   }
+ 149:anim_rat.c    **** }
+ 150:anim_rat.c    **** 
+ 151:anim_rat.c    **** int16_t ticksremaining;
+ 152:anim_rat.c    **** void initanim_rat(void) {
+ 153:anim_rat.c    ****   DEBUG(putstring("screen width: "));
+ 154:anim_rat.c    ****   DEBUG(uart_putw_dec(GLCD_XPIXELS));
+ 155:anim_rat.c    ****   DEBUG(putstring("\n\rscreen height: "));
+ 156:anim_rat.c    ****   DEBUG(uart_putw_dec(GLCD_YPIXELS));
+ 157:anim_rat.c    ****   DEBUG(putstring_nl(""));
+ 158:anim_rat.c    **** 
+ 159:anim_rat.c    ****   oldball_x = ball_x = 2500;
+ 160:anim_rat.c    ****   oldball_y = ball_y = 2500;	//Somewhere away from 0,0.
+ 161:anim_rat.c    ****   oldleftpaddle_y = leftpaddle_y = 2500;
+ 162:anim_rat.c    ****   oldrightpaddle_y = rightpaddle_y = 2500;
+ 163:anim_rat.c    ****   init_crand();
+ 164:anim_rat.c    **** 
+ 165:anim_rat.c    ****   ball_dx = ball_dy = 0;
+ 166:anim_rat.c    ****   initdisplay_rat(0);
+ 167:anim_rat.c    **** }
+ 168:anim_rat.c    **** 
+ 169:anim_rat.c    **** void initdisplay_rat(uint8_t inverted) {
+ 170:anim_rat.c    **** 
+ 171:anim_rat.c    ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
+ 172:anim_rat.c    ****   
+ 173:anim_rat.c    ****   // draw top 'line'
+ 174:anim_rat.c    ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, 2, ! inverted);
+ 175:anim_rat.c    ****   
+ 176:anim_rat.c    ****   // bottom line
+ 177:anim_rat.c    ****   glcdFillRectangle(0, GLCD_YPIXELS - 2, GLCD_XPIXELS, 2, ! inverted);
+ 178:anim_rat.c    **** 
+ 179:anim_rat.c    ****   // left paddle
+ 180:anim_rat.c    ****   glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+ 181:anim_rat.c    ****   // right paddle
+ 182:anim_rat.c    ****   glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+ 183:anim_rat.c    ****       
+ 184:anim_rat.c    **** 	//left_score = time_h;
+ 185:anim_rat.c    **** 	//right_score = time_m;
+ 186:anim_rat.c    **** 	setscore_rat();
+ 187:anim_rat.c    **** 
+ 188:anim_rat.c    ****   // time
+ 189:anim_rat.c    ****     drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, left_score/10, inverted);
+ 190:anim_rat.c    ****     drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, left_score%10, inverted);
+ 191:anim_rat.c    ****   
+ 192:anim_rat.c    ****   drawbigdigit(DISPLAY_M10_X_RAT, DISPLAY_TIME_Y_RAT, right_score/10, inverted);
+ 193:anim_rat.c    ****   drawbigdigit(DISPLAY_M1_X_RAT, DISPLAY_TIME_Y_RAT, right_score%10, inverted);
+ 194:anim_rat.c    **** 
+ 195:anim_rat.c    ****   drawmidline(inverted);
+ 196:anim_rat.c    **** }
+ 197:anim_rat.c    **** 
+ 198:anim_rat.c    **** void move_paddle(int32_t *paddle, uint32_t dest) {
+ 244               	.LM10:
+ 245               	.LFBB3:
+ 246 0064 1F93      		push r17
+ 247               	/* prologue: function */
+ 248               	/* frame size = 0 */
+ 249 0066 FC01      		movw r30,r24
+ 199:anim_rat.c    **** 	if(abs(*paddle - dest) < MAX_PADDLE_SPEED) {
+ 251               	.LM11:
+ 252 0068 8081      		ld r24,Z
+ 253 006a 9181      		ldd r25,Z+1
+ 254 006c A281      		ldd r26,Z+2
+ 255 006e B381      		ldd r27,Z+3
+ 256 0070 9C01      		movw r18,r24
+ 257 0072 241B      		sub r18,r20
+ 258 0074 350B      		sbc r19,r21
+ 259 0076 1EEF      		ldi r17,hi8(-499)
+ 260 0078 2D30      		cpi r18,lo8(-499)
+ 261 007a 3107      		cpc r19,r17
+ 262 007c 04F0      		brlt .L11
+ 263 007e 245F      		subi r18,lo8(500)
+ 264 0080 3140      		sbci r19,hi8(500)
+ 265 0082 04F4      		brge .L11
+ 200:anim_rat.c    ****         *paddle = dest;
+ 267               	.LM12:
+ 268 0084 4083      		st Z,r20
+ 269 0086 5183      		std Z+1,r21
+ 270 0088 6283      		std Z+2,r22
+ 271 008a 7383      		std Z+3,r23
+ 272 008c 00C0      		rjmp .L14
+ 273               	.L11:
+ 201:anim_rat.c    ****       } else {
+ 202:anim_rat.c    ****         if(*paddle > dest)
+ 275               	.LM13:
+ 276 008e 4817      		cp r20,r24
+ 277 0090 5907      		cpc r21,r25
+ 278 0092 6A07      		cpc r22,r26
+ 279 0094 7B07      		cpc r23,r27
+ 280 0096 00F4      		brsh .L13
+ 203:anim_rat.c    ****           *paddle -= MAX_PADDLE_SPEED;
+ 282               	.LM14:
+ 283 0098 845F      		subi r24,lo8(-(-500))
+ 284 009a 9140      		sbci r25,hi8(-(-500))
+ 285 009c A040      		sbci r26,hlo8(-(-500))
+ 286 009e B040      		sbci r27,hhi8(-(-500))
+ 287 00a0 00C0      		rjmp .L15
+ 288               	.L13:
+ 204:anim_rat.c    ****         else
+ 205:anim_rat.c    ****           *paddle += MAX_PADDLE_SPEED;
+ 290               	.LM15:
+ 291 00a2 8C50      		subi r24,lo8(-(500))
+ 292 00a4 9E4F      		sbci r25,hi8(-(500))
+ 293 00a6 AF4F      		sbci r26,hlo8(-(500))
+ 294 00a8 BF4F      		sbci r27,hhi8(-(500))
+ 295               	.L15:
+ 296 00aa 8083      		st Z,r24
+ 297 00ac 9183      		std Z+1,r25
+ 298 00ae A283      		std Z+2,r26
+ 299 00b0 B383      		std Z+3,r27
+ 300               	.L14:
+ 301               	/* epilogue start */
+ 206:anim_rat.c    ****       }
+ 207:anim_rat.c    **** }
+ 303               	.LM16:
+ 304 00b2 1F91      		pop r17
+ 305 00b4 0895      		ret
+ 307               	.Lscope3:
+ 309               		.stabd	78,0,0
+ 315               	.global	calculate_keepout
+ 317               	calculate_keepout:
+ 318               		.stabd	46,0,0
+ 208:anim_rat.c    **** 
+ 209:anim_rat.c    **** uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir) {
+ 210:anim_rat.c    ****   uint8_t miss=0;
+ 211:anim_rat.c    ****   if(dir) //Ball moving to the left
+ 212:anim_rat.c    ****   {
+ 213:anim_rat.c    ****   	ticksremaining = calculate_keepout(ball_x, ball_y, ball_dx, ball_dy, left, right);
+ 214:anim_rat.c    ****   	*dest = *left;
+ 215:anim_rat.c    ****   	if(minute_changed) miss=1;
+ 216:anim_rat.c    ****   }
+ 217:anim_rat.c    ****   else
+ 218:anim_rat.c    ****   {
+ 219:anim_rat.c    ****   	ticksremaining = calculate_keepout(ball_x, ball_y, ball_dx, ball_dy, right, left);
+ 220:anim_rat.c    ****   	*dest = *right;
+ 221:anim_rat.c    ****   	if(hour_changed) miss=1;
+ 222:anim_rat.c    ****   }
+ 223:anim_rat.c    ****   *dest -= (PADDLE_H_FIXED / 3);
+ 224:anim_rat.c    ****     if(miss)
+ 225:anim_rat.c    ****     {
+ 226:anim_rat.c    ****       if(*dest < (SCREEN_H_FIXED/3)) {
+ 227:anim_rat.c    ****       	*dest += (PADDLE_H_FIXED*2);
+ 228:anim_rat.c    ****       }
+ 229:anim_rat.c    ****       else if (*dest > ((SCREEN_H_FIXED/3)*2)) {
+ 230:anim_rat.c    ****       	*dest -= (PADDLE_H_FIXED*2);
+ 231:anim_rat.c    ****       }
+ 232:anim_rat.c    ****       else {
+ 233:anim_rat.c    ****       	//*dest = crand(2)?0:SCREEN_H_FIXED;
+ 234:anim_rat.c    ****       	*dest += crand(2) ? (PADDLE_H_FIXED*2) : -(PADDLE_H_FIXED*2);
+ 235:anim_rat.c    ****       }
+ 236:anim_rat.c    ****     }
+ 237:anim_rat.c    ****     return ticksremaining;
+ 238:anim_rat.c    **** }
+ 239:anim_rat.c    **** 
+ 240:anim_rat.c    **** void step_rat(void) {
+ 241:anim_rat.c    ****   // The keepout is used to know where to -not- put the paddle
+ 242:anim_rat.c    ****   // the 'bouncepos' is where we expect the ball's y-coord to be when
+ 243:anim_rat.c    ****   // it intersects with the paddle area
+ 244:anim_rat.c    ****   static uint8_t right_keepout_top, right_keepout_bot, right_bouncepos, right_endpos;
+ 245:anim_rat.c    ****   static uint8_t left_keepout_top, left_keepout_bot, left_bouncepos, left_endpos;
+ 246:anim_rat.c    ****   static uint32_t dest_paddle_pos;
+ 247:anim_rat.c    ****   static uint32_t right_dest, left_dest;
+ 248:anim_rat.c    **** 
+ 249:anim_rat.c    ****   // Save old ball location so we can do some vector stuff 
+ 250:anim_rat.c    ****   oldball_x = ball_x;
+ 251:anim_rat.c    ****   oldball_y = ball_y;
+ 252:anim_rat.c    **** 
+ 253:anim_rat.c    ****   // move ball according to the vector
+ 254:anim_rat.c    ****   ball_x += ball_dx;
+ 255:anim_rat.c    ****   ball_y += ball_dy;
+ 256:anim_rat.c    ****   
+ 257:anim_rat.c    ****     
+ 258:anim_rat.c    ****   
+ 259:anim_rat.c    ****   /************************************* TOP & BOTTOM WALLS */
+ 260:anim_rat.c    ****   // bouncing off bottom wall, reverse direction
+ 261:anim_rat.c    ****   if (ball_y  > (SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED)) {
+ 262:anim_rat.c    ****     //DEBUG(putstring_nl("bottom wall bounce"));
+ 263:anim_rat.c    ****     ball_y = SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED;
+ 264:anim_rat.c    ****     ball_dy *= -1;
+ 265:anim_rat.c    ****   }
+ 266:anim_rat.c    ****   
+ 267:anim_rat.c    ****   // bouncing off top wall, reverse direction
+ 268:anim_rat.c    ****   if (ball_y < TOPBAR_H_FIXED) {
+ 269:anim_rat.c    ****     //DEBUG(putstring_nl("top wall bounce"));
+ 270:anim_rat.c    ****     ball_y = TOPBAR_H_FIXED;
+ 271:anim_rat.c    ****     ball_dy *= -1;
+ 272:anim_rat.c    ****   }
+ 273:anim_rat.c    ****   
+ 274:anim_rat.c    ****   
+ 275:anim_rat.c    ****   
+ 276:anim_rat.c    ****   /************************************* LEFT & RIGHT WALLS */
+ 277:anim_rat.c    ****   // the ball hits either wall, the ball resets location & angle
+ 278:anim_rat.c    ****   if (((ball_x/FIXED_MATH)  > (SCREEN_W - ball_radius*2)) || ((int8_t)(ball_x/FIXED_MATH) <= 0) || 
+ 279:anim_rat.c    ****   if(DEBUGGING) {
+ 280:anim_rat.c    ****     if ((int8_t)(ball_x/FIXED_MATH) <= 0) {
+ 281:anim_rat.c    ****         putstring("Left wall collide");
+ 282:anim_rat.c    ****         if (! minute_changed) {
+ 283:anim_rat.c    **** 	  putstring_nl("...on accident");
+ 284:anim_rat.c    ****         } else {
+ 285:anim_rat.c    **** 	  putstring_nl("...on purpose");
+ 286:anim_rat.c    ****         }
+ 287:anim_rat.c    ****       } else {
+ 288:anim_rat.c    ****         putstring("Right wall collide");
+ 289:anim_rat.c    ****         if (! hour_changed) {
+ 290:anim_rat.c    **** 	  putstring_nl("...on accident");
+ 291:anim_rat.c    ****         } else {
+ 292:anim_rat.c    **** 	  putstring_nl("...on purpose");
+ 293:anim_rat.c    ****         }
+ 294:anim_rat.c    ****       }
+ 295:anim_rat.c    ****     }
+ 296:anim_rat.c    **** 
+ 297:anim_rat.c    ****     // place ball in the middle of the screen
+ 298:anim_rat.c    ****     ball_x = (SCREEN_W_FIXED / 2) - FIXED_MATH;
+ 299:anim_rat.c    ****     ball_y = (SCREEN_H_FIXED / 2) - FIXED_MATH;
+ 300:anim_rat.c    **** 
+ 301:anim_rat.c    ****     int8_t angle = random_angle();
+ 302:anim_rat.c    ****     ball_dx = MAX_BALL_SPEED;
+ 303:anim_rat.c    ****     ball_dy = MAX_BALL_SPEED;
+ 304:anim_rat.c    ****     ball_dx *= cosine(angle);
+ 305:anim_rat.c    ****     ball_dy *= sine(angle);
+ 306:anim_rat.c    ****     ball_dx /= 0x7FFF;
+ 307:anim_rat.c    ****     ball_dy /= 0x7FFF;
+ 308:anim_rat.c    ****     
+ 309:anim_rat.c    **** 
+ 310:anim_rat.c    ****     glcdFillRectangle(LEFTPADDLE_X, left_keepout_top, PADDLE_W, left_keepout_bot - left_keepout_top
+ 311:anim_rat.c    ****     glcdFillRectangle(RIGHTPADDLE_X, right_keepout_top, PADDLE_W, right_keepout_bot - right_keepout
+ 312:anim_rat.c    **** 
+ 313:anim_rat.c    ****     right_keepout_top = right_keepout_bot = 0;
+ 314:anim_rat.c    ****     left_keepout_top = left_keepout_bot = 0;
+ 315:anim_rat.c    ****     redraw_time_rat = 1;
+ 316:anim_rat.c    ****     minute_changed = hour_changed = 0;
+ 317:anim_rat.c    ****     ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, ball_dx > 0);
+ 318:anim_rat.c    **** 
+ 319:anim_rat.c    **** 		//left_score = time_h;
+ 320:anim_rat.c    **** 		//right_score = time_m;
+ 321:anim_rat.c    **** 		setscore_rat();
+ 322:anim_rat.c    **** 	}
+ 323:anim_rat.c    **** 
+ 324:anim_rat.c    ****  
+ 325:anim_rat.c    **** 
+ 326:anim_rat.c    ****   // save old paddle position
+ 327:anim_rat.c    ****   oldleftpaddle_y = leftpaddle_y;
+ 328:anim_rat.c    ****   oldrightpaddle_y = rightpaddle_y;
+ 329:anim_rat.c    ****   
+ 330:anim_rat.c    ****   
+ 331:anim_rat.c    ****  /* if(ball_dx > 0) {
+ 332:anim_rat.c    ****   // For debugging, print the ball location
+ 333:anim_rat.c    ****   DEBUG(putstring("ball @ (")); 
+ 334:anim_rat.c    ****   DEBUG(uart_putw_dec(ball_x)); 
+ 335:anim_rat.c    ****   DEBUG(putstring(", ")); 
+ 336:anim_rat.c    ****   DEBUG(uart_putw_dec(ball_y)); 
+ 337:anim_rat.c    ****   DEBUG(putstring(")"));
+ 338:anim_rat.c    ****   DEBUG(putstring(" ball_dx @ ("));
+ 339:anim_rat.c    ****   DEBUG(uart_putw_dec(ball_dx));
+ 340:anim_rat.c    ****   DEBUG(putstring(")"));
+ 341:anim_rat.c    ****   DEBUG(putstring(" ball_dy @ ("));
+ 342:anim_rat.c    ****   DEBUG(uart_putw_dec(ball_dy));
+ 343:anim_rat.c    ****   DEBUG(putstring(")"));
+ 344:anim_rat.c    ****   DEBUG(putstring(" ball_dy @ ("));
+ 345:anim_rat.c    ****   DEBUG(uart_putw_dec(ball_dy));
+ 346:anim_rat.c    ****   DEBUG(putstring(")"));
+ 347:anim_rat.c    ****   
+ 348:anim_rat.c    ****   }*/
+ 349:anim_rat.c    **** 
+ 350:anim_rat.c    ****   /*if(!minute_changed) {
+ 351:anim_rat.c    ****     if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+ 352:anim_rat.c    ****     	move_paddle(&leftpaddle_y, ball_y);
+ 353:anim_rat.c    ****     }
+ 354:anim_rat.c    ****   } else {
+ 355:anim_rat.c    ****     //Minute changed.  We now have to miss the ball on purpose, if at all possible.
+ 356:anim_rat.c    ****     //If we don't succeed this time around, we will try again next time around.
+ 357:anim_rat.c    ****     if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+ 358:anim_rat.c    ****     	move_paddle(&leftpaddle_y, dest_paddle_pos);
+ 359:anim_rat.c    ****     }
+ 360:anim_rat.c    ****   }*/
+ 361:anim_rat.c    ****   
+ 362:anim_rat.c    ****   //ticksremaining--;
+ 363:anim_rat.c    ****   if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+ 364:anim_rat.c    ****     move_paddle(&leftpaddle_y, minute_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+ 365:anim_rat.c    ****   } else if((ball_dx > 0) && (ball_x > (SCREEN_W_FIXED/2))) {
+ 366:anim_rat.c    ****   	move_paddle(&rightpaddle_y, hour_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+ 367:anim_rat.c    ****   } else {
+ 368:anim_rat.c    ****   	if(ball_dx < 0)
+ 369:anim_rat.c    ****   		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
+ 370:anim_rat.c    ****   	else
+ 371:anim_rat.c    ****   		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
+ 372:anim_rat.c    ****   }
+ 373:anim_rat.c    **** 
+ 374:anim_rat.c    ****   // make sure the paddles dont hit the top or bottom
+ 375:anim_rat.c    ****   if (leftpaddle_y < TOPBAR_H_FIXED +1)
+ 376:anim_rat.c    ****     leftpaddle_y = TOPBAR_H_FIXED + 1;
+ 377:anim_rat.c    ****   if (rightpaddle_y < TOPBAR_H_FIXED + 1)
+ 378:anim_rat.c    ****     rightpaddle_y = TOPBAR_H_FIXED + 1;
+ 379:anim_rat.c    ****   
+ 380:anim_rat.c    ****   if (leftpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
+ 381:anim_rat.c    ****     leftpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
+ 382:anim_rat.c    ****   if (rightpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
+ 383:anim_rat.c    ****     rightpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
+ 384:anim_rat.c    ****   
+ 385:anim_rat.c    ****   if ((ball_dx > 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radi
+ 386:anim_rat.c    ****     ball_dx *= -1;
+ 387:anim_rat.c    ****     ball_x = RIGHTPADDLE_X_FIXED - (ball_radius*2*FIXED_MATH);
+ 388:anim_rat.c    ****     //ball_y = right_dest;
+ 389:anim_rat.c    ****     //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
+ 390:anim_rat.c    ****   }
+ 391:anim_rat.c    ****   if ((ball_dx < 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radi
+ 392:anim_rat.c    ****     ball_dx *= -1;
+ 393:anim_rat.c    ****     ball_x = LEFTPADDLE_X_FIXED + PADDLE_W_FIXED;
+ 394:anim_rat.c    ****     //ball_y = left_dest;
+ 395:anim_rat.c    ****     //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
+ 396:anim_rat.c    ****   }
+ 397:anim_rat.c    ****   
+ 398:anim_rat.c    **** }
+ 399:anim_rat.c    **** 
+ 400:anim_rat.c    **** void drawmidline(uint8_t inverted) {
+ 401:anim_rat.c    ****   uint8_t i;
+ 402:anim_rat.c    ****   for (i=0; i < (SCREEN_H/8 - 1); i++) { 
+ 403:anim_rat.c    ****     glcdSetAddress((SCREEN_W-MIDLINE_W)/2, i);
+ 404:anim_rat.c    ****     if (inverted) {
+ 405:anim_rat.c    ****       glcdDataWrite(0xF0);
+ 406:anim_rat.c    ****     } else {
+ 407:anim_rat.c    ****       glcdDataWrite(0x0F);  
+ 408:anim_rat.c    ****     }
+ 409:anim_rat.c    ****   }
+ 410:anim_rat.c    ****   glcdSetAddress((SCREEN_W-MIDLINE_W)/2, i);
+ 411:anim_rat.c    ****   if (inverted) {
+ 412:anim_rat.c    ****     glcdDataWrite(0x20);  
+ 413:anim_rat.c    ****   } else {
+ 414:anim_rat.c    ****     glcdDataWrite(0xCF);  
+ 415:anim_rat.c    ****   }
+ 416:anim_rat.c    **** }
+ 417:anim_rat.c    **** 
+ 418:anim_rat.c    **** void drawdisplay_rat(uint8_t inverted) {
+ 419:anim_rat.c    **** 
+ 420:anim_rat.c    **** 	setscore_rat();
+ 421:anim_rat.c    ****     // erase old ball
+ 422:anim_rat.c    ****     glcdFillRectangle(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, inv
+ 423:anim_rat.c    ****     // draw new ball
+ 424:anim_rat.c    ****     glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverte
+ 425:anim_rat.c    **** 
+ 426:anim_rat.c    ****     // draw middle lines around where the ball may have intersected it?
+ 427:anim_rat.c    ****     if  (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2,
+ 428:anim_rat.c    **** 		       SCREEN_W/2-MIDLINE_W, 0, MIDLINE_W, SCREEN_H)) {
+ 429:anim_rat.c    ****       // redraw it since we had an intersection
+ 430:anim_rat.c    ****       drawmidline(inverted);
+ 431:anim_rat.c    ****     }
+ 432:anim_rat.c    **** 
+ 433:anim_rat.c    **** 
+ 434:anim_rat.c    **** 
+ 435:anim_rat.c    ****     
+ 436:anim_rat.c    ****     if (oldleftpaddle_y != leftpaddle_y) {
+ 437:anim_rat.c    ****       // clear left paddle
+ 438:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, oldleftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+ 439:anim_rat.c    ****     }
+ 440:anim_rat.c    ****       // draw left paddle
+ 441:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 442:anim_rat.c    ****     
+ 443:anim_rat.c    **** 
+ 444:anim_rat.c    ****     if (oldrightpaddle_y != rightpaddle_y) {
+ 445:anim_rat.c    ****       // clear right paddle
+ 446:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, oldrightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+ 447:anim_rat.c    ****     }
+ 448:anim_rat.c    ****       // draw right paddle
+ 449:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 450:anim_rat.c    ****     
+ 451:anim_rat.c    **** 
+ 452:anim_rat.c    ****     if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, RIG
+ 453:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 454:anim_rat.c    ****     }
+ 455:anim_rat.c    ****     if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, LEF
+ 456:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 457:anim_rat.c    ****     }
+ 458:anim_rat.c    ****    // draw time
+ 459:anim_rat.c    ****    uint8_t redraw_digits;
+ 460:anim_rat.c    ****    TIMSK2 = 0;	//Disable Timer 2 interrupt, to prevent a race condition.
+ 461:anim_rat.c    ****    if(redraw_time_rat)
+ 462:anim_rat.c    ****    {
+ 463:anim_rat.c    ****    	   redraw_digits = 1;
+ 464:anim_rat.c    ****    	   redraw_time_rat = 0;
+ 465:anim_rat.c    ****    }
+ 466:anim_rat.c    ****    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
+ 467:anim_rat.c    ****     
+ 468:anim_rat.c    ****     draw_score_rat(redraw_digits,inverted);
+ 469:anim_rat.c    ****     
+ 470:anim_rat.c    ****     redraw_digits = 0;
+ 471:anim_rat.c    ****     
+ 472:anim_rat.c    **** }
+ 473:anim_rat.c    **** 
+ 474:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 475:anim_rat.c    **** uint8_t rat_time_loc[8] = {
+ 476:anim_rat.c    **** 	DISPLAY_H10_X_RAT,
+ 477:anim_rat.c    **** 	DISPLAY_H1_X_RAT,
+ 478:anim_rat.c    **** 	DISPLAY_M10_X_RAT,
+ 479:anim_rat.c    **** 	DISPLAY_M1_X_RAT,
+ 480:anim_rat.c    **** 	DISPLAY_MON1_X,
+ 481:anim_rat.c    **** 	DISPLAY_DOW1_X,
+ 482:anim_rat.c    **** 	DISPLAY_DOW2_X,
+ 483:anim_rat.c    **** 	DISPLAY_DOW3_X
+ 484:anim_rat.c    **** };
+ 485:anim_rat.c    **** #endif
+ 486:anim_rat.c    **** 
+ 487:anim_rat.c    **** void check_ball_digit_collision(uint8_t redraw_digits, uint8_t digit_x, uint8_t digit, uint8_t inve
+ 488:anim_rat.c    **** {
+ 489:anim_rat.c    **** 	if (redraw_digits || intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball
+ 490:anim_rat.c    **** 					digit_x, DISPLAY_TIME_Y_RAT, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
+ 491:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 492:anim_rat.c    ****         if(digit > 10)
+ 493:anim_rat.c    ****           drawbigfont(digit_x, DISPLAY_TIME_Y_RAT, digit, inverted);
+ 494:anim_rat.c    ****         else
+ 495:anim_rat.c    **** #endif
+ 496:anim_rat.c    **** 	      drawbigdigit(digit_x, DISPLAY_TIME_Y_RAT, digit, inverted);
+ 497:anim_rat.c    ****       }
+ 498:anim_rat.c    **** }
+ 499:anim_rat.c    **** 
+ 500:anim_rat.c    **** void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
+ 501:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 502:anim_rat.c    **** 	uint8_t i;
+ 503:anim_rat.c    ****     static uint8_t prev_mode;
+ 504:anim_rat.c    **** 	if(score_mode==SCORE_MODE_DOW) {
+ 505:anim_rat.c    **** 		if(prev_mode != SCORE_MODE_DOW)
+ 506:anim_rat.c    **** 		{
+ 507:anim_rat.c    **** 			for(i=0;i<4;i++)
+ 508:anim_rat.c    **** 				drawbigdigit(rat_time_loc[i],DISPLAY_TIME_Y_RAT, 10, inverted);
+ 509:anim_rat.c    **** 			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted
+ 510:anim_rat.c    **** 			prev_mode = SCORE_MODE_DOW;
+ 511:anim_rat.c    **** 		}
+ 512:anim_rat.c    **** 		
+ 513:anim_rat.c    **** 		for(i=0;i<3;i++)
+ 514:anim_rat.c    **** 			check_ball_digit_collision(redraw_digits, rat_time_loc[i+5], sdotw(dotw(date_m,date_d,date_y),i)
+ 515:anim_rat.c    **** 	}
+ 516:anim_rat.c    **** 	else if (score_mode==SCORE_MODE_DATELONG) {
+ 517:anim_rat.c    **** 		if(prev_mode != SCORE_MODE_DATELONG)
+ 518:anim_rat.c    **** 		{
+ 519:anim_rat.c    **** 			if(prev_mode == SCORE_MODE_DOW) {
+ 520:anim_rat.c    **** 			for(i=0;i<3;i++)
+ 521:anim_rat.c    **** 			  drawbigfont(rat_time_loc[i+5], DISPLAY_TIME_Y_RAT, ' ', inverted);
+ 522:anim_rat.c    **** 		    }
+ 523:anim_rat.c    **** 		    if(prev_mode == SCORE_MODE_TIME) {
+ 524:anim_rat.c    **** 		    for(i=0;i<4;i++)
+ 525:anim_rat.c    **** 		      drawbigdigit(rat_time_loc[i], DISPLAY_TIME_Y_RAT, 10, inverted);
+ 526:anim_rat.c    **** 		    }
+ 527:anim_rat.c    **** 			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted
+ 528:anim_rat.c    **** 			prev_mode = SCORE_MODE_DATELONG;
+ 529:anim_rat.c    **** 		}
+ 530:anim_rat.c    **** 		for(i=0;i<3;i++)
+ 531:anim_rat.c    **** 			check_ball_digit_collision(redraw_digits, rat_time_loc[i+4], smon(date_m,i), inverted); 
+ 532:anim_rat.c    **** 		check_ball_digit_collision(redraw_digits, DISPLAY_DAY10_X, right_score/10, inverted);
+ 533:anim_rat.c    **** 		check_ball_digit_collision(redraw_digits, DISPLAY_DAY10_X, right_score%10, inverted);
+ 534:anim_rat.c    **** 	}
+ 535:anim_rat.c    **** 	else {
+ 536:anim_rat.c    **** 	  if((prev_mode == SCORE_MODE_DOW) || (prev_mode == SCORE_MODE_DATELONG))
+ 537:anim_rat.c    **** 		{
+ 538:anim_rat.c    **** 			if(prev_mode == SCORE_MODE_DATELONG) {
+ 539:anim_rat.c    **** 			  for(i=0;i<3;i++)
+ 540:anim_rat.c    **** 			    drawbigfont(rat_time_loc[i+4], DISPLAY_TIME_Y_RAT, ' ', inverted);
+ 541:anim_rat.c    **** 			  drawbigdigit(DISPLAY_DAY10_X, DISPLAY_TIME_Y_RAT, 10, inverted);
+ 542:anim_rat.c    **** 			  drawbigdigit(DISPLAY_DAY1_X, DISPLAY_TIME_Y_RAT, 10, inverted);
+ 543:anim_rat.c    **** 			}
+ 544:anim_rat.c    **** 			if(prev_mode == SCORE_MODE_DOW) {
+ 545:anim_rat.c    **** 			  for(i=0;i<3;i++)
+ 546:anim_rat.c    **** 			    drawbigfont(rat_time_loc[i+5], DISPLAY_TIME_Y_RAT, ' ', inverted);
+ 547:anim_rat.c    **** 		    }
+ 548:anim_rat.c    **** 		    if(prev_mode == SCORE_MODE_TIME) {
+ 549:anim_rat.c    **** 		      for(i=0;i<4;i++)
+ 550:anim_rat.c    **** 			    drawbigdigit(rat_time_loc[i], DISPLAY_TIME_Y_RAT, 10, inverted);
+ 551:anim_rat.c    **** 		    }
+ 552:anim_rat.c    **** 			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted
+ 553:anim_rat.c    **** 			prev_mode = SCORE_MODE_TIME;
+ 554:anim_rat.c    **** 	    }
+ 555:anim_rat.c    **** #endif
+ 556:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_H10_X_RAT,left_score/10,inverted);
+ 557:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_H1_X_RAT,left_score%10,inverted);
+ 558:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_M10_X_RAT,right_score/10,inverted);
+ 559:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_M1_X_RAT,right_score%10,inverted);
+ 560:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 561:anim_rat.c    ****   }
+ 562:anim_rat.c    **** #endif
+ 563:anim_rat.c    **** }
+ 564:anim_rat.c    **** 
+ 565:anim_rat.c    **** #ifdef OPTION_DOW_DATELONG
+ 566:anim_rat.c    **** //uint8_t get_font(uint16_t addr)
+ 567:anim_rat.c    **** void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted) {
+ 568:anim_rat.c    ****   uint8_t i, j;
+ 569:anim_rat.c    ****   
+ 570:anim_rat.c    ****   for (i = 0; i < 5; i++) {
+ 571:anim_rat.c    ****     uint8_t d = get_font(((n-0x20)*5)+i);
+ 572:anim_rat.c    ****     for (j=0; j<7; j++) {
+ 573:anim_rat.c    ****       if (d & _BV(j)) {
+ 574:anim_rat.c    **** 	glcdFillRectangle(x+i*2, y+j*2, 2, 2, !inverted);
+ 575:anim_rat.c    ****       } else {
+ 576:anim_rat.c    **** 	glcdFillRectangle(x+i*2, y+j*2, 2, 2, inverted);
+ 577:anim_rat.c    ****       }
+ 578:anim_rat.c    ****     }
+ 579:anim_rat.c    ****   }
+ 580:anim_rat.c    **** }
+ 581:anim_rat.c    **** #endif
+ 582:anim_rat.c    **** 
+ 583:anim_rat.c    **** int8_t random_angle(void) {
+ 584:anim_rat.c    **** 	uint32_t angle = crand(0);
+ 585:anim_rat.c    **** 	angle *= (64 - MIN_BALL_ANGLE*2);
+ 586:anim_rat.c    **** 	angle /= RAND_MAX;
+ 587:anim_rat.c    **** 	angle += MIN_BALL_ANGLE;
+ 588:anim_rat.c    **** 	uint8_t quadrant = (crand(1)) % 4;
+ 589:anim_rat.c    **** 	angle += quadrant*64;
+ 590:anim_rat.c    **** 	return angle & 0xFF;
+ 591:anim_rat.c    **** }
+ 592:anim_rat.c    **** 
+ 593:anim_rat.c    **** 
+ 594:anim_rat.c    **** uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_dx, int32_t theball
+ 595:anim_rat.c    **** {
+ 320               	.LM17:
+ 321               	.LFBB4:
+ 322 00b6 2F92      		push r2
+ 323 00b8 3F92      		push r3
+ 324 00ba 4F92      		push r4
+ 325 00bc 5F92      		push r5
+ 326 00be 6F92      		push r6
+ 327 00c0 7F92      		push r7
+ 328 00c2 8F92      		push r8
+ 329 00c4 9F92      		push r9
+ 330 00c6 AF92      		push r10
+ 331 00c8 BF92      		push r11
+ 332 00ca CF92      		push r12
+ 333 00cc DF92      		push r13
+ 334 00ce EF92      		push r14
+ 335 00d0 FF92      		push r15
+ 336 00d2 0F93      		push r16
+ 337 00d4 1F93      		push r17
+ 338 00d6 DF93      		push r29
+ 339 00d8 CF93      		push r28
+ 340 00da CDB7      		in r28,__SP_L__
+ 341 00dc DEB7      		in r29,__SP_H__
+ 342 00de 6497      		sbiw r28,20
+ 343 00e0 0FB6      		in __tmp_reg__,__SREG__
+ 344 00e2 F894      		cli
+ 345 00e4 DEBF      		out __SP_H__,r29
+ 346 00e6 0FBE      		out __SREG__,__tmp_reg__
+ 347 00e8 CDBF      		out __SP_L__,r28
+ 348               	/* prologue: function */
+ 349               	/* frame size = 20 */
+ 350 00ea 2701      		movw r4,r14
+ 351 00ec 3801      		movw r6,r16
+ 352 00ee 1401      		movw r2,r8
+ 354               	.LM18:
+ 355 00f0 E60E      		add r14,r22
+ 356 00f2 F71E      		adc r15,r23
+ 357 00f4 081F      		adc r16,r24
+ 358 00f6 191F      		adc r17,r25
+ 359 00f8 E986      		std Y+9,r14
+ 360 00fa FA86      		std Y+10,r15
+ 361 00fc 0B87      		std Y+11,r16
+ 362 00fe 1C87      		std Y+12,r17
+ 363 0100 EE24      		clr r14
+ 364 0102 FF24      		clr r15
+ 365 0104 8701      		movw r16,r14
+ 366 0106 E418      		sub r14,r4
+ 367 0108 F508      		sbc r15,r5
+ 368 010a 0609      		sbc r16,r6
+ 369 010c 1709      		sbc r17,r7
+ 370 010e E982      		std Y+1,r14
+ 371 0110 FA82      		std Y+2,r15
+ 372 0112 0B83      		std Y+3,r16
+ 373 0114 1C83      		std Y+4,r17
+ 374 0116 E4E1      		ldi r30,lo8(1300)
+ 375 0118 EE2E      		mov r14,r30
+ 376 011a E5E0      		ldi r30,hi8(1300)
+ 377 011c FE2E      		mov r15,r30
+ 378 011e 012D      		mov r16,__zero_reg__
+ 379 0120 112D      		mov r17,__zero_reg__
+ 380 0122 E61A      		sub r14,r22
+ 381 0124 F70A      		sbc r15,r23
+ 382 0126 080B      		sbc r16,r24
+ 383 0128 190B      		sbc r17,r25
+ 384 012a ED82      		std Y+5,r14
+ 385 012c FE82      		std Y+6,r15
+ 386 012e 0F83      		std Y+7,r16
+ 387 0130 1887      		std Y+8,r17
+ 388 0132 7901      		movw r14,r18
+ 389 0134 8A01      		movw r16,r20
+ 390 0136 6D87      		std Y+13,r22
+ 391 0138 7E87      		std Y+14,r23
+ 392 013a 8F87      		std Y+15,r24
+ 393 013c 988B      		std Y+16,r25
+ 394 013e C501      		movw r24,r10
+ 395 0140 D601      		movw r26,r12
+ 396 0142 5C01      		movw r10,r24
+ 397 0144 6D01      		movw r12,r26
+ 398 0146 9924      		clr r9
+ 399 0148 20E0      		ldi r18,lo8(0)
+ 400 014a 00C0      		rjmp .L17
+ 401               	.L24:
+ 402               	.LBB7:
+ 596:anim_rat.c    ****   // "simulate" the ball bounce...its not optimized (yet)
+ 597:anim_rat.c    ****   int32_t sim_ball_y = theball_y;
+ 598:anim_rat.c    ****   int32_t sim_ball_x = theball_x;
+ 599:anim_rat.c    ****   int32_t sim_ball_dy = theball_dy;
+ 600:anim_rat.c    ****   int32_t sim_ball_dx = theball_dx;
+ 601:anim_rat.c    ****   
+ 602:anim_rat.c    ****   uint8_t tix = 0, collided = 0;
+ 603:anim_rat.c    **** 
+ 604:anim_rat.c    ****   while ((sim_ball_x < (RIGHTPADDLE_X_FIXED + PADDLE_W_FIXED)) && ((sim_ball_x + (ball_radius*2*FIX
+ 605:anim_rat.c    ****     int32_t old_sim_ball_x = sim_ball_x;
+ 606:anim_rat.c    ****     int32_t old_sim_ball_y = sim_ball_y;
+ 607:anim_rat.c    ****     sim_ball_y += sim_ball_dy;
+ 404               	.LM19:
+ 405 014c B601      		movw r22,r12
+ 406 014e A501      		movw r20,r10
+ 407 0150 4E0D      		add r20,r14
+ 408 0152 5F1D      		adc r21,r15
+ 409 0154 601F      		adc r22,r16
+ 410 0156 711F      		adc r23,r17
+ 411 0158 498B      		std Y+17,r20
+ 412 015a 5A8B      		std Y+18,r21
+ 413 015c 6B8B      		std Y+19,r22
+ 414 015e 7C8B      		std Y+20,r23
+ 415 0160 6D85      		ldd r22,Y+13
+ 416 0162 7E85      		ldd r23,Y+14
+ 417 0164 8F85      		ldd r24,Y+15
+ 418 0166 9889      		ldd r25,Y+16
+ 419 0168 640D      		add r22,r4
+ 420 016a 751D      		adc r23,r5
+ 421 016c 861D      		adc r24,r6
+ 422 016e 971D      		adc r25,r7
+ 423 0170 6D87      		std Y+13,r22
+ 424 0172 7E87      		std Y+14,r23
+ 425 0174 8F87      		std Y+15,r24
+ 426 0176 988B      		std Y+16,r25
+ 608:anim_rat.c    ****     sim_ball_x += sim_ball_dx;
+ 609:anim_rat.c    **** 	
+ 610:anim_rat.c    ****     if (sim_ball_y  > (SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED)) {
+ 428               	.LM20:
+ 429 0178 8989      		ldd r24,Y+17
+ 430 017a 9A89      		ldd r25,Y+18
+ 431 017c AB89      		ldd r26,Y+19
+ 432 017e BC89      		ldd r27,Y+20
+ 433 0180 895A      		subi r24,lo8(5801)
+ 434 0182 9641      		sbci r25,hi8(5801)
+ 435 0184 A040      		sbci r26,hlo8(5801)
+ 436 0186 B040      		sbci r27,hhi8(5801)
+ 437 0188 04F0      		brlt .L18
+ 611:anim_rat.c    ****       sim_ball_y = SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED;
+ 612:anim_rat.c    ****       sim_ball_dy *= -1;
+ 439               	.LM21:
+ 440 018a D094      		com r13
+ 441 018c C094      		com r12
+ 442 018e B094      		com r11
+ 443 0190 A094      		com r10
+ 444 0192 A11C      		adc r10,__zero_reg__
+ 445 0194 B11C      		adc r11,__zero_reg__
+ 446 0196 C11C      		adc r12,__zero_reg__
+ 447 0198 D11C      		adc r13,__zero_reg__
+ 448 019a 48EA      		ldi r20,lo8(5800)
+ 449 019c 56E1      		ldi r21,hi8(5800)
+ 450 019e 60E0      		ldi r22,hlo8(5800)
+ 451 01a0 70E0      		ldi r23,hhi8(5800)
+ 452 01a2 498B      		std Y+17,r20
+ 453 01a4 5A8B      		std Y+18,r21
+ 454 01a6 6B8B      		std Y+19,r22
+ 455 01a8 7C8B      		std Y+20,r23
+ 456 01aa 00C0      		rjmp .L19
+ 457               	.L18:
+ 613:anim_rat.c    ****     }
+ 614:anim_rat.c    **** 	
+ 615:anim_rat.c    ****     if (sim_ball_y <  TOPBAR_H_FIXED) {
+ 459               	.LM22:
+ 460 01ac 6989      		ldd r22,Y+17
+ 461 01ae 7A89      		ldd r23,Y+18
+ 462 01b0 8B89      		ldd r24,Y+19
+ 463 01b2 9C89      		ldd r25,Y+20
+ 464 01b4 683C      		cpi r22,lo8(200)
+ 465 01b6 7105      		cpc r23,__zero_reg__
+ 466 01b8 8105      		cpc r24,__zero_reg__
+ 467 01ba 9105      		cpc r25,__zero_reg__
+ 468 01bc 04F4      		brge .L19
+ 616:anim_rat.c    ****       sim_ball_y = TOPBAR_H_FIXED;
+ 617:anim_rat.c    ****       sim_ball_dy *= -1;
+ 470               	.LM23:
+ 471 01be D094      		com r13
+ 472 01c0 C094      		com r12
+ 473 01c2 B094      		com r11
+ 474 01c4 A094      		com r10
+ 475 01c6 A11C      		adc r10,__zero_reg__
+ 476 01c8 B11C      		adc r11,__zero_reg__
+ 477 01ca C11C      		adc r12,__zero_reg__
+ 478 01cc D11C      		adc r13,__zero_reg__
+ 479 01ce 88EC      		ldi r24,lo8(200)
+ 480 01d0 90E0      		ldi r25,hi8(200)
+ 481 01d2 A0E0      		ldi r26,hlo8(200)
+ 482 01d4 B0E0      		ldi r27,hhi8(200)
+ 483 01d6 898B      		std Y+17,r24
+ 484 01d8 9A8B      		std Y+18,r25
+ 485 01da AB8B      		std Y+19,r26
+ 486 01dc BC8B      		std Y+20,r27
+ 487               	.L19:
+ 618:anim_rat.c    ****     }
+ 619:anim_rat.c    ****     
+ 620:anim_rat.c    ****     if (((sim_ball_x + ball_radius*2*FIXED_MATH) >= RIGHTPADDLE_X_FIXED) && 
+ 489               	.LM24:
+ 490 01de 4985      		ldd r20,Y+9
+ 491 01e0 5A85      		ldd r21,Y+10
+ 492 01e2 6B85      		ldd r22,Y+11
+ 493 01e4 7C85      		ldd r23,Y+12
+ 494 01e6 4C55      		subi r20,lo8(11100)
+ 495 01e8 5B42      		sbci r21,hi8(11100)
+ 496 01ea 6040      		sbci r22,hlo8(11100)
+ 497 01ec 7040      		sbci r23,hhi8(11100)
+ 498 01ee 04F0      		brlt .L20
+ 596:anim_rat.c    **** {
+ 500               	.LM25:
+ 501 01f0 8D85      		ldd r24,Y+13
+ 502 01f2 9E85      		ldd r25,Y+14
+ 503 01f4 AF85      		ldd r26,Y+15
+ 504 01f6 B889      		ldd r27,Y+16
+ 505 01f8 8419      		sub r24,r4
+ 506 01fa 9509      		sbc r25,r5
+ 507 01fc A609      		sbc r26,r6
+ 508 01fe B709      		sbc r27,r7
+ 510               	.LM26:
+ 511 0200 8C55      		subi r24,lo8(11100)
+ 512 0202 9B42      		sbci r25,hi8(11100)
+ 513 0204 A040      		sbci r26,hlo8(11100)
+ 514 0206 B040      		sbci r27,hhi8(11100)
+ 515 0208 04F4      		brge .L20
+ 516               	.LBB8:
+ 621:anim_rat.c    **** 	((old_sim_ball_x + ball_radius*2*FIXED_MATH) < RIGHTPADDLE_X_FIXED)) {
+ 622:anim_rat.c    ****       // check if we collided with the right paddle
+ 623:anim_rat.c    ****       
+ 624:anim_rat.c    ****       // first determine the exact position at which it would collide
+ 625:anim_rat.c    ****       int32_t dx = RIGHTPADDLE_X_FIXED - (old_sim_ball_x + ball_radius*2*FIXED_MATH);
+ 626:anim_rat.c    ****       // now figure out what fraction that is of the motion and multiply that by the dy
+ 627:anim_rat.c    ****       int32_t dy = (dx / sim_ball_dx) * sim_ball_dy;
+ 628:anim_rat.c    **** 	  
+ 629:anim_rat.c    ****       //if(DEBUGGING){putstring("RCOLL@ ("); uart_putw_dec(old_sim_ball_x + dx); putstring(", "); u
+ 630:anim_rat.c    ****       
+ 631:anim_rat.c    ****       *keepout1 = (old_sim_ball_y + dy); 
+ 518               	.LM27:
+ 519 020a 6D81      		ldd r22,Y+5
+ 520 020c 7E81      		ldd r23,Y+6
+ 521 020e 8F81      		ldd r24,Y+7
+ 522 0210 9885      		ldd r25,Y+8
+ 523 0212 685B      		subi r22,lo8(-(9800))
+ 524 0214 794D      		sbci r23,hi8(-(9800))
+ 525 0216 8F4F      		sbci r24,hlo8(-(9800))
+ 526 0218 9F4F      		sbci r25,hhi8(-(9800))
+ 527 021a 00C0      		rjmp .L26
+ 528               	.L20:
+ 529               	.LBE8:
+ 632:anim_rat.c    ****       collided = 1;
+ 633:anim_rat.c    ****     } else if ((sim_ball_x <= (LEFTPADDLE_X_FIXED + PADDLE_W_FIXED)) && 
+ 531               	.LM28:
+ 532 021c 4985      		ldd r20,Y+9
+ 533 021e 5A85      		ldd r21,Y+10
+ 534 0220 6B85      		ldd r22,Y+11
+ 535 0222 7C85      		ldd r23,Y+12
+ 536 0224 4551      		subi r20,lo8(1301)
+ 537 0226 5540      		sbci r21,hi8(1301)
+ 538 0228 6040      		sbci r22,hlo8(1301)
+ 539 022a 7040      		sbci r23,hhi8(1301)
+ 540 022c 04F4      		brge .L22
+ 596:anim_rat.c    **** {
+ 542               	.LM29:
+ 543 022e 8D85      		ldd r24,Y+13
+ 544 0230 9E85      		ldd r25,Y+14
+ 545 0232 AF85      		ldd r26,Y+15
+ 546 0234 B889      		ldd r27,Y+16
+ 547 0236 8419      		sub r24,r4
+ 548 0238 9509      		sbc r25,r5
+ 549 023a A609      		sbc r26,r6
+ 550 023c B709      		sbc r27,r7
+ 552               	.LM30:
+ 553 023e 8551      		subi r24,lo8(1301)
+ 554 0240 9540      		sbci r25,hi8(1301)
+ 555 0242 A040      		sbci r26,hlo8(1301)
+ 556 0244 B040      		sbci r27,hhi8(1301)
+ 557 0246 04F0      		brlt .L22
+ 558               	.LBB9:
+ 634:anim_rat.c    **** 			(old_sim_ball_x > (LEFTPADDLE_X_FIXED + PADDLE_W_FIXED))) {
+ 635:anim_rat.c    ****       // check if we collided with the left paddle
+ 636:anim_rat.c    **** 
+ 637:anim_rat.c    ****       // first determine the exact position at which it would collide
+ 638:anim_rat.c    ****       int32_t dx = (LEFTPADDLE_X_FIXED + PADDLE_W_FIXED) - old_sim_ball_x;
+ 639:anim_rat.c    ****       // now figure out what fraction that is of the motion and multiply that by the dy
+ 640:anim_rat.c    ****       int32_t dy = (dx / sim_ball_dx) * sim_ball_dy;
+ 641:anim_rat.c    **** 	  
+ 642:anim_rat.c    ****       //if(DEBUGGING){putstring("LCOLL@ ("); uart_putw_dec(old_sim_ball_x + dx); putstring(", "); u
+ 643:anim_rat.c    ****       
+ 644:anim_rat.c    ****       *keepout1 = (old_sim_ball_y + dy); 
+ 560               	.LM31:
+ 561 0248 6D81      		ldd r22,Y+5
+ 562 024a 7E81      		ldd r23,Y+6
+ 563 024c 8F81      		ldd r24,Y+7
+ 564 024e 9885      		ldd r25,Y+8
+ 565               	.L26:
+ 566 0250 A301      		movw r20,r6
+ 567 0252 9201      		movw r18,r4
+ 568 0254 0E94 0000 		call __divmodsi4
+ 569 0258 C601      		movw r24,r12
+ 570 025a B501      		movw r22,r10
+ 571 025c 0E94 0000 		call __mulsi3
+ 572 0260 E60E      		add r14,r22
+ 573 0262 F71E      		adc r15,r23
+ 574 0264 081F      		adc r16,r24
+ 575 0266 191F      		adc r17,r25
+ 576 0268 D101      		movw r26,r2
+ 577 026a ED92      		st X+,r14
+ 578 026c FD92      		st X+,r15
+ 579 026e 0D93      		st X+,r16
+ 580 0270 1C93      		st X,r17
+ 581 0272 1397      		sbiw r26,3
+ 582 0274 00C0      		rjmp .L21
+ 583               	.L22:
+ 584               	.LBE9:
+ 645:anim_rat.c    ****       collided = 1;
+ 646:anim_rat.c    ****     }
+ 647:anim_rat.c    ****     if (!collided) {
+ 586               	.LM32:
+ 587 0276 2223      		tst r18
+ 588 0278 01F4      		brne .L21
+ 648:anim_rat.c    ****       tix++;
+ 590               	.LM33:
+ 591 027a 9394      		inc r9
+ 592 027c 00C0      		rjmp .L23
+ 593               	.L21:
+ 594 027e 21E0      		ldi r18,lo8(1)
+ 595               	.L23:
+ 596 0280 E984      		ldd r14,Y+9
+ 597 0282 FA84      		ldd r15,Y+10
+ 598 0284 0B85      		ldd r16,Y+11
+ 599 0286 1C85      		ldd r17,Y+12
+ 600 0288 E40C      		add r14,r4
+ 601 028a F51C      		adc r15,r5
+ 602 028c 061D      		adc r16,r6
+ 603 028e 171D      		adc r17,r7
+ 604 0290 E986      		std Y+9,r14
+ 605 0292 FA86      		std Y+10,r15
+ 606 0294 0B87      		std Y+11,r16
+ 607 0296 1C87      		std Y+12,r17
+ 608 0298 4D81      		ldd r20,Y+5
+ 609 029a 5E81      		ldd r21,Y+6
+ 610 029c 6F81      		ldd r22,Y+7
+ 611 029e 7885      		ldd r23,Y+8
+ 612 02a0 8981      		ldd r24,Y+1
+ 613 02a2 9A81      		ldd r25,Y+2
+ 614 02a4 AB81      		ldd r26,Y+3
+ 615 02a6 BC81      		ldd r27,Y+4
+ 616 02a8 480F      		add r20,r24
+ 617 02aa 591F      		adc r21,r25
+ 618 02ac 6A1F      		adc r22,r26
+ 619 02ae 7B1F      		adc r23,r27
+ 620 02b0 4D83      		std Y+5,r20
+ 621 02b2 5E83      		std Y+6,r21
+ 622 02b4 6F83      		std Y+7,r22
+ 623 02b6 7887      		std Y+8,r23
+ 624 02b8 E988      		ldd r14,Y+17
+ 625 02ba FA88      		ldd r15,Y+18
+ 626 02bc 0B89      		ldd r16,Y+19
+ 627 02be 1C89      		ldd r17,Y+20
+ 628               	.L17:
+ 629               	.LBE7:
+ 605:anim_rat.c    ****   while ((sim_ball_x < (RIGHTPADDLE_X_FIXED + PADDLE_W_FIXED)) && ((sim_ball_x + (ball_radius*2*FIX
+ 631               	.LM34:
+ 632 02c0 8D85      		ldd r24,Y+13
+ 633 02c2 9E85      		ldd r25,Y+14
+ 634 02c4 AF85      		ldd r26,Y+15
+ 635 02c6 B889      		ldd r27,Y+16
+ 636 02c8 8955      		subi r24,lo8(-(-601))
+ 637 02ca 9240      		sbci r25,hi8(-(-601))
+ 638 02cc A040      		sbci r26,hlo8(-(-601))
+ 639 02ce B040      		sbci r27,hhi8(-(-601))
+ 640 02d0 8F5B      		subi r24,lo8(11199)
+ 641 02d2 9B42      		sbci r25,hi8(11199)
+ 642 02d4 A040      		sbci r26,hlo8(11199)
+ 643 02d6 B040      		sbci r27,hhi8(11199)
+ 644 02d8 00F4      		brsh .+2
+ 645 02da 00C0      		rjmp .L24
+ 649:anim_rat.c    ****     }
+ 650:anim_rat.c    ****     
+ 651:anim_rat.c    ****     //if(DEBUGGING){putstring("\tSIMball @ ["); uart_putw_dec(sim_ball_x); putstring(", "); uart_pu
+ 652:anim_rat.c    ****   }
+ 653:anim_rat.c    ****   *keepout2 = sim_ball_y / FIXED_MATH;
+ 647               	.LM35:
+ 648 02dc C801      		movw r24,r16
+ 649 02de B701      		movw r22,r14
+ 650 02e0 24E6      		ldi r18,lo8(100)
+ 651 02e2 30E0      		ldi r19,hi8(100)
+ 652 02e4 40E0      		ldi r20,hlo8(100)
+ 653 02e6 50E0      		ldi r21,hhi8(100)
+ 654 02e8 0E94 0000 		call __divmodsi4
+ 655 02ec E9A5      		ldd r30,Y+41
+ 656 02ee FAA5      		ldd r31,Y+42
+ 657 02f0 2083      		st Z,r18
+ 658 02f2 3183      		std Z+1,r19
+ 659 02f4 4283      		std Z+2,r20
+ 660 02f6 5383      		std Z+3,r21
+ 654:anim_rat.c    **** 
+ 655:anim_rat.c    ****   return tix;
+ 656:anim_rat.c    **** }
+ 662               	.LM36:
+ 663 02f8 892D      		mov r24,r9
+ 664               	/* epilogue start */
+ 665 02fa 6496      		adiw r28,20
+ 666 02fc 0FB6      		in __tmp_reg__,__SREG__
+ 667 02fe F894      		cli
+ 668 0300 DEBF      		out __SP_H__,r29
+ 669 0302 0FBE      		out __SREG__,__tmp_reg__
+ 670 0304 CDBF      		out __SP_L__,r28
+ 671 0306 CF91      		pop r28
+ 672 0308 DF91      		pop r29
+ 673 030a 1F91      		pop r17
+ 674 030c 0F91      		pop r16
+ 675 030e FF90      		pop r15
+ 676 0310 EF90      		pop r14
+ 677 0312 DF90      		pop r13
+ 678 0314 CF90      		pop r12
+ 679 0316 BF90      		pop r11
+ 680 0318 AF90      		pop r10
+ 681 031a 9F90      		pop r9
+ 682 031c 8F90      		pop r8
+ 683 031e 7F90      		pop r7
+ 684 0320 6F90      		pop r6
+ 685 0322 5F90      		pop r5
+ 686 0324 4F90      		pop r4
+ 687 0326 3F90      		pop r3
+ 688 0328 2F90      		pop r2
+ 689 032a 0895      		ret
+ 699               	.Lscope4:
+ 701               		.stabd	78,0,0
+ 703               	.global	random_angle
+ 705               	random_angle:
+ 706               		.stabd	46,0,0
+ 584:anim_rat.c    **** int8_t random_angle(void) {
+ 708               	.LM37:
+ 709               	.LFBB5:
+ 710 032c EF92      		push r14
+ 711 032e FF92      		push r15
+ 712 0330 0F93      		push r16
+ 713 0332 1F93      		push r17
+ 714               	/* prologue: function */
+ 715               	/* frame size = 0 */
+ 585:anim_rat.c    **** 	uint32_t angle = crand(0);
+ 717               	.LM38:
+ 718 0334 80E0      		ldi r24,lo8(0)
+ 719 0336 0E94 0000 		call crand
+ 720 033a A0E0      		ldi r26,lo8(0)
+ 721 033c B0E0      		ldi r27,hi8(0)
+ 586:anim_rat.c    **** 	angle *= (64 - MIN_BALL_ANGLE*2);
+ 723               	.LM39:
+ 724 033e BC01      		movw r22,r24
+ 725 0340 CD01      		movw r24,r26
+ 726 0342 22E2      		ldi r18,lo8(34)
+ 727 0344 30E0      		ldi r19,hi8(34)
+ 728 0346 40E0      		ldi r20,hlo8(34)
+ 729 0348 50E0      		ldi r21,hhi8(34)
+ 730 034a 0E94 0000 		call __mulsi3
+ 587:anim_rat.c    **** 	angle /= RAND_MAX;
+ 732               	.LM40:
+ 733 034e 2FEF      		ldi r18,lo8(32767)
+ 734 0350 3FE7      		ldi r19,hi8(32767)
+ 735 0352 40E0      		ldi r20,hlo8(32767)
+ 736 0354 50E0      		ldi r21,hhi8(32767)
+ 737 0356 0E94 0000 		call __udivmodsi4
+ 738 035a 7901      		movw r14,r18
+ 739 035c 8A01      		movw r16,r20
+ 589:anim_rat.c    **** 	uint8_t quadrant = (crand(1)) % 4;
+ 741               	.LM41:
+ 742 035e 81E0      		ldi r24,lo8(1)
+ 743 0360 0E94 0000 		call crand
+ 588:anim_rat.c    **** 	angle += MIN_BALL_ANGLE;
+ 745               	.LM42:
+ 746 0364 2FE0      		ldi r18,lo8(15)
+ 747 0366 30E0      		ldi r19,hi8(15)
+ 748 0368 40E0      		ldi r20,hlo8(15)
+ 749 036a 50E0      		ldi r21,hhi8(15)
+ 750 036c E20E      		add r14,r18
+ 751 036e F31E      		adc r15,r19
+ 752 0370 041F      		adc r16,r20
+ 753 0372 151F      		adc r17,r21
+ 754 0374 8295      		swap r24
+ 755 0376 880F      		lsl r24
+ 756 0378 880F      		lsl r24
+ 757 037a 807C      		andi r24,0xc0
+ 592:anim_rat.c    **** }
+ 759               	.LM43:
+ 760 037c 8E0D      		add r24,r14
+ 761               	/* epilogue start */
+ 762 037e 1F91      		pop r17
+ 763 0380 0F91      		pop r16
+ 764 0382 FF90      		pop r15
+ 765 0384 EF90      		pop r14
+ 766 0386 0895      		ret
+ 771               	.Lscope5:
+ 773               		.stabd	78,0,0
+ 779               	.global	calculate_dest_pos
+ 781               	calculate_dest_pos:
+ 782               		.stabd	46,0,0
+ 210:anim_rat.c    **** uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir) {
+ 784               	.LM44:
+ 785               	.LFBB6:
+ 786 0388 2F92      		push r2
+ 787 038a 3F92      		push r3
+ 788 038c 4F92      		push r4
+ 789 038e 5F92      		push r5
+ 790 0390 6F92      		push r6
+ 791 0392 7F92      		push r7
+ 792 0394 8F92      		push r8
+ 793 0396 9F92      		push r9
+ 794 0398 AF92      		push r10
+ 795 039a BF92      		push r11
+ 796 039c CF92      		push r12
+ 797 039e DF92      		push r13
+ 798 03a0 EF92      		push r14
+ 799 03a2 FF92      		push r15
+ 800 03a4 0F93      		push r16
+ 801 03a6 1F93      		push r17
+ 802 03a8 CF93      		push r28
+ 803 03aa DF93      		push r29
+ 804               	/* prologue: function */
+ 805               	/* frame size = 0 */
+ 806 03ac 1C01      		movw r2,r24
+ 807 03ae EB01      		movw r28,r22
+ 808 03b0 2A01      		movw r4,r20
+ 809 03b2 6091 0000 		lds r22,ball_x
+ 810 03b6 7091 0000 		lds r23,(ball_x)+1
+ 811 03ba 8091 0000 		lds r24,(ball_x)+2
+ 812 03be 9091 0000 		lds r25,(ball_x)+3
+ 813 03c2 E090 0000 		lds r14,ball_y
+ 814 03c6 F090 0000 		lds r15,(ball_y)+1
+ 815 03ca 0091 0000 		lds r16,(ball_y)+2
+ 816 03ce 1091 0000 		lds r17,(ball_y)+3
+ 817 03d2 A090 0000 		lds r10,ball_dx
+ 818 03d6 B090 0000 		lds r11,(ball_dx)+1
+ 819 03da C090 0000 		lds r12,(ball_dx)+2
+ 820 03de D090 0000 		lds r13,(ball_dx)+3
+ 821 03e2 6090 0000 		lds r6,ball_dy
+ 822 03e6 7090 0000 		lds r7,(ball_dy)+1
+ 823 03ea 8090 0000 		lds r8,(ball_dy)+2
+ 824 03ee 9090 0000 		lds r9,(ball_dy)+3
+ 212:anim_rat.c    ****   if(dir) //Ball moving to the left
+ 826               	.LM45:
+ 827 03f2 2223      		tst r18
+ 828 03f4 01F0      		breq .L30
+ 214:anim_rat.c    ****   	ticksremaining = calculate_keepout(ball_x, ball_y, ball_dx, ball_dy, left, right);
+ 830               	.LM46:
+ 831 03f6 00D0      		rcall .
+ 832 03f8 EDB7      		in r30,__SP_L__
+ 833 03fa FEB7      		in r31,__SP_H__
+ 834 03fc D283      		std Z+2,r29
+ 835 03fe C183      		std Z+1,r28
+ 836 0400 A801      		movw r20,r16
+ 837 0402 9701      		movw r18,r14
+ 838 0404 8601      		movw r16,r12
+ 839 0406 7501      		movw r14,r10
+ 840 0408 6401      		movw r12,r8
+ 841 040a 5301      		movw r10,r6
+ 842 040c 4101      		movw r8,r2
+ 843 040e 0E94 0000 		call calculate_keepout
+ 844 0412 8093 0000 		sts ticksremaining,r24
+ 845 0416 1092 0000 		sts ticksremaining+1,__zero_reg__
+ 215:anim_rat.c    ****   	*dest = *left;
+ 847               	.LM47:
+ 848 041a F101      		movw r30,r2
+ 849 041c 8081      		ld r24,Z
+ 850 041e 9181      		ldd r25,Z+1
+ 851 0420 A281      		ldd r26,Z+2
+ 852 0422 B381      		ldd r27,Z+3
+ 853 0424 F201      		movw r30,r4
+ 854 0426 8083      		st Z,r24
+ 855 0428 9183      		std Z+1,r25
+ 856 042a A283      		std Z+2,r26
+ 857 042c B383      		std Z+3,r27
+ 216:anim_rat.c    ****   	if(minute_changed) miss=1;
+ 859               	.LM48:
+ 860 042e 8091 0000 		lds r24,minute_changed
+ 861 0432 00C0      		rjmp .L40
+ 862               	.L30:
+ 220:anim_rat.c    ****   	ticksremaining = calculate_keepout(ball_x, ball_y, ball_dx, ball_dy, right, left);
+ 864               	.LM49:
+ 865 0434 00D0      		rcall .
+ 866 0436 EDB7      		in r30,__SP_L__
+ 867 0438 FEB7      		in r31,__SP_H__
+ 868 043a 3282      		std Z+2,r3
+ 869 043c 2182      		std Z+1,r2
+ 870 043e A801      		movw r20,r16
+ 871 0440 9701      		movw r18,r14
+ 872 0442 8601      		movw r16,r12
+ 873 0444 7501      		movw r14,r10
+ 874 0446 6401      		movw r12,r8
+ 875 0448 5301      		movw r10,r6
+ 876 044a 4E01      		movw r8,r28
+ 877 044c 0E94 0000 		call calculate_keepout
+ 878 0450 8093 0000 		sts ticksremaining,r24
+ 879 0454 1092 0000 		sts ticksremaining+1,__zero_reg__
+ 221:anim_rat.c    ****   	*dest = *right;
+ 881               	.LM50:
+ 882 0458 8881      		ld r24,Y
+ 883 045a 9981      		ldd r25,Y+1
+ 884 045c AA81      		ldd r26,Y+2
+ 885 045e BB81      		ldd r27,Y+3
+ 886 0460 F201      		movw r30,r4
+ 887 0462 8083      		st Z,r24
+ 888 0464 9183      		std Z+1,r25
+ 889 0466 A283      		std Z+2,r26
+ 890 0468 B383      		std Z+3,r27
+ 222:anim_rat.c    ****   	if(hour_changed) miss=1;
+ 892               	.LM51:
+ 893 046a 8091 0000 		lds r24,hour_changed
+ 894               	.L40:
+ 895 046e 0F90      		pop __tmp_reg__
+ 896 0470 0F90      		pop __tmp_reg__
+ 897 0472 8823      		tst r24
+ 898 0474 01F0      		breq .L32
+ 899 0476 21E0      		ldi r18,lo8(1)
+ 900 0478 00C0      		rjmp .L33
+ 901               	.L32:
+ 902 047a 20E0      		ldi r18,lo8(0)
+ 903               	.L33:
+ 224:anim_rat.c    ****   *dest -= (PADDLE_H_FIXED / 3);
+ 905               	.LM52:
+ 906 047c F201      		movw r30,r4
+ 907 047e 8081      		ld r24,Z
+ 908 0480 9181      		ldd r25,Z+1
+ 909 0482 A281      		ldd r26,Z+2
+ 910 0484 B381      		ldd r27,Z+3
+ 911 0486 30E7      		ldi r19,lo8(-400)
+ 912 0488 E32E      		mov r14,r19
+ 913 048a 3EEF      		ldi r19,hi8(-400)
+ 914 048c F32E      		mov r15,r19
+ 915 048e 3FEF      		ldi r19,hlo8(-400)
+ 916 0490 032F      		mov r16,r19
+ 917 0492 3FEF      		ldi r19,hhi8(-400)
+ 918 0494 132F      		mov r17,r19
+ 919 0496 E80E      		add r14,r24
+ 920 0498 F91E      		adc r15,r25
+ 921 049a 0A1F      		adc r16,r26
+ 922 049c 1B1F      		adc r17,r27
+ 923 049e E082      		st Z,r14
+ 924 04a0 F182      		std Z+1,r15
+ 925 04a2 0283      		std Z+2,r16
+ 926 04a4 1383      		std Z+3,r17
+ 225:anim_rat.c    ****     if(miss)
+ 928               	.LM53:
+ 929 04a6 2223      		tst r18
+ 930 04a8 01F0      		breq .L34
+ 227:anim_rat.c    ****       if(*dest < (SCREEN_H_FIXED/3)) {
+ 932               	.LM54:
+ 933 04aa F5E5      		ldi r31,lo8(2133)
+ 934 04ac EF16      		cp r14,r31
+ 935 04ae F8E0      		ldi r31,hi8(2133)
+ 936 04b0 FF06      		cpc r15,r31
+ 937 04b2 F0E0      		ldi r31,hlo8(2133)
+ 938 04b4 0F07      		cpc r16,r31
+ 939 04b6 F0E0      		ldi r31,hhi8(2133)
+ 940 04b8 1F07      		cpc r17,r31
+ 941 04ba 00F4      		brsh .L35
+ 228:anim_rat.c    ****       	*dest += (PADDLE_H_FIXED*2);
+ 943               	.LM55:
+ 944 04bc 8053      		subi r24,lo8(-(2000))
+ 945 04be 984F      		sbci r25,hi8(-(2000))
+ 946 04c0 AF4F      		sbci r26,hlo8(-(2000))
+ 947 04c2 BF4F      		sbci r27,hhi8(-(2000))
+ 948 04c4 00C0      		rjmp .L41
+ 949               	.L35:
+ 230:anim_rat.c    ****       else if (*dest > ((SCREEN_H_FIXED/3)*2)) {
+ 951               	.LM56:
+ 952 04c6 FBEA      		ldi r31,lo8(4267)
+ 953 04c8 EF16      		cp r14,r31
+ 954 04ca F0E1      		ldi r31,hi8(4267)
+ 955 04cc FF06      		cpc r15,r31
+ 956 04ce F0E0      		ldi r31,hlo8(4267)
+ 957 04d0 0F07      		cpc r16,r31
+ 958 04d2 F0E0      		ldi r31,hhi8(4267)
+ 959 04d4 1F07      		cpc r17,r31
+ 960 04d6 00F0      		brlo .L36
+ 231:anim_rat.c    ****       	*dest -= (PADDLE_H_FIXED*2);
+ 962               	.LM57:
+ 963 04d8 805F      		subi r24,lo8(-(-2800))
+ 964 04da 9A40      		sbci r25,hi8(-(-2800))
+ 965 04dc A040      		sbci r26,hlo8(-(-2800))
+ 966 04de B040      		sbci r27,hhi8(-(-2800))
+ 967 04e0 00C0      		rjmp .L41
+ 968               	.L36:
+ 235:anim_rat.c    ****       	*dest += crand(2) ? (PADDLE_H_FIXED*2) : -(PADDLE_H_FIXED*2);
+ 970               	.LM58:
+ 971 04e2 82E0      		ldi r24,lo8(2)
+ 972 04e4 0E94 0000 		call crand
+ 973 04e8 892B      		or r24,r25
+ 974 04ea 01F4      		brne .L37
+ 975 04ec 80EA      		ldi r24,lo8(-2400)
+ 976 04ee 96EF      		ldi r25,hi8(-2400)
+ 977 04f0 AFEF      		ldi r26,hlo8(-2400)
+ 978 04f2 BFEF      		ldi r27,hhi8(-2400)
+ 979 04f4 00C0      		rjmp .L38
+ 980               	.L37:
+ 981 04f6 80E6      		ldi r24,lo8(2400)
+ 982 04f8 99E0      		ldi r25,hi8(2400)
+ 983 04fa A0E0      		ldi r26,hlo8(2400)
+ 984 04fc B0E0      		ldi r27,hhi8(2400)
+ 985               	.L38:
+ 986 04fe 8E0D      		add r24,r14
+ 987 0500 9F1D      		adc r25,r15
+ 988 0502 A01F      		adc r26,r16
+ 989 0504 B11F      		adc r27,r17
+ 990               	.L41:
+ 991 0506 F201      		movw r30,r4
+ 992 0508 8083      		st Z,r24
+ 993 050a 9183      		std Z+1,r25
+ 994 050c A283      		std Z+2,r26
+ 995 050e B383      		std Z+3,r27
+ 996               	.L34:
+ 239:anim_rat.c    **** }
+ 998               	.LM59:
+ 999 0510 8091 0000 		lds r24,ticksremaining
+ 1000               	/* epilogue start */
+ 1001 0514 DF91      		pop r29
+ 1002 0516 CF91      		pop r28
+ 1003 0518 1F91      		pop r17
+ 1004 051a 0F91      		pop r16
+ 1005 051c FF90      		pop r15
+ 1006 051e EF90      		pop r14
+ 1007 0520 DF90      		pop r13
+ 1008 0522 CF90      		pop r12
+ 1009 0524 BF90      		pop r11
+ 1010 0526 AF90      		pop r10
+ 1011 0528 9F90      		pop r9
+ 1012 052a 8F90      		pop r8
+ 1013 052c 7F90      		pop r7
+ 1014 052e 6F90      		pop r6
+ 1015 0530 5F90      		pop r5
+ 1016 0532 4F90      		pop r4
+ 1017 0534 3F90      		pop r3
+ 1018 0536 2F90      		pop r2
+ 1019 0538 0895      		ret
+ 1024               	.Lscope6:
+ 1026               		.stabd	78,0,0
+ 1032               	.global	check_ball_digit_collision
+ 1034               	check_ball_digit_collision:
+ 1035               		.stabd	46,0,0
+ 489:anim_rat.c    **** {
+ 1037               	.LM60:
+ 1038               	.LFBB7:
+ 1039 053a AF92      		push r10
+ 1040 053c BF92      		push r11
+ 1041 053e CF92      		push r12
+ 1042 0540 DF92      		push r13
+ 1043 0542 EF92      		push r14
+ 1044 0544 FF92      		push r15
+ 1045 0546 0F93      		push r16
+ 1046 0548 1F93      		push r17
+ 1047               	/* prologue: function */
+ 1048               	/* frame size = 0 */
+ 1049 054a F62E      		mov r15,r22
+ 1050 054c D42E      		mov r13,r20
+ 1051 054e B22E      		mov r11,r18
+ 490:anim_rat.c    **** 	if (redraw_digits || intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball
+ 1053               	.LM61:
+ 1054 0550 8823      		tst r24
+ 1055 0552 01F4      		brne .L43
+ 1056 0554 6091 0000 		lds r22,oldball_x
+ 1057 0558 7091 0000 		lds r23,(oldball_x)+1
+ 1058 055c 8091 0000 		lds r24,(oldball_x)+2
+ 1059 0560 9091 0000 		lds r25,(oldball_x)+3
+ 1060 0564 24E6      		ldi r18,lo8(100)
+ 1061 0566 30E0      		ldi r19,hi8(100)
+ 1062 0568 40E0      		ldi r20,hlo8(100)
+ 1063 056a 50E0      		ldi r21,hhi8(100)
+ 1064 056c 0E94 0000 		call __divmodsi4
+ 1065 0570 122F      		mov r17,r18
+ 1066 0572 6091 0000 		lds r22,oldball_y
+ 1067 0576 7091 0000 		lds r23,(oldball_y)+1
+ 1068 057a 8091 0000 		lds r24,(oldball_y)+2
+ 1069 057e 9091 0000 		lds r25,(oldball_y)+3
+ 1070 0582 24E6      		ldi r18,lo8(100)
+ 1071 0584 30E0      		ldi r19,hi8(100)
+ 1072 0586 40E0      		ldi r20,hlo8(100)
+ 1073 0588 50E0      		ldi r21,hhi8(100)
+ 1074 058a 0E94 0000 		call __divmodsi4
+ 1075 058e 812F      		mov r24,r17
+ 1076 0590 622F      		mov r22,r18
+ 1077 0592 44E0      		ldi r20,lo8(4)
+ 1078 0594 24E0      		ldi r18,lo8(4)
+ 1079 0596 0F2D      		mov r16,r15
+ 1080 0598 E4E0      		ldi r30,lo8(4)
+ 1081 059a EE2E      		mov r14,r30
+ 1082 059c 7AE0      		ldi r23,lo8(10)
+ 1083 059e C72E      		mov r12,r23
+ 1084 05a0 50E1      		ldi r21,lo8(16)
+ 1085 05a2 A52E      		mov r10,r21
+ 1086 05a4 0E94 0000 		call intersectrect
+ 1087 05a8 8823      		tst r24
+ 1088 05aa 01F0      		breq .L45
+ 1089               	.L43:
+ 497:anim_rat.c    **** 	      drawbigdigit(digit_x, DISPLAY_TIME_Y_RAT, digit, inverted);
+ 1091               	.LM62:
+ 1092 05ac 8F2D      		mov r24,r15
+ 1093 05ae 64E0      		ldi r22,lo8(4)
+ 1094 05b0 4D2D      		mov r20,r13
+ 1095 05b2 2B2D      		mov r18,r11
+ 1096 05b4 0E94 0000 		call drawbigdigit
+ 1097               	.L45:
+ 1098               	/* epilogue start */
+ 499:anim_rat.c    **** }
+ 1100               	.LM63:
+ 1101 05b8 1F91      		pop r17
+ 1102 05ba 0F91      		pop r16
+ 1103 05bc FF90      		pop r15
+ 1104 05be EF90      		pop r14
+ 1105 05c0 DF90      		pop r13
+ 1106 05c2 CF90      		pop r12
+ 1107 05c4 BF90      		pop r11
+ 1108 05c6 AF90      		pop r10
+ 1109 05c8 0895      		ret
+ 1111               	.Lscope7:
+ 1113               		.stabd	78,0,0
+ 1117               	.global	draw_score_rat
+ 1119               	draw_score_rat:
+ 1120               		.stabd	46,0,0
+ 501:anim_rat.c    **** void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
+ 1122               	.LM64:
+ 1123               	.LFBB8:
+ 1124 05ca 0F93      		push r16
+ 1125 05cc 1F93      		push r17
+ 1126               	/* prologue: function */
+ 1127               	/* frame size = 0 */
+ 1128 05ce 182F      		mov r17,r24
+ 1129 05d0 062F      		mov r16,r22
+ 557:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_H10_X_RAT,left_score/10,inverted);
+ 1131               	.LM65:
+ 1132 05d2 8091 0000 		lds r24,left_score
+ 1133 05d6 6AE0      		ldi r22,lo8(10)
+ 1134 05d8 0E94 0000 		call __udivmodqi4
+ 1135 05dc 482F      		mov r20,r24
+ 1136 05de 812F      		mov r24,r17
+ 1137 05e0 6EE1      		ldi r22,lo8(30)
+ 1138 05e2 202F      		mov r18,r16
+ 1139 05e4 0E94 0000 		call check_ball_digit_collision
+ 558:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_H1_X_RAT,left_score%10,inverted);
+ 1141               	.LM66:
+ 1142 05e8 8091 0000 		lds r24,left_score
+ 1143 05ec 6AE0      		ldi r22,lo8(10)
+ 1144 05ee 0E94 0000 		call __udivmodqi4
+ 1145 05f2 812F      		mov r24,r17
+ 1146 05f4 6DE2      		ldi r22,lo8(45)
+ 1147 05f6 492F      		mov r20,r25
+ 1148 05f8 202F      		mov r18,r16
+ 1149 05fa 0E94 0000 		call check_ball_digit_collision
+ 559:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_M10_X_RAT,right_score/10,inverted);
+ 1151               	.LM67:
+ 1152 05fe 8091 0000 		lds r24,right_score
+ 1153 0602 6AE0      		ldi r22,lo8(10)
+ 1154 0604 0E94 0000 		call __udivmodqi4
+ 1155 0608 482F      		mov r20,r24
+ 1156 060a 812F      		mov r24,r17
+ 1157 060c 66E4      		ldi r22,lo8(70)
+ 1158 060e 202F      		mov r18,r16
+ 1159 0610 0E94 0000 		call check_ball_digit_collision
+ 560:anim_rat.c    **** 	check_ball_digit_collision(redraw_digits, DISPLAY_M1_X_RAT,right_score%10,inverted);
+ 1161               	.LM68:
+ 1162 0614 8091 0000 		lds r24,right_score
+ 1163 0618 6AE0      		ldi r22,lo8(10)
+ 1164 061a 0E94 0000 		call __udivmodqi4
+ 1165 061e 812F      		mov r24,r17
+ 1166 0620 65E5      		ldi r22,lo8(85)
+ 1167 0622 492F      		mov r20,r25
+ 1168 0624 202F      		mov r18,r16
+ 1169 0626 0E94 0000 		call check_ball_digit_collision
+ 1170               	/* epilogue start */
+ 564:anim_rat.c    **** }
+ 1172               	.LM69:
+ 1173 062a 1F91      		pop r17
+ 1174 062c 0F91      		pop r16
+ 1175 062e 0895      		ret
+ 1177               	.Lscope8:
+ 1179               		.stabd	78,0,0
+ 1182               	.global	drawmidline
+ 1184               	drawmidline:
+ 1185               		.stabd	46,0,0
+ 401:anim_rat.c    **** void drawmidline(uint8_t inverted) {
+ 1187               	.LM70:
+ 1188               	.LFBB9:
+ 1189 0630 0F93      		push r16
+ 1190 0632 1F93      		push r17
+ 1191               	/* prologue: function */
+ 1192               	/* frame size = 0 */
+ 1193 0634 082F      		mov r16,r24
+ 401:anim_rat.c    **** void drawmidline(uint8_t inverted) {
+ 1195               	.LM71:
+ 1196 0636 10E0      		ldi r17,lo8(0)
+ 1197               	.L51:
+ 404:anim_rat.c    ****     glcdSetAddress((SCREEN_W-MIDLINE_W)/2, i);
+ 1199               	.LM72:
+ 1200 0638 8FE3      		ldi r24,lo8(63)
+ 1201 063a 612F      		mov r22,r17
+ 1202 063c 0E94 0000 		call glcdSetAddress
+ 405:anim_rat.c    ****     if (inverted) {
+ 1204               	.LM73:
+ 1205 0640 0023      		tst r16
+ 1206 0642 01F0      		breq .L49
+ 406:anim_rat.c    ****       glcdDataWrite(0xF0);
+ 1208               	.LM74:
+ 1209 0644 80EF      		ldi r24,lo8(-16)
+ 1210 0646 00C0      		rjmp .L56
+ 1211               	.L49:
+ 408:anim_rat.c    ****       glcdDataWrite(0x0F);  
+ 1213               	.LM75:
+ 1214 0648 8FE0      		ldi r24,lo8(15)
+ 1215               	.L56:
+ 1216 064a 0E94 0000 		call glcdDataWrite
+ 403:anim_rat.c    ****   for (i=0; i < (SCREEN_H/8 - 1); i++) { 
+ 1218               	.LM76:
+ 1219 064e 1F5F      		subi r17,lo8(-(1))
+ 1220 0650 1730      		cpi r17,lo8(7)
+ 1221 0652 01F4      		brne .L51
+ 411:anim_rat.c    ****   glcdSetAddress((SCREEN_W-MIDLINE_W)/2, i);
+ 1223               	.LM77:
+ 1224 0654 8FE3      		ldi r24,lo8(63)
+ 1225 0656 67E0      		ldi r22,lo8(7)
+ 1226 0658 0E94 0000 		call glcdSetAddress
+ 412:anim_rat.c    ****   if (inverted) {
+ 1228               	.LM78:
+ 1229 065c 0023      		tst r16
+ 1230 065e 01F0      		breq .L52
+ 413:anim_rat.c    ****     glcdDataWrite(0x20);  
+ 1232               	.LM79:
+ 1233 0660 80E2      		ldi r24,lo8(32)
+ 1234 0662 00C0      		rjmp .L57
+ 1235               	.L52:
+ 415:anim_rat.c    ****     glcdDataWrite(0xCF);  
+ 1237               	.LM80:
+ 1238 0664 8FEC      		ldi r24,lo8(-49)
+ 1239               	.L57:
+ 1240 0666 0E94 0000 		call glcdDataWrite
+ 1241               	/* epilogue start */
+ 417:anim_rat.c    **** }
+ 1243               	.LM81:
+ 1244 066a 1F91      		pop r17
+ 1245 066c 0F91      		pop r16
+ 1246 066e 0895      		ret
+ 1251               	.Lscope9:
+ 1253               		.stabd	78,0,0
+ 1255               	.global	setscore_rat
+ 1257               	setscore_rat:
+ 1258               		.stabd	46,0,0
+ 102:anim_rat.c    **** {
+ 1260               	.LM82:
+ 1261               	.LFBB10:
+ 1262               	/* prologue: function */
+ 1263               	/* frame size = 0 */
+ 103:anim_rat.c    ****   if(score_mode != last_score_mode_rat) {
+ 1265               	.LM83:
+ 1266 0670 9091 0000 		lds r25,score_mode
+ 1267 0674 8091 0000 		lds r24,last_score_mode_rat
+ 1268 0678 9817      		cp r25,r24
+ 1269 067a 01F0      		breq .L59
+ 104:anim_rat.c    ****     redraw_time_rat = 1;
+ 1271               	.LM84:
+ 1272 067c 81E0      		ldi r24,lo8(1)
+ 1273 067e 8093 0000 		sts redraw_time_rat,r24
+ 105:anim_rat.c    ****     last_score_mode_rat = score_mode;
+ 1275               	.LM85:
+ 1276 0682 8091 0000 		lds r24,score_mode
+ 1277 0686 8093 0000 		sts last_score_mode_rat,r24
+ 1278               	.L59:
+ 107:anim_rat.c    ****   switch(score_mode) {
+ 1280               	.LM86:
+ 1281 068a 8091 0000 		lds r24,score_mode
+ 1282 068e 8130      		cpi r24,lo8(1)
+ 1283 0690 01F0      		breq .L62
+ 1284 0692 8130      		cpi r24,lo8(1)
+ 1285 0694 00F0      		brlo .L61
+ 1286 0696 8230      		cpi r24,lo8(2)
+ 1287 0698 01F0      		breq .L63
+ 1288 069a 8330      		cpi r24,lo8(3)
+ 1289 069c 01F0      		breq .+2
+ 1290 069e 00C0      		rjmp .L69
+ 1291 06a0 00C0      		rjmp .L72
+ 1292               	.L61:
+ 116:anim_rat.c    ****       if((minute_changed || hour_changed)) {
+ 1294               	.LM87:
+ 1295 06a2 8091 0000 		lds r24,minute_changed
+ 1296 06a6 8823      		tst r24
+ 1297 06a8 01F4      		brne .L65
+ 1298 06aa 8091 0000 		lds r24,hour_changed
+ 1299 06ae 8823      		tst r24
+ 1300 06b0 01F0      		breq .L66
+ 1301               	.L65:
+ 117:anim_rat.c    ****       	if(hour_changed) {
+ 1303               	.LM88:
+ 1304 06b2 8091 0000 		lds r24,hour_changed
+ 1305 06b6 8823      		tst r24
+ 1306 06b8 01F0      		breq .L67
+ 118:anim_rat.c    **** 	      left_score = hours(old_h);
+ 1308               	.LM89:
+ 1309 06ba 8091 0000 		lds r24,old_h
+ 1310 06be 0E94 0000 		call hours
+ 1311 06c2 8093 0000 		sts left_score,r24
+ 1312 06c6 00C0      		rjmp .L71
+ 1313               	.L67:
+ 120:anim_rat.c    **** 	    } else if (minute_changed) {
+ 1315               	.LM90:
+ 1316 06c8 8091 0000 		lds r24,minute_changed
+ 1317 06cc 8823      		tst r24
+ 1318 06ce 01F0      		breq .L69
+ 1319               	.L71:
+ 121:anim_rat.c    **** 	      right_score = old_m;
+ 1321               	.LM91:
+ 1322 06d0 8091 0000 		lds r24,old_m
+ 1323 06d4 00C0      		rjmp .L70
+ 1324               	.L66:
+ 124:anim_rat.c    ****         left_score = hours(time_h);
+ 1326               	.LM92:
+ 1327 06d6 8091 0000 		lds r24,time_h
+ 1328 06da 0E94 0000 		call hours
+ 1329 06de 8093 0000 		sts left_score,r24
+ 125:anim_rat.c    ****         right_score = time_m;
+ 1331               	.LM93:
+ 1332 06e2 8091 0000 		lds r24,time_m
+ 1333 06e6 00C0      		rjmp .L70
+ 1334               	.L62:
+ 132:anim_rat.c    ****       if(region == REGION_US) {
+ 1336               	.LM94:
+ 1337 06e8 8091 0000 		lds r24,region
+ 1338 06ec 8823      		tst r24
+ 1339 06ee 01F4      		brne .L68
+ 134:anim_rat.c    ****         left_score = date_m;
+ 1341               	.LM95:
+ 1342 06f0 8091 0000 		lds r24,date_m
+ 1343 06f4 8093 0000 		sts left_score,r24
+ 135:anim_rat.c    ****         right_score = date_d;
+ 1345               	.LM96:
+ 1346 06f8 8091 0000 		lds r24,date_d
+ 1347 06fc 00C0      		rjmp .L70
+ 1348               	.L68:
+ 137:anim_rat.c    ****         left_score = date_d;
+ 1350               	.LM97:
+ 1351 06fe 8091 0000 		lds r24,date_d
+ 1352 0702 8093 0000 		sts left_score,r24
+ 138:anim_rat.c    ****         right_score = date_m;
+ 1354               	.LM98:
+ 1355 0706 8091 0000 		lds r24,date_m
+ 1356 070a 00C0      		rjmp .L70
+ 1357               	.L63:
+ 142:anim_rat.c    ****       left_score = 20;
+ 1359               	.LM99:
+ 1360 070c 84E1      		ldi r24,lo8(20)
+ 1361 070e 8093 0000 		sts left_score,r24
+ 143:anim_rat.c    ****       right_score = date_y;
+ 1363               	.LM100:
+ 1364 0712 8091 0000 		lds r24,date_y
+ 1365               	.L70:
+ 1366 0716 8093 0000 		sts right_score,r24
+ 1367 071a 0895      		ret
+ 1368               	.L72:
+ 146:anim_rat.c    ****       left_score = hours(alarm_h);
+ 1370               	.LM101:
+ 1371 071c 8091 0000 		lds r24,alarm_h
+ 1372 0720 0E94 0000 		call hours
+ 1373 0724 8093 0000 		sts left_score,r24
+ 147:anim_rat.c    ****       right_score = alarm_m;
+ 1375               	.LM102:
+ 1376 0728 8091 0000 		lds r24,alarm_m
+ 1377 072c 8093 0000 		sts right_score,r24
+ 1378               	.L69:
+ 1379 0730 0895      		ret
+ 1381               	.Lscope10:
+ 1383               		.stabd	78,0,0
+ 1386               	.global	drawdisplay_rat
+ 1388               	drawdisplay_rat:
+ 1389               		.stabd	46,0,0
+ 419:anim_rat.c    **** void drawdisplay_rat(uint8_t inverted) {
+ 1391               	.LM103:
+ 1392               	.LFBB11:
+ 1393 0732 AF92      		push r10
+ 1394 0734 CF92      		push r12
+ 1395 0736 DF92      		push r13
+ 1396 0738 EF92      		push r14
+ 1397 073a FF92      		push r15
+ 1398 073c 0F93      		push r16
+ 1399 073e 1F93      		push r17
+ 1400               	/* prologue: function */
+ 1401               	/* frame size = 0 */
+ 1402 0740 D82E      		mov r13,r24
+ 421:anim_rat.c    **** 	setscore_rat();
+ 1404               	.LM104:
+ 1405 0742 0E94 0000 		call setscore_rat
+ 423:anim_rat.c    ****     glcdFillRectangle(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, inv
+ 1407               	.LM105:
+ 1408 0746 6091 0000 		lds r22,oldball_x
+ 1409 074a 7091 0000 		lds r23,(oldball_x)+1
+ 1410 074e 8091 0000 		lds r24,(oldball_x)+2
+ 1411 0752 9091 0000 		lds r25,(oldball_x)+3
+ 1412 0756 24E6      		ldi r18,lo8(100)
+ 1413 0758 30E0      		ldi r19,hi8(100)
+ 1414 075a 40E0      		ldi r20,hlo8(100)
+ 1415 075c 50E0      		ldi r21,hhi8(100)
+ 1416 075e 0E94 0000 		call __divmodsi4
+ 1417 0762 122F      		mov r17,r18
+ 1418 0764 6091 0000 		lds r22,oldball_y
+ 1419 0768 7091 0000 		lds r23,(oldball_y)+1
+ 1420 076c 8091 0000 		lds r24,(oldball_y)+2
+ 1421 0770 9091 0000 		lds r25,(oldball_y)+3
+ 1422 0774 24E6      		ldi r18,lo8(100)
+ 1423 0776 30E0      		ldi r19,hi8(100)
+ 1424 0778 40E0      		ldi r20,hlo8(100)
+ 1425 077a 50E0      		ldi r21,hhi8(100)
+ 1426 077c 0E94 0000 		call __divmodsi4
+ 1427 0780 812F      		mov r24,r17
+ 1428 0782 622F      		mov r22,r18
+ 1429 0784 44E0      		ldi r20,lo8(4)
+ 1430 0786 24E0      		ldi r18,lo8(4)
+ 1431 0788 0D2D      		mov r16,r13
+ 1432 078a 0E94 0000 		call glcdFillRectangle
+ 425:anim_rat.c    ****     glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverte
+ 1434               	.LM106:
+ 1435 078e FF24      		clr r15
+ 1436 0790 DD20      		tst r13
+ 1437 0792 01F4      		brne .L74
+ 1438 0794 FF24      		clr r15
+ 1439 0796 F394      		inc r15
+ 1440               	.L74:
+ 1441 0798 6091 0000 		lds r22,ball_x
+ 1442 079c 7091 0000 		lds r23,(ball_x)+1
+ 1443 07a0 8091 0000 		lds r24,(ball_x)+2
+ 1444 07a4 9091 0000 		lds r25,(ball_x)+3
+ 1445 07a8 24E6      		ldi r18,lo8(100)
+ 1446 07aa 30E0      		ldi r19,hi8(100)
+ 1447 07ac 40E0      		ldi r20,hlo8(100)
+ 1448 07ae 50E0      		ldi r21,hhi8(100)
+ 1449 07b0 0E94 0000 		call __divmodsi4
+ 1450 07b4 122F      		mov r17,r18
+ 1451 07b6 6091 0000 		lds r22,ball_y
+ 1452 07ba 7091 0000 		lds r23,(ball_y)+1
+ 1453 07be 8091 0000 		lds r24,(ball_y)+2
+ 1454 07c2 9091 0000 		lds r25,(ball_y)+3
+ 1455 07c6 24E6      		ldi r18,lo8(100)
+ 1456 07c8 30E0      		ldi r19,hi8(100)
+ 1457 07ca 40E0      		ldi r20,hlo8(100)
+ 1458 07cc 50E0      		ldi r21,hhi8(100)
+ 1459 07ce 0E94 0000 		call __divmodsi4
+ 1460 07d2 812F      		mov r24,r17
+ 1461 07d4 622F      		mov r22,r18
+ 1462 07d6 44E0      		ldi r20,lo8(4)
+ 1463 07d8 24E0      		ldi r18,lo8(4)
+ 1464 07da 0F2D      		mov r16,r15
+ 1465 07dc 0E94 0000 		call glcdFillRectangle
+ 428:anim_rat.c    ****     if  (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2,
+ 1467               	.LM107:
+ 1468 07e0 6091 0000 		lds r22,oldball_x
+ 1469 07e4 7091 0000 		lds r23,(oldball_x)+1
+ 1470 07e8 8091 0000 		lds r24,(oldball_x)+2
+ 1471 07ec 9091 0000 		lds r25,(oldball_x)+3
+ 1472 07f0 24E6      		ldi r18,lo8(100)
+ 1473 07f2 30E0      		ldi r19,hi8(100)
+ 1474 07f4 40E0      		ldi r20,hlo8(100)
+ 1475 07f6 50E0      		ldi r21,hhi8(100)
+ 1476 07f8 0E94 0000 		call __divmodsi4
+ 1477 07fc 122F      		mov r17,r18
+ 1478 07fe 6091 0000 		lds r22,oldball_y
+ 1479 0802 7091 0000 		lds r23,(oldball_y)+1
+ 1480 0806 8091 0000 		lds r24,(oldball_y)+2
+ 1481 080a 9091 0000 		lds r25,(oldball_y)+3
+ 1482 080e 24E6      		ldi r18,lo8(100)
+ 1483 0810 30E0      		ldi r19,hi8(100)
+ 1484 0812 40E0      		ldi r20,hlo8(100)
+ 1485 0814 50E0      		ldi r21,hhi8(100)
+ 1486 0816 0E94 0000 		call __divmodsi4
+ 1487 081a 812F      		mov r24,r17
+ 1488 081c 622F      		mov r22,r18
+ 1489 081e 44E0      		ldi r20,lo8(4)
+ 1490 0820 24E0      		ldi r18,lo8(4)
+ 1491 0822 0FE3      		ldi r16,lo8(63)
+ 1492 0824 EE24      		clr r14
+ 1493 0826 CC24      		clr r12
+ 1494 0828 C394      		inc r12
+ 1495 082a 90E4      		ldi r25,lo8(64)
+ 1496 082c A92E      		mov r10,r25
+ 1497 082e 0E94 0000 		call intersectrect
+ 1498 0832 8823      		tst r24
+ 1499 0834 01F0      		breq .L75
+ 431:anim_rat.c    ****       drawmidline(inverted);
+ 1501               	.LM108:
+ 1502 0836 8D2D      		mov r24,r13
+ 1503 0838 0E94 0000 		call drawmidline
+ 1504               	.L75:
+ 437:anim_rat.c    ****     if (oldleftpaddle_y != leftpaddle_y) {
+ 1506               	.LM109:
+ 1507 083c 2091 0000 		lds r18,oldleftpaddle_y
+ 1508 0840 3091 0000 		lds r19,(oldleftpaddle_y)+1
+ 1509 0844 4091 0000 		lds r20,(oldleftpaddle_y)+2
+ 1510 0848 5091 0000 		lds r21,(oldleftpaddle_y)+3
+ 1511 084c 8091 0000 		lds r24,leftpaddle_y
+ 1512 0850 9091 0000 		lds r25,(leftpaddle_y)+1
+ 1513 0854 A091 0000 		lds r26,(leftpaddle_y)+2
+ 1514 0858 B091 0000 		lds r27,(leftpaddle_y)+3
+ 1515 085c 2817      		cp r18,r24
+ 1516 085e 3907      		cpc r19,r25
+ 1517 0860 4A07      		cpc r20,r26
+ 1518 0862 5B07      		cpc r21,r27
+ 1519 0864 01F0      		breq .L76
+ 439:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, oldleftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+ 1521               	.LM110:
+ 1522 0866 CA01      		movw r24,r20
+ 1523 0868 B901      		movw r22,r18
+ 1524 086a 24E6      		ldi r18,lo8(100)
+ 1525 086c 30E0      		ldi r19,hi8(100)
+ 1526 086e 40E0      		ldi r20,hlo8(100)
+ 1527 0870 50E0      		ldi r21,hhi8(100)
+ 1528 0872 0E94 0000 		call __divmodsi4
+ 1529 0876 8AE0      		ldi r24,lo8(10)
+ 1530 0878 622F      		mov r22,r18
+ 1531 087a 43E0      		ldi r20,lo8(3)
+ 1532 087c 2CE0      		ldi r18,lo8(12)
+ 1533 087e 0D2D      		mov r16,r13
+ 1534 0880 0E94 0000 		call glcdFillRectangle
+ 1535               	.L76:
+ 442:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 1537               	.LM111:
+ 1538 0884 6091 0000 		lds r22,leftpaddle_y
+ 1539 0888 7091 0000 		lds r23,(leftpaddle_y)+1
+ 1540 088c 8091 0000 		lds r24,(leftpaddle_y)+2
+ 1541 0890 9091 0000 		lds r25,(leftpaddle_y)+3
+ 1542 0894 24E6      		ldi r18,lo8(100)
+ 1543 0896 30E0      		ldi r19,hi8(100)
+ 1544 0898 40E0      		ldi r20,hlo8(100)
+ 1545 089a 50E0      		ldi r21,hhi8(100)
+ 1546 089c 0E94 0000 		call __divmodsi4
+ 1547 08a0 8AE0      		ldi r24,lo8(10)
+ 1548 08a2 622F      		mov r22,r18
+ 1549 08a4 43E0      		ldi r20,lo8(3)
+ 1550 08a6 2CE0      		ldi r18,lo8(12)
+ 1551 08a8 0F2D      		mov r16,r15
+ 1552 08aa 0E94 0000 		call glcdFillRectangle
+ 445:anim_rat.c    ****     if (oldrightpaddle_y != rightpaddle_y) {
+ 1554               	.LM112:
+ 1555 08ae 2091 0000 		lds r18,oldrightpaddle_y
+ 1556 08b2 3091 0000 		lds r19,(oldrightpaddle_y)+1
+ 1557 08b6 4091 0000 		lds r20,(oldrightpaddle_y)+2
+ 1558 08ba 5091 0000 		lds r21,(oldrightpaddle_y)+3
+ 1559 08be 8091 0000 		lds r24,rightpaddle_y
+ 1560 08c2 9091 0000 		lds r25,(rightpaddle_y)+1
+ 1561 08c6 A091 0000 		lds r26,(rightpaddle_y)+2
+ 1562 08ca B091 0000 		lds r27,(rightpaddle_y)+3
+ 1563 08ce 2817      		cp r18,r24
+ 1564 08d0 3907      		cpc r19,r25
+ 1565 08d2 4A07      		cpc r20,r26
+ 1566 08d4 5B07      		cpc r21,r27
+ 1567 08d6 01F0      		breq .L77
+ 447:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, oldrightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+ 1569               	.LM113:
+ 1570 08d8 CA01      		movw r24,r20
+ 1571 08da B901      		movw r22,r18
+ 1572 08dc 24E6      		ldi r18,lo8(100)
+ 1573 08de 30E0      		ldi r19,hi8(100)
+ 1574 08e0 40E0      		ldi r20,hlo8(100)
+ 1575 08e2 50E0      		ldi r21,hhi8(100)
+ 1576 08e4 0E94 0000 		call __divmodsi4
+ 1577 08e8 83E7      		ldi r24,lo8(115)
+ 1578 08ea 622F      		mov r22,r18
+ 1579 08ec 43E0      		ldi r20,lo8(3)
+ 1580 08ee 2CE0      		ldi r18,lo8(12)
+ 1581 08f0 0D2D      		mov r16,r13
+ 1582 08f2 0E94 0000 		call glcdFillRectangle
+ 1583               	.L77:
+ 450:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 1585               	.LM114:
+ 1586 08f6 6091 0000 		lds r22,rightpaddle_y
+ 1587 08fa 7091 0000 		lds r23,(rightpaddle_y)+1
+ 1588 08fe 8091 0000 		lds r24,(rightpaddle_y)+2
+ 1589 0902 9091 0000 		lds r25,(rightpaddle_y)+3
+ 1590 0906 24E6      		ldi r18,lo8(100)
+ 1591 0908 30E0      		ldi r19,hi8(100)
+ 1592 090a 40E0      		ldi r20,hlo8(100)
+ 1593 090c 50E0      		ldi r21,hhi8(100)
+ 1594 090e 0E94 0000 		call __divmodsi4
+ 1595 0912 83E7      		ldi r24,lo8(115)
+ 1596 0914 622F      		mov r22,r18
+ 1597 0916 43E0      		ldi r20,lo8(3)
+ 1598 0918 2CE0      		ldi r18,lo8(12)
+ 1599 091a 0F2D      		mov r16,r15
+ 1600 091c 0E94 0000 		call glcdFillRectangle
+ 453:anim_rat.c    ****     if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, RIG
+ 1602               	.LM115:
+ 1603 0920 6091 0000 		lds r22,oldball_x
+ 1604 0924 7091 0000 		lds r23,(oldball_x)+1
+ 1605 0928 8091 0000 		lds r24,(oldball_x)+2
+ 1606 092c 9091 0000 		lds r25,(oldball_x)+3
+ 1607 0930 24E6      		ldi r18,lo8(100)
+ 1608 0932 30E0      		ldi r19,hi8(100)
+ 1609 0934 40E0      		ldi r20,hlo8(100)
+ 1610 0936 50E0      		ldi r21,hhi8(100)
+ 1611 0938 0E94 0000 		call __divmodsi4
+ 1612 093c 022F      		mov r16,r18
+ 1613 093e 6091 0000 		lds r22,oldball_y
+ 1614 0942 7091 0000 		lds r23,(oldball_y)+1
+ 1615 0946 8091 0000 		lds r24,(oldball_y)+2
+ 1616 094a 9091 0000 		lds r25,(oldball_y)+3
+ 1617 094e 24E6      		ldi r18,lo8(100)
+ 1618 0950 30E0      		ldi r19,hi8(100)
+ 1619 0952 40E0      		ldi r20,hlo8(100)
+ 1620 0954 50E0      		ldi r21,hhi8(100)
+ 1621 0956 0E94 0000 		call __divmodsi4
+ 1622 095a 122F      		mov r17,r18
+ 1623 095c 6091 0000 		lds r22,rightpaddle_y
+ 1624 0960 7091 0000 		lds r23,(rightpaddle_y)+1
+ 1625 0964 8091 0000 		lds r24,(rightpaddle_y)+2
+ 1626 0968 9091 0000 		lds r25,(rightpaddle_y)+3
+ 1627 096c 24E6      		ldi r18,lo8(100)
+ 1628 096e 30E0      		ldi r19,hi8(100)
+ 1629 0970 40E0      		ldi r20,hlo8(100)
+ 1630 0972 50E0      		ldi r21,hhi8(100)
+ 1631 0974 0E94 0000 		call __divmodsi4
+ 1632 0978 E22E      		mov r14,r18
+ 1633 097a 802F      		mov r24,r16
+ 1634 097c 612F      		mov r22,r17
+ 1635 097e 44E0      		ldi r20,lo8(4)
+ 1636 0980 24E0      		ldi r18,lo8(4)
+ 1637 0982 03E7      		ldi r16,lo8(115)
+ 1638 0984 13E0      		ldi r17,lo8(3)
+ 1639 0986 C12E      		mov r12,r17
+ 1640 0988 BCE0      		ldi r27,lo8(12)
+ 1641 098a AB2E      		mov r10,r27
+ 1642 098c 0E94 0000 		call intersectrect
+ 1643 0990 8823      		tst r24
+ 1644 0992 01F0      		breq .L78
+ 454:anim_rat.c    ****       glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 1646               	.LM116:
+ 1647 0994 6091 0000 		lds r22,rightpaddle_y
+ 1648 0998 7091 0000 		lds r23,(rightpaddle_y)+1
+ 1649 099c 8091 0000 		lds r24,(rightpaddle_y)+2
+ 1650 09a0 9091 0000 		lds r25,(rightpaddle_y)+3
+ 1651 09a4 24E6      		ldi r18,lo8(100)
+ 1652 09a6 30E0      		ldi r19,hi8(100)
+ 1653 09a8 40E0      		ldi r20,hlo8(100)
+ 1654 09aa 50E0      		ldi r21,hhi8(100)
+ 1655 09ac 0E94 0000 		call __divmodsi4
+ 1656 09b0 83E7      		ldi r24,lo8(115)
+ 1657 09b2 622F      		mov r22,r18
+ 1658 09b4 43E0      		ldi r20,lo8(3)
+ 1659 09b6 2CE0      		ldi r18,lo8(12)
+ 1660 09b8 0F2D      		mov r16,r15
+ 1661 09ba 0E94 0000 		call glcdFillRectangle
+ 1662               	.L78:
+ 456:anim_rat.c    ****     if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, LEF
+ 1664               	.LM117:
+ 1665 09be 6091 0000 		lds r22,oldball_x
+ 1666 09c2 7091 0000 		lds r23,(oldball_x)+1
+ 1667 09c6 8091 0000 		lds r24,(oldball_x)+2
+ 1668 09ca 9091 0000 		lds r25,(oldball_x)+3
+ 1669 09ce 24E6      		ldi r18,lo8(100)
+ 1670 09d0 30E0      		ldi r19,hi8(100)
+ 1671 09d2 40E0      		ldi r20,hlo8(100)
+ 1672 09d4 50E0      		ldi r21,hhi8(100)
+ 1673 09d6 0E94 0000 		call __divmodsi4
+ 1674 09da 022F      		mov r16,r18
+ 1675 09dc 6091 0000 		lds r22,oldball_y
+ 1676 09e0 7091 0000 		lds r23,(oldball_y)+1
+ 1677 09e4 8091 0000 		lds r24,(oldball_y)+2
+ 1678 09e8 9091 0000 		lds r25,(oldball_y)+3
+ 1679 09ec 24E6      		ldi r18,lo8(100)
+ 1680 09ee 30E0      		ldi r19,hi8(100)
+ 1681 09f0 40E0      		ldi r20,hlo8(100)
+ 1682 09f2 50E0      		ldi r21,hhi8(100)
+ 1683 09f4 0E94 0000 		call __divmodsi4
+ 1684 09f8 122F      		mov r17,r18
+ 1685 09fa 6091 0000 		lds r22,leftpaddle_y
+ 1686 09fe 7091 0000 		lds r23,(leftpaddle_y)+1
+ 1687 0a02 8091 0000 		lds r24,(leftpaddle_y)+2
+ 1688 0a06 9091 0000 		lds r25,(leftpaddle_y)+3
+ 1689 0a0a 24E6      		ldi r18,lo8(100)
+ 1690 0a0c 30E0      		ldi r19,hi8(100)
+ 1691 0a0e 40E0      		ldi r20,hlo8(100)
+ 1692 0a10 50E0      		ldi r21,hhi8(100)
+ 1693 0a12 0E94 0000 		call __divmodsi4
+ 1694 0a16 E22E      		mov r14,r18
+ 1695 0a18 802F      		mov r24,r16
+ 1696 0a1a 612F      		mov r22,r17
+ 1697 0a1c 44E0      		ldi r20,lo8(4)
+ 1698 0a1e 24E0      		ldi r18,lo8(4)
+ 1699 0a20 0AE0      		ldi r16,lo8(10)
+ 1700 0a22 A3E0      		ldi r26,lo8(3)
+ 1701 0a24 CA2E      		mov r12,r26
+ 1702 0a26 FCE0      		ldi r31,lo8(12)
+ 1703 0a28 AF2E      		mov r10,r31
+ 1704 0a2a 0E94 0000 		call intersectrect
+ 1705 0a2e 8823      		tst r24
+ 1706 0a30 01F0      		breq .L79
+ 457:anim_rat.c    ****       glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+ 1708               	.LM118:
+ 1709 0a32 6091 0000 		lds r22,leftpaddle_y
+ 1710 0a36 7091 0000 		lds r23,(leftpaddle_y)+1
+ 1711 0a3a 8091 0000 		lds r24,(leftpaddle_y)+2
+ 1712 0a3e 9091 0000 		lds r25,(leftpaddle_y)+3
+ 1713 0a42 24E6      		ldi r18,lo8(100)
+ 1714 0a44 30E0      		ldi r19,hi8(100)
+ 1715 0a46 40E0      		ldi r20,hlo8(100)
+ 1716 0a48 50E0      		ldi r21,hhi8(100)
+ 1717 0a4a 0E94 0000 		call __divmodsi4
+ 1718 0a4e 8AE0      		ldi r24,lo8(10)
+ 1719 0a50 622F      		mov r22,r18
+ 1720 0a52 43E0      		ldi r20,lo8(3)
+ 1721 0a54 2CE0      		ldi r18,lo8(12)
+ 1722 0a56 0F2D      		mov r16,r15
+ 1723 0a58 0E94 0000 		call glcdFillRectangle
+ 1724               	.L79:
+ 461:anim_rat.c    ****    TIMSK2 = 0;	//Disable Timer 2 interrupt, to prevent a race condition.
+ 1726               	.LM119:
+ 1727 0a5c 1092 7000 		sts 112,__zero_reg__
+ 462:anim_rat.c    ****    if(redraw_time_rat)
+ 1729               	.LM120:
+ 1730 0a60 8091 0000 		lds r24,redraw_time_rat
+ 1731 0a64 8823      		tst r24
+ 1732 0a66 01F0      		breq .L80
+ 465:anim_rat.c    ****    	   redraw_time_rat = 0;
+ 1734               	.LM121:
+ 1735 0a68 1092 0000 		sts redraw_time_rat,__zero_reg__
+ 1736               	.L80:
+ 467:anim_rat.c    ****    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
+ 1738               	.LM122:
+ 1739 0a6c 81E0      		ldi r24,lo8(1)
+ 1740 0a6e 8093 7000 		sts 112,r24
+ 469:anim_rat.c    ****     draw_score_rat(redraw_digits,inverted);
+ 1742               	.LM123:
+ 1743 0a72 6D2D      		mov r22,r13
+ 1744 0a74 0E94 0000 		call draw_score_rat
+ 1745               	/* epilogue start */
+ 473:anim_rat.c    **** }
+ 1747               	.LM124:
+ 1748 0a78 1F91      		pop r17
+ 1749 0a7a 0F91      		pop r16
+ 1750 0a7c FF90      		pop r15
+ 1751 0a7e EF90      		pop r14
+ 1752 0a80 DF90      		pop r13
+ 1753 0a82 CF90      		pop r12
+ 1754 0a84 AF90      		pop r10
+ 1755 0a86 0895      		ret
+ 1757               	.Lscope11:
+ 1759               		.stabd	78,0,0
+ 1761               	.global	step_rat
+ 1763               	step_rat:
+ 1764               		.stabd	46,0,0
+ 241:anim_rat.c    **** void step_rat(void) {
+ 1766               	.LM125:
+ 1767               	.LFBB12:
+ 1768 0a88 6F92      		push r6
+ 1769 0a8a 7F92      		push r7
+ 1770 0a8c 8F92      		push r8
+ 1771 0a8e 9F92      		push r9
+ 1772 0a90 AF92      		push r10
+ 1773 0a92 BF92      		push r11
+ 1774 0a94 CF92      		push r12
+ 1775 0a96 DF92      		push r13
+ 1776 0a98 EF92      		push r14
+ 1777 0a9a FF92      		push r15
+ 1778 0a9c 0F93      		push r16
+ 1779 0a9e 1F93      		push r17
+ 1780               	/* prologue: function */
+ 1781               	/* frame size = 0 */
+ 251:anim_rat.c    ****   oldball_x = ball_x;
+ 1783               	.LM126:
+ 1784 0aa0 8091 0000 		lds r24,ball_x
+ 1785 0aa4 9091 0000 		lds r25,(ball_x)+1
+ 1786 0aa8 A091 0000 		lds r26,(ball_x)+2
+ 1787 0aac B091 0000 		lds r27,(ball_x)+3
+ 1788 0ab0 8093 0000 		sts oldball_x,r24
+ 1789 0ab4 9093 0000 		sts (oldball_x)+1,r25
+ 1790 0ab8 A093 0000 		sts (oldball_x)+2,r26
+ 1791 0abc B093 0000 		sts (oldball_x)+3,r27
+ 252:anim_rat.c    ****   oldball_y = ball_y;
+ 1793               	.LM127:
+ 1794 0ac0 2091 0000 		lds r18,ball_y
+ 1795 0ac4 3091 0000 		lds r19,(ball_y)+1
+ 1796 0ac8 4091 0000 		lds r20,(ball_y)+2
+ 1797 0acc 5091 0000 		lds r21,(ball_y)+3
+ 1798 0ad0 2093 0000 		sts oldball_y,r18
+ 1799 0ad4 3093 0000 		sts (oldball_y)+1,r19
+ 1800 0ad8 4093 0000 		sts (oldball_y)+2,r20
+ 1801 0adc 5093 0000 		sts (oldball_y)+3,r21
+ 255:anim_rat.c    ****   ball_x += ball_dx;
+ 1803               	.LM128:
+ 1804 0ae0 6090 0000 		lds r6,ball_dx
+ 1805 0ae4 7090 0000 		lds r7,(ball_dx)+1
+ 1806 0ae8 8090 0000 		lds r8,(ball_dx)+2
+ 1807 0aec 9090 0000 		lds r9,(ball_dx)+3
+ 1808 0af0 6401      		movw r12,r8
+ 1809 0af2 5301      		movw r10,r6
+ 1810 0af4 A80E      		add r10,r24
+ 1811 0af6 B91E      		adc r11,r25
+ 1812 0af8 CA1E      		adc r12,r26
+ 1813 0afa DB1E      		adc r13,r27
+ 1814 0afc A092 0000 		sts ball_x,r10
+ 1815 0b00 B092 0000 		sts (ball_x)+1,r11
+ 1816 0b04 C092 0000 		sts (ball_x)+2,r12
+ 1817 0b08 D092 0000 		sts (ball_x)+3,r13
+ 256:anim_rat.c    ****   ball_y += ball_dy;
+ 1819               	.LM129:
+ 1820 0b0c E090 0000 		lds r14,ball_dy
+ 1821 0b10 F090 0000 		lds r15,(ball_dy)+1
+ 1822 0b14 0091 0000 		lds r16,(ball_dy)+2
+ 1823 0b18 1091 0000 		lds r17,(ball_dy)+3
+ 1824 0b1c D801      		movw r26,r16
+ 1825 0b1e C701      		movw r24,r14
+ 1826 0b20 820F      		add r24,r18
+ 1827 0b22 931F      		adc r25,r19
+ 1828 0b24 A41F      		adc r26,r20
+ 1829 0b26 B51F      		adc r27,r21
+ 1830 0b28 8093 0000 		sts ball_y,r24
+ 1831 0b2c 9093 0000 		sts (ball_y)+1,r25
+ 1832 0b30 A093 0000 		sts (ball_y)+2,r26
+ 1833 0b34 B093 0000 		sts (ball_y)+3,r27
+ 262:anim_rat.c    ****   if (ball_y  > (SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED)) {
+ 1835               	.LM130:
+ 1836 0b38 895A      		subi r24,lo8(5801)
+ 1837 0b3a 9641      		sbci r25,hi8(5801)
+ 1838 0b3c A040      		sbci r26,hlo8(5801)
+ 1839 0b3e B040      		sbci r27,hhi8(5801)
+ 1840 0b40 04F0      		brlt .L83
+ 264:anim_rat.c    ****     ball_y = SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED;
+ 1842               	.LM131:
+ 1843 0b42 88EA      		ldi r24,lo8(5800)
+ 1844 0b44 96E1      		ldi r25,hi8(5800)
+ 1845 0b46 A0E0      		ldi r26,hlo8(5800)
+ 1846 0b48 B0E0      		ldi r27,hhi8(5800)
+ 1847 0b4a 8093 0000 		sts ball_y,r24
+ 1848 0b4e 9093 0000 		sts (ball_y)+1,r25
+ 1849 0b52 A093 0000 		sts (ball_y)+2,r26
+ 1850 0b56 B093 0000 		sts (ball_y)+3,r27
+ 265:anim_rat.c    ****     ball_dy *= -1;
+ 1852               	.LM132:
+ 1853 0b5a 8827      		clr r24
+ 1854 0b5c 9927      		clr r25
+ 1855 0b5e DC01      		movw r26,r24
+ 1856 0b60 8E19      		sub r24,r14
+ 1857 0b62 9F09      		sbc r25,r15
+ 1858 0b64 A00B      		sbc r26,r16
+ 1859 0b66 B10B      		sbc r27,r17
+ 1860 0b68 8093 0000 		sts ball_dy,r24
+ 1861 0b6c 9093 0000 		sts (ball_dy)+1,r25
+ 1862 0b70 A093 0000 		sts (ball_dy)+2,r26
+ 1863 0b74 B093 0000 		sts (ball_dy)+3,r27
+ 1864               	.L83:
+ 269:anim_rat.c    ****   if (ball_y < TOPBAR_H_FIXED) {
+ 1866               	.LM133:
+ 1867 0b78 8091 0000 		lds r24,ball_y
+ 1868 0b7c 9091 0000 		lds r25,(ball_y)+1
+ 1869 0b80 A091 0000 		lds r26,(ball_y)+2
+ 1870 0b84 B091 0000 		lds r27,(ball_y)+3
+ 1871 0b88 883C      		cpi r24,lo8(200)
+ 1872 0b8a 9105      		cpc r25,__zero_reg__
+ 1873 0b8c A105      		cpc r26,__zero_reg__
+ 1874 0b8e B105      		cpc r27,__zero_reg__
+ 1875 0b90 04F4      		brge .L84
+ 271:anim_rat.c    ****     ball_y = TOPBAR_H_FIXED;
+ 1877               	.LM134:
+ 1878 0b92 88EC      		ldi r24,lo8(200)
+ 1879 0b94 90E0      		ldi r25,hi8(200)
+ 1880 0b96 A0E0      		ldi r26,hlo8(200)
+ 1881 0b98 B0E0      		ldi r27,hhi8(200)
+ 1882 0b9a 8093 0000 		sts ball_y,r24
+ 1883 0b9e 9093 0000 		sts (ball_y)+1,r25
+ 1884 0ba2 A093 0000 		sts (ball_y)+2,r26
+ 1885 0ba6 B093 0000 		sts (ball_y)+3,r27
+ 272:anim_rat.c    ****     ball_dy *= -1;
+ 1887               	.LM135:
+ 1888 0baa 8091 0000 		lds r24,ball_dy
+ 1889 0bae 9091 0000 		lds r25,(ball_dy)+1
+ 1890 0bb2 A091 0000 		lds r26,(ball_dy)+2
+ 1891 0bb6 B091 0000 		lds r27,(ball_dy)+3
+ 1892 0bba B095      		com r27
+ 1893 0bbc A095      		com r26
+ 1894 0bbe 9095      		com r25
+ 1895 0bc0 8195      		neg r24
+ 1896 0bc2 9F4F      		sbci r25,lo8(-1)
+ 1897 0bc4 AF4F      		sbci r26,lo8(-1)
+ 1898 0bc6 BF4F      		sbci r27,lo8(-1)
+ 1899 0bc8 8093 0000 		sts ball_dy,r24
+ 1900 0bcc 9093 0000 		sts (ball_dy)+1,r25
+ 1901 0bd0 A093 0000 		sts (ball_dy)+2,r26
+ 1902 0bd4 B093 0000 		sts (ball_dy)+3,r27
+ 1903               	.L84:
+ 279:anim_rat.c    ****   if (((ball_x/FIXED_MATH)  > (SCREEN_W - ball_radius*2)) || ((int8_t)(ball_x/FIXED_MATH) <= 0) || 
+ 1905               	.LM136:
+ 1906 0bd8 44ED      		ldi r20,lo8(12500)
+ 1907 0bda A416      		cp r10,r20
+ 1908 0bdc 40E3      		ldi r20,hi8(12500)
+ 1909 0bde B406      		cpc r11,r20
+ 1910 0be0 40E0      		ldi r20,hlo8(12500)
+ 1911 0be2 C406      		cpc r12,r20
+ 1912 0be4 40E0      		ldi r20,hhi8(12500)
+ 1913 0be6 D406      		cpc r13,r20
+ 1914 0be8 04F4      		brge .L85
+ 1915 0bea C601      		movw r24,r12
+ 1916 0bec B501      		movw r22,r10
+ 1917 0bee 24E6      		ldi r18,lo8(100)
+ 1918 0bf0 30E0      		ldi r19,hi8(100)
+ 1919 0bf2 40E0      		ldi r20,hlo8(100)
+ 1920 0bf4 50E0      		ldi r21,hhi8(100)
+ 1921 0bf6 0E94 0000 		call __divmodsi4
+ 1922 0bfa 1216      		cp __zero_reg__,r18
+ 1923 0bfc 04F4      		brge .L85
+ 1924 0bfe 6114      		cp r6,__zero_reg__
+ 1925 0c00 7104      		cpc r7,__zero_reg__
+ 1926 0c02 8104      		cpc r8,__zero_reg__
+ 1927 0c04 9104      		cpc r9,__zero_reg__
+ 1928 0c06 01F0      		breq .+2
+ 1929 0c08 00C0      		rjmp .L86
+ 1930 0c0a 8091 0000 		lds r24,ball_dy
+ 1931 0c0e 9091 0000 		lds r25,(ball_dy)+1
+ 1932 0c12 A091 0000 		lds r26,(ball_dy)+2
+ 1933 0c16 B091 0000 		lds r27,(ball_dy)+3
+ 1934 0c1a 0097      		sbiw r24,0
+ 1935 0c1c A105      		cpc r26,__zero_reg__
+ 1936 0c1e B105      		cpc r27,__zero_reg__
+ 1937 0c20 01F0      		breq .+2
+ 1938 0c22 00C0      		rjmp .L86
+ 1939               	.L85:
+ 1940               	.LBB10:
+ 299:anim_rat.c    ****     ball_x = (SCREEN_W_FIXED / 2) - FIXED_MATH;
+ 1942               	.LM137:
+ 1943 0c24 8CE9      		ldi r24,lo8(6300)
+ 1944 0c26 98E1      		ldi r25,hi8(6300)
+ 1945 0c28 A0E0      		ldi r26,hlo8(6300)
+ 1946 0c2a B0E0      		ldi r27,hhi8(6300)
+ 1947 0c2c 8093 0000 		sts ball_x,r24
+ 1948 0c30 9093 0000 		sts (ball_x)+1,r25
+ 1949 0c34 A093 0000 		sts (ball_x)+2,r26
+ 1950 0c38 B093 0000 		sts (ball_x)+3,r27
+ 300:anim_rat.c    ****     ball_y = (SCREEN_H_FIXED / 2) - FIXED_MATH;
+ 1952               	.LM138:
+ 1953 0c3c 8CE1      		ldi r24,lo8(3100)
+ 1954 0c3e 9CE0      		ldi r25,hi8(3100)
+ 1955 0c40 A0E0      		ldi r26,hlo8(3100)
+ 1956 0c42 B0E0      		ldi r27,hhi8(3100)
+ 1957 0c44 8093 0000 		sts ball_y,r24
+ 1958 0c48 9093 0000 		sts (ball_y)+1,r25
+ 1959 0c4c A093 0000 		sts (ball_y)+2,r26
+ 1960 0c50 B093 0000 		sts (ball_y)+3,r27
+ 302:anim_rat.c    ****     int8_t angle = random_angle();
+ 1962               	.LM139:
+ 1963 0c54 0E94 0000 		call random_angle
+ 1964 0c58 182F      		mov r17,r24
+ 303:anim_rat.c    ****     ball_dx = MAX_BALL_SPEED;
+ 1966               	.LM140:
+ 1967 0c5a 84EF      		ldi r24,lo8(500)
+ 1968 0c5c 91E0      		ldi r25,hi8(500)
+ 1969 0c5e A0E0      		ldi r26,hlo8(500)
+ 1970 0c60 B0E0      		ldi r27,hhi8(500)
+ 1971 0c62 8093 0000 		sts ball_dx,r24
+ 1972 0c66 9093 0000 		sts (ball_dx)+1,r25
+ 1973 0c6a A093 0000 		sts (ball_dx)+2,r26
+ 1974 0c6e B093 0000 		sts (ball_dx)+3,r27
+ 304:anim_rat.c    ****     ball_dy = MAX_BALL_SPEED;
+ 1976               	.LM141:
+ 1977 0c72 8093 0000 		sts ball_dy,r24
+ 1978 0c76 9093 0000 		sts (ball_dy)+1,r25
+ 1979 0c7a A093 0000 		sts (ball_dy)+2,r26
+ 1980 0c7e B093 0000 		sts (ball_dy)+3,r27
+ 305:anim_rat.c    ****     ball_dx *= cosine(angle);
+ 1982               	.LM142:
+ 1983 0c82 812F      		mov r24,r17
+ 1984 0c84 0E94 0000 		call cosine
+ 1985 0c88 AA27      		clr r26
+ 1986 0c8a 97FD      		sbrc r25,7
+ 1987 0c8c A095      		com r26
+ 1988 0c8e BA2F      		mov r27,r26
+ 1989 0c90 BC01      		movw r22,r24
+ 1990 0c92 CD01      		movw r24,r26
+ 1991 0c94 24EF      		ldi r18,lo8(500)
+ 1992 0c96 31E0      		ldi r19,hi8(500)
+ 1993 0c98 40E0      		ldi r20,hlo8(500)
+ 1994 0c9a 50E0      		ldi r21,hhi8(500)
+ 1995 0c9c 0E94 0000 		call __mulsi3
+ 1996 0ca0 6093 0000 		sts ball_dx,r22
+ 1997 0ca4 7093 0000 		sts (ball_dx)+1,r23
+ 1998 0ca8 8093 0000 		sts (ball_dx)+2,r24
+ 1999 0cac 9093 0000 		sts (ball_dx)+3,r25
+ 306:anim_rat.c    ****     ball_dy *= sine(angle);
+ 2001               	.LM143:
+ 2002 0cb0 A090 0000 		lds r10,ball_dy
+ 2003 0cb4 B090 0000 		lds r11,(ball_dy)+1
+ 2004 0cb8 C090 0000 		lds r12,(ball_dy)+2
+ 2005 0cbc D090 0000 		lds r13,(ball_dy)+3
+ 2006 0cc0 812F      		mov r24,r17
+ 2007 0cc2 0E94 0000 		call sine
+ 2008 0cc6 7C01      		movw r14,r24
+ 307:anim_rat.c    ****     ball_dx /= 0x7FFF;
+ 2010               	.LM144:
+ 2011 0cc8 6091 0000 		lds r22,ball_dx
+ 2012 0ccc 7091 0000 		lds r23,(ball_dx)+1
+ 2013 0cd0 8091 0000 		lds r24,(ball_dx)+2
+ 2014 0cd4 9091 0000 		lds r25,(ball_dx)+3
+ 2015 0cd8 2FEF      		ldi r18,lo8(32767)
+ 2016 0cda 3FE7      		ldi r19,hi8(32767)
+ 2017 0cdc 40E0      		ldi r20,hlo8(32767)
+ 2018 0cde 50E0      		ldi r21,hhi8(32767)
+ 2019 0ce0 0E94 0000 		call __divmodsi4
+ 2020 0ce4 2093 0000 		sts ball_dx,r18
+ 2021 0ce8 3093 0000 		sts (ball_dx)+1,r19
+ 2022 0cec 4093 0000 		sts (ball_dx)+2,r20
+ 2023 0cf0 5093 0000 		sts (ball_dx)+3,r21
+ 308:anim_rat.c    ****     ball_dy /= 0x7FFF;
+ 2025               	.LM145:
+ 2026 0cf4 0027      		clr r16
+ 2027 0cf6 F7FC      		sbrc r15,7
+ 2028 0cf8 0095      		com r16
+ 2029 0cfa 102F      		mov r17,r16
+ 2030 0cfc C801      		movw r24,r16
+ 2031 0cfe B701      		movw r22,r14
+ 2032 0d00 A601      		movw r20,r12
+ 2033 0d02 9501      		movw r18,r10
+ 2034 0d04 0E94 0000 		call __mulsi3
+ 2035 0d08 2FEF      		ldi r18,lo8(32767)
+ 2036 0d0a 3FE7      		ldi r19,hi8(32767)
+ 2037 0d0c 40E0      		ldi r20,hlo8(32767)
+ 2038 0d0e 50E0      		ldi r21,hhi8(32767)
+ 2039 0d10 0E94 0000 		call __divmodsi4
+ 2040 0d14 2093 0000 		sts ball_dy,r18
+ 2041 0d18 3093 0000 		sts (ball_dy)+1,r19
+ 2042 0d1c 4093 0000 		sts (ball_dy)+2,r20
+ 2043 0d20 5093 0000 		sts (ball_dy)+3,r21
+ 311:anim_rat.c    ****     glcdFillRectangle(LEFTPADDLE_X, left_keepout_top, PADDLE_W, left_keepout_bot - left_keepout_top
+ 2045               	.LM146:
+ 2046 0d24 6091 0000 		lds r22,left_keepout_top.2233
+ 2047 0d28 2091 0000 		lds r18,left_keepout_bot.2234
+ 2048 0d2c 261B      		sub r18,r22
+ 2049 0d2e 8AE0      		ldi r24,lo8(10)
+ 2050 0d30 43E0      		ldi r20,lo8(3)
+ 2051 0d32 00E0      		ldi r16,lo8(0)
+ 2052 0d34 0E94 0000 		call glcdFillRectangle
+ 312:anim_rat.c    ****     glcdFillRectangle(RIGHTPADDLE_X, right_keepout_top, PADDLE_W, right_keepout_bot - right_keepout
+ 2054               	.LM147:
+ 2055 0d38 6091 0000 		lds r22,right_keepout_top.2229
+ 2056 0d3c 2091 0000 		lds r18,right_keepout_bot.2230
+ 2057 0d40 261B      		sub r18,r22
+ 2058 0d42 83E7      		ldi r24,lo8(115)
+ 2059 0d44 43E0      		ldi r20,lo8(3)
+ 2060 0d46 0E94 0000 		call glcdFillRectangle
+ 314:anim_rat.c    ****     right_keepout_top = right_keepout_bot = 0;
+ 2062               	.LM148:
+ 2063 0d4a 1092 0000 		sts right_keepout_bot.2230,__zero_reg__
+ 2064 0d4e 1092 0000 		sts right_keepout_top.2229,__zero_reg__
+ 315:anim_rat.c    ****     left_keepout_top = left_keepout_bot = 0;
+ 2066               	.LM149:
+ 2067 0d52 1092 0000 		sts left_keepout_bot.2234,__zero_reg__
+ 2068 0d56 1092 0000 		sts left_keepout_top.2233,__zero_reg__
+ 316:anim_rat.c    ****     redraw_time_rat = 1;
+ 2070               	.LM150:
+ 2071 0d5a 81E0      		ldi r24,lo8(1)
+ 2072 0d5c 8093 0000 		sts redraw_time_rat,r24
+ 317:anim_rat.c    ****     minute_changed = hour_changed = 0;
+ 2074               	.LM151:
+ 2075 0d60 1092 0000 		sts hour_changed,__zero_reg__
+ 2076 0d64 8091 0000 		lds r24,hour_changed
+ 2077 0d68 8093 0000 		sts minute_changed,r24
+ 318:anim_rat.c    ****     ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, ball_dx > 0);
+ 2079               	.LM152:
+ 2080 0d6c 20E0      		ldi r18,lo8(0)
+ 2081 0d6e 8091 0000 		lds r24,ball_dx
+ 2082 0d72 9091 0000 		lds r25,(ball_dx)+1
+ 2083 0d76 A091 0000 		lds r26,(ball_dx)+2
+ 2084 0d7a B091 0000 		lds r27,(ball_dx)+3
+ 2085 0d7e 1816      		cp __zero_reg__,r24
+ 2086 0d80 1906      		cpc __zero_reg__,r25
+ 2087 0d82 1A06      		cpc __zero_reg__,r26
+ 2088 0d84 1B06      		cpc __zero_reg__,r27
+ 2089 0d86 04F4      		brge .L87
+ 2090 0d88 21E0      		ldi r18,lo8(1)
+ 2091               	.L87:
+ 2092 0d8a 80E0      		ldi r24,lo8(left_dest.2239)
+ 2093 0d8c 90E0      		ldi r25,hi8(left_dest.2239)
+ 2094 0d8e 60E0      		ldi r22,lo8(right_dest.2238)
+ 2095 0d90 70E0      		ldi r23,hi8(right_dest.2238)
+ 2096 0d92 40E0      		ldi r20,lo8(dest_paddle_pos.2237)
+ 2097 0d94 50E0      		ldi r21,hi8(dest_paddle_pos.2237)
+ 2098 0d96 0E94 0000 		call calculate_dest_pos
+ 2099 0d9a 8093 0000 		sts ticksremaining,r24
+ 2100 0d9e 1092 0000 		sts ticksremaining+1,__zero_reg__
+ 322:anim_rat.c    **** 		setscore_rat();
+ 2102               	.LM153:
+ 2103 0da2 0E94 0000 		call setscore_rat
+ 2104               	.L86:
+ 2105               	.LBE10:
+ 328:anim_rat.c    ****   oldleftpaddle_y = leftpaddle_y;
+ 2107               	.LM154:
+ 2108 0da6 E090 0000 		lds r14,leftpaddle_y
+ 2109 0daa F090 0000 		lds r15,(leftpaddle_y)+1
+ 2110 0dae 0091 0000 		lds r16,(leftpaddle_y)+2
+ 2111 0db2 1091 0000 		lds r17,(leftpaddle_y)+3
+ 2112 0db6 E092 0000 		sts oldleftpaddle_y,r14
+ 2113 0dba F092 0000 		sts (oldleftpaddle_y)+1,r15
+ 2114 0dbe 0093 0000 		sts (oldleftpaddle_y)+2,r16
+ 2115 0dc2 1093 0000 		sts (oldleftpaddle_y)+3,r17
+ 329:anim_rat.c    ****   oldrightpaddle_y = rightpaddle_y;
+ 2117               	.LM155:
+ 2118 0dc6 2091 0000 		lds r18,rightpaddle_y
+ 2119 0dca 3091 0000 		lds r19,(rightpaddle_y)+1
+ 2120 0dce 4091 0000 		lds r20,(rightpaddle_y)+2
+ 2121 0dd2 5091 0000 		lds r21,(rightpaddle_y)+3
+ 2122 0dd6 2093 0000 		sts oldrightpaddle_y,r18
+ 2123 0dda 3093 0000 		sts (oldrightpaddle_y)+1,r19
+ 2124 0dde 4093 0000 		sts (oldrightpaddle_y)+2,r20
+ 2125 0de2 5093 0000 		sts (oldrightpaddle_y)+3,r21
+ 364:anim_rat.c    ****   if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+ 2127               	.LM156:
+ 2128 0de6 8091 0000 		lds r24,ball_dx
+ 2129 0dea 9091 0000 		lds r25,(ball_dx)+1
+ 2130 0dee A091 0000 		lds r26,(ball_dx)+2
+ 2131 0df2 B091 0000 		lds r27,(ball_dx)+3
+ 2132 0df6 B7FF      		sbrs r27,7
+ 2133 0df8 00C0      		rjmp .L88
+ 2134 0dfa 8091 0000 		lds r24,ball_x
+ 2135 0dfe 9091 0000 		lds r25,(ball_x)+1
+ 2136 0e02 A091 0000 		lds r26,(ball_x)+2
+ 2137 0e06 B091 0000 		lds r27,(ball_x)+3
+ 2138 0e0a 8050      		subi r24,lo8(6400)
+ 2139 0e0c 9941      		sbci r25,hi8(6400)
+ 2140 0e0e A040      		sbci r26,hlo8(6400)
+ 2141 0e10 B040      		sbci r27,hhi8(6400)
+ 2142 0e12 04F0      		brlt .+2
+ 2143 0e14 00C0      		rjmp .L89
+ 365:anim_rat.c    ****     move_paddle(&leftpaddle_y, minute_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+ 2145               	.LM157:
+ 2146 0e16 8091 0000 		lds r24,minute_changed
+ 2147 0e1a 8823      		tst r24
+ 2148 0e1c 01F0      		breq .L90
+ 2149 0e1e 8091 0000 		lds r24,dest_paddle_pos.2237
+ 2150 0e22 9091 0000 		lds r25,(dest_paddle_pos.2237)+1
+ 2151 0e26 A091 0000 		lds r26,(dest_paddle_pos.2237)+2
+ 2152 0e2a B091 0000 		lds r27,(dest_paddle_pos.2237)+3
+ 2153 0e2e 00C0      		rjmp .L91
+ 2154               	.L90:
+ 2155 0e30 8091 0000 		lds r24,ball_y
+ 2156 0e34 9091 0000 		lds r25,(ball_y)+1
+ 2157 0e38 A091 0000 		lds r26,(ball_y)+2
+ 2158 0e3c B091 0000 		lds r27,(ball_y)+3
+ 2159 0e40 8059      		subi r24,lo8(-(-400))
+ 2160 0e42 9140      		sbci r25,hi8(-(-400))
+ 2161 0e44 A040      		sbci r26,hlo8(-(-400))
+ 2162 0e46 B040      		sbci r27,hhi8(-(-400))
+ 2163               	.L91:
+ 2164               	.LBB11:
+ 2165               	.LBB12:
+ 200:anim_rat.c    **** 	if(abs(*paddle - dest) < MAX_PADDLE_SPEED) {
+ 2167               	.LM158:
+ 2168 0e48 9701      		movw r18,r14
+ 2169 0e4a 281B      		sub r18,r24
+ 2170 0e4c 390B      		sbc r19,r25
+ 2171 0e4e EEEF      		ldi r30,hi8(-499)
+ 2172 0e50 2D30      		cpi r18,lo8(-499)
+ 2173 0e52 3E07      		cpc r19,r30
+ 2174 0e54 04F0      		brlt .L92
+ 2175 0e56 245F      		subi r18,lo8(500)
+ 2176 0e58 3140      		sbci r19,hi8(500)
+ 2177 0e5a 04F4      		brge .L92
+ 201:anim_rat.c    ****         *paddle = dest;
+ 2179               	.LM159:
+ 2180 0e5c 8093 0000 		sts leftpaddle_y,r24
+ 2181 0e60 9093 0000 		sts (leftpaddle_y)+1,r25
+ 2182 0e64 A093 0000 		sts (leftpaddle_y)+2,r26
+ 2183 0e68 B093 0000 		sts (leftpaddle_y)+3,r27
+ 2184 0e6c 00C0      		rjmp .L93
+ 2185               	.L92:
+ 203:anim_rat.c    ****         if(*paddle > dest)
+ 2187               	.LM160:
+ 2188 0e6e 8E15      		cp r24,r14
+ 2189 0e70 9F05      		cpc r25,r15
+ 2190 0e72 A007      		cpc r26,r16
+ 2191 0e74 B107      		cpc r27,r17
+ 2192 0e76 00F4      		brsh .L94
+ 204:anim_rat.c    ****           *paddle -= MAX_PADDLE_SPEED;
+ 2194               	.LM161:
+ 2195 0e78 8CE0      		ldi r24,lo8(-500)
+ 2196 0e7a 9EEF      		ldi r25,hi8(-500)
+ 2197 0e7c AFEF      		ldi r26,hlo8(-500)
+ 2198 0e7e BFEF      		ldi r27,hhi8(-500)
+ 2199 0e80 00C0      		rjmp .L109
+ 2200               	.L94:
+ 206:anim_rat.c    ****           *paddle += MAX_PADDLE_SPEED;
+ 2202               	.LM162:
+ 2203 0e82 84EF      		ldi r24,lo8(500)
+ 2204 0e84 91E0      		ldi r25,hi8(500)
+ 2205 0e86 A0E0      		ldi r26,hlo8(500)
+ 2206 0e88 B0E0      		ldi r27,hhi8(500)
+ 2207               	.L109:
+ 2208 0e8a E80E      		add r14,r24
+ 2209 0e8c F91E      		adc r15,r25
+ 2210 0e8e 0A1F      		adc r16,r26
+ 2211 0e90 1B1F      		adc r17,r27
+ 2212 0e92 E092 0000 		sts leftpaddle_y,r14
+ 2213 0e96 F092 0000 		sts (leftpaddle_y)+1,r15
+ 2214 0e9a 0093 0000 		sts (leftpaddle_y)+2,r16
+ 2215 0e9e 1093 0000 		sts (leftpaddle_y)+3,r17
+ 2216 0ea2 00C0      		rjmp .L93
+ 2217               	.L88:
+ 2218               	.LBE12:
+ 2219               	.LBE11:
+ 366:anim_rat.c    ****   } else if((ball_dx > 0) && (ball_x > (SCREEN_W_FIXED/2))) {
+ 2221               	.LM163:
+ 2222 0ea4 0097      		sbiw r24,0
+ 2223 0ea6 A105      		cpc r26,__zero_reg__
+ 2224 0ea8 B105      		cpc r27,__zero_reg__
+ 2225 0eaa 01F4      		brne .+2
+ 2226 0eac 00C0      		rjmp .L95
+ 2227 0eae 8091 0000 		lds r24,ball_x
+ 2228 0eb2 9091 0000 		lds r25,(ball_x)+1
+ 2229 0eb6 A091 0000 		lds r26,(ball_x)+2
+ 2230 0eba B091 0000 		lds r27,(ball_x)+3
+ 2231 0ebe 8150      		subi r24,lo8(6401)
+ 2232 0ec0 9941      		sbci r25,hi8(6401)
+ 2233 0ec2 A040      		sbci r26,hlo8(6401)
+ 2234 0ec4 B040      		sbci r27,hhi8(6401)
+ 2235 0ec6 04F4      		brge .+2
+ 2236 0ec8 00C0      		rjmp .L95
+ 367:anim_rat.c    ****   	move_paddle(&rightpaddle_y, hour_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
+ 2238               	.LM164:
+ 2239 0eca 8091 0000 		lds r24,hour_changed
+ 2240 0ece 8823      		tst r24
+ 2241 0ed0 01F0      		breq .L96
+ 2242 0ed2 8091 0000 		lds r24,dest_paddle_pos.2237
+ 2243 0ed6 9091 0000 		lds r25,(dest_paddle_pos.2237)+1
+ 2244 0eda A091 0000 		lds r26,(dest_paddle_pos.2237)+2
+ 2245 0ede B091 0000 		lds r27,(dest_paddle_pos.2237)+3
+ 2246 0ee2 00C0      		rjmp .L97
+ 2247               	.L96:
+ 2248 0ee4 8091 0000 		lds r24,ball_y
+ 2249 0ee8 9091 0000 		lds r25,(ball_y)+1
+ 2250 0eec A091 0000 		lds r26,(ball_y)+2
+ 2251 0ef0 B091 0000 		lds r27,(ball_y)+3
+ 2252 0ef4 8059      		subi r24,lo8(-(-400))
+ 2253 0ef6 9140      		sbci r25,hi8(-(-400))
+ 2254 0ef8 A040      		sbci r26,hlo8(-(-400))
+ 2255 0efa B040      		sbci r27,hhi8(-(-400))
+ 2256               	.L97:
+ 2257               	.LBB13:
+ 2258               	.LBB14:
+ 200:anim_rat.c    **** 	if(abs(*paddle - dest) < MAX_PADDLE_SPEED) {
+ 2260               	.LM165:
+ 2261 0efc B901      		movw r22,r18
+ 2262 0efe 681B      		sub r22,r24
+ 2263 0f00 790B      		sbc r23,r25
+ 2264 0f02 EEEF      		ldi r30,hi8(-499)
+ 2265 0f04 6D30      		cpi r22,lo8(-499)
+ 2266 0f06 7E07      		cpc r23,r30
+ 2267 0f08 04F0      		brlt .L98
+ 2268 0f0a 645F      		subi r22,lo8(500)
+ 2269 0f0c 7140      		sbci r23,hi8(500)
+ 2270 0f0e 04F4      		brge .L98
+ 201:anim_rat.c    ****         *paddle = dest;
+ 2272               	.LM166:
+ 2273 0f10 8093 0000 		sts rightpaddle_y,r24
+ 2274 0f14 9093 0000 		sts (rightpaddle_y)+1,r25
+ 2275 0f18 A093 0000 		sts (rightpaddle_y)+2,r26
+ 2276 0f1c B093 0000 		sts (rightpaddle_y)+3,r27
+ 2277 0f20 00C0      		rjmp .L93
+ 2278               	.L98:
+ 203:anim_rat.c    ****         if(*paddle > dest)
+ 2280               	.LM167:
+ 2281 0f22 8217      		cp r24,r18
+ 2282 0f24 9307      		cpc r25,r19
+ 2283 0f26 A407      		cpc r26,r20
+ 2284 0f28 B507      		cpc r27,r21
+ 2285 0f2a 00F4      		brsh .L99
+ 204:anim_rat.c    ****           *paddle -= MAX_PADDLE_SPEED;
+ 2287               	.LM168:
+ 2288 0f2c 245F      		subi r18,lo8(-(-500))
+ 2289 0f2e 3140      		sbci r19,hi8(-(-500))
+ 2290 0f30 4040      		sbci r20,hlo8(-(-500))
+ 2291 0f32 5040      		sbci r21,hhi8(-(-500))
+ 2292 0f34 00C0      		rjmp .L107
+ 2293               	.L99:
+ 206:anim_rat.c    ****           *paddle += MAX_PADDLE_SPEED;
+ 2295               	.LM169:
+ 2296 0f36 2C50      		subi r18,lo8(-(500))
+ 2297 0f38 3E4F      		sbci r19,hi8(-(500))
+ 2298 0f3a 4F4F      		sbci r20,hlo8(-(500))
+ 2299 0f3c 5F4F      		sbci r21,hhi8(-(500))
+ 2300               	.L107:
+ 2301 0f3e 2093 0000 		sts rightpaddle_y,r18
+ 2302 0f42 3093 0000 		sts (rightpaddle_y)+1,r19
+ 2303 0f46 4093 0000 		sts (rightpaddle_y)+2,r20
+ 2304 0f4a 5093 0000 		sts (rightpaddle_y)+3,r21
+ 2305 0f4e 00C0      		rjmp .L93
+ 2306               	.L89:
+ 2307               	.LBE14:
+ 2308               	.LBE13:
+ 370:anim_rat.c    ****   		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
+ 2310               	.LM170:
+ 2311 0f50 80E0      		ldi r24,lo8(left_dest.2239)
+ 2312 0f52 90E0      		ldi r25,hi8(left_dest.2239)
+ 2313 0f54 60E0      		ldi r22,lo8(right_dest.2238)
+ 2314 0f56 70E0      		ldi r23,hi8(right_dest.2238)
+ 2315 0f58 40E0      		ldi r20,lo8(dest_paddle_pos.2237)
+ 2316 0f5a 50E0      		ldi r21,hi8(dest_paddle_pos.2237)
+ 2317 0f5c 21E0      		ldi r18,lo8(1)
+ 2318 0f5e 00C0      		rjmp .L108
+ 2319               	.L95:
+ 372:anim_rat.c    ****   		ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
+ 2321               	.LM171:
+ 2322 0f60 80E0      		ldi r24,lo8(left_dest.2239)
+ 2323 0f62 90E0      		ldi r25,hi8(left_dest.2239)
+ 2324 0f64 60E0      		ldi r22,lo8(right_dest.2238)
+ 2325 0f66 70E0      		ldi r23,hi8(right_dest.2238)
+ 2326 0f68 40E0      		ldi r20,lo8(dest_paddle_pos.2237)
+ 2327 0f6a 50E0      		ldi r21,hi8(dest_paddle_pos.2237)
+ 2328 0f6c 20E0      		ldi r18,lo8(0)
+ 2329               	.L108:
+ 2330 0f6e 0E94 0000 		call calculate_dest_pos
+ 2331 0f72 8093 0000 		sts ticksremaining,r24
+ 2332 0f76 1092 0000 		sts ticksremaining+1,__zero_reg__
+ 2333               	.L93:
+ 376:anim_rat.c    ****   if (leftpaddle_y < TOPBAR_H_FIXED +1)
+ 2335               	.LM172:
+ 2336 0f7a 8091 0000 		lds r24,leftpaddle_y
+ 2337 0f7e 9091 0000 		lds r25,(leftpaddle_y)+1
+ 2338 0f82 A091 0000 		lds r26,(leftpaddle_y)+2
+ 2339 0f86 B091 0000 		lds r27,(leftpaddle_y)+3
+ 2340 0f8a 893C      		cpi r24,lo8(201)
+ 2341 0f8c 9105      		cpc r25,__zero_reg__
+ 2342 0f8e A105      		cpc r26,__zero_reg__
+ 2343 0f90 B105      		cpc r27,__zero_reg__
+ 2344 0f92 04F4      		brge .L100
+ 377:anim_rat.c    ****     leftpaddle_y = TOPBAR_H_FIXED + 1;
+ 2346               	.LM173:
+ 2347 0f94 89EC      		ldi r24,lo8(201)
+ 2348 0f96 90E0      		ldi r25,hi8(201)
+ 2349 0f98 A0E0      		ldi r26,hlo8(201)
+ 2350 0f9a B0E0      		ldi r27,hhi8(201)
+ 2351 0f9c 8093 0000 		sts leftpaddle_y,r24
+ 2352 0fa0 9093 0000 		sts (leftpaddle_y)+1,r25
+ 2353 0fa4 A093 0000 		sts (leftpaddle_y)+2,r26
+ 2354 0fa8 B093 0000 		sts (leftpaddle_y)+3,r27
+ 2355               	.L100:
+ 378:anim_rat.c    ****   if (rightpaddle_y < TOPBAR_H_FIXED + 1)
+ 2357               	.LM174:
+ 2358 0fac 8091 0000 		lds r24,rightpaddle_y
+ 2359 0fb0 9091 0000 		lds r25,(rightpaddle_y)+1
+ 2360 0fb4 A091 0000 		lds r26,(rightpaddle_y)+2
+ 2361 0fb8 B091 0000 		lds r27,(rightpaddle_y)+3
+ 2362 0fbc 893C      		cpi r24,lo8(201)
+ 2363 0fbe 9105      		cpc r25,__zero_reg__
+ 2364 0fc0 A105      		cpc r26,__zero_reg__
+ 2365 0fc2 B105      		cpc r27,__zero_reg__
+ 2366 0fc4 04F4      		brge .L101
+ 379:anim_rat.c    ****     rightpaddle_y = TOPBAR_H_FIXED + 1;
+ 2368               	.LM175:
+ 2369 0fc6 89EC      		ldi r24,lo8(201)
+ 2370 0fc8 90E0      		ldi r25,hi8(201)
+ 2371 0fca A0E0      		ldi r26,hlo8(201)
+ 2372 0fcc B0E0      		ldi r27,hhi8(201)
+ 2373 0fce 8093 0000 		sts rightpaddle_y,r24
+ 2374 0fd2 9093 0000 		sts (rightpaddle_y)+1,r25
+ 2375 0fd6 A093 0000 		sts (rightpaddle_y)+2,r26
+ 2376 0fda B093 0000 		sts (rightpaddle_y)+3,r27
+ 2377               	.L101:
+ 381:anim_rat.c    ****   if (leftpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
+ 2379               	.LM176:
+ 2380 0fde 8091 0000 		lds r24,leftpaddle_y
+ 2381 0fe2 9091 0000 		lds r25,(leftpaddle_y)+1
+ 2382 0fe6 A091 0000 		lds r26,(leftpaddle_y)+2
+ 2383 0fea B091 0000 		lds r27,(leftpaddle_y)+3
+ 2384 0fee 8858      		subi r24,lo8(5000)
+ 2385 0ff0 9341      		sbci r25,hi8(5000)
+ 2386 0ff2 A040      		sbci r26,hlo8(5000)
+ 2387 0ff4 B040      		sbci r27,hhi8(5000)
+ 2388 0ff6 04F0      		brlt .L102
+ 382:anim_rat.c    ****     leftpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
+ 2390               	.LM177:
+ 2391 0ff8 87E8      		ldi r24,lo8(4999)
+ 2392 0ffa 93E1      		ldi r25,hi8(4999)
+ 2393 0ffc A0E0      		ldi r26,hlo8(4999)
+ 2394 0ffe B0E0      		ldi r27,hhi8(4999)
+ 2395 1000 8093 0000 		sts leftpaddle_y,r24
+ 2396 1004 9093 0000 		sts (leftpaddle_y)+1,r25
+ 2397 1008 A093 0000 		sts (leftpaddle_y)+2,r26
+ 2398 100c B093 0000 		sts (leftpaddle_y)+3,r27
+ 2399               	.L102:
+ 383:anim_rat.c    ****   if (rightpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
+ 2401               	.LM178:
+ 2402 1010 8091 0000 		lds r24,rightpaddle_y
+ 2403 1014 9091 0000 		lds r25,(rightpaddle_y)+1
+ 2404 1018 A091 0000 		lds r26,(rightpaddle_y)+2
+ 2405 101c B091 0000 		lds r27,(rightpaddle_y)+3
+ 2406 1020 8858      		subi r24,lo8(5000)
+ 2407 1022 9341      		sbci r25,hi8(5000)
+ 2408 1024 A040      		sbci r26,hlo8(5000)
+ 2409 1026 B040      		sbci r27,hhi8(5000)
+ 2410 1028 04F0      		brlt .L103
+ 384:anim_rat.c    ****     rightpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
+ 2412               	.LM179:
+ 2413 102a 87E8      		ldi r24,lo8(4999)
+ 2414 102c 93E1      		ldi r25,hi8(4999)
+ 2415 102e A0E0      		ldi r26,hlo8(4999)
+ 2416 1030 B0E0      		ldi r27,hhi8(4999)
+ 2417 1032 8093 0000 		sts rightpaddle_y,r24
+ 2418 1036 9093 0000 		sts (rightpaddle_y)+1,r25
+ 2419 103a A093 0000 		sts (rightpaddle_y)+2,r26
+ 2420 103e B093 0000 		sts (rightpaddle_y)+3,r27
+ 2421               	.L103:
+ 386:anim_rat.c    ****   if ((ball_dx > 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radi
+ 2423               	.LM180:
+ 2424 1042 8091 0000 		lds r24,ball_dx
+ 2425 1046 9091 0000 		lds r25,(ball_dx)+1
+ 2426 104a A091 0000 		lds r26,(ball_dx)+2
+ 2427 104e B091 0000 		lds r27,(ball_dx)+3
+ 2428 1052 1816      		cp __zero_reg__,r24
+ 2429 1054 1906      		cpc __zero_reg__,r25
+ 2430 1056 1A06      		cpc __zero_reg__,r26
+ 2431 1058 1B06      		cpc __zero_reg__,r27
+ 2432 105a 04F0      		brlt .+2
+ 2433 105c 00C0      		rjmp .L104
+ 2434 105e 6091 0000 		lds r22,ball_x
+ 2435 1062 7091 0000 		lds r23,(ball_x)+1
+ 2436 1066 8091 0000 		lds r24,(ball_x)+2
+ 2437 106a 9091 0000 		lds r25,(ball_x)+3
+ 2438 106e 24E6      		ldi r18,lo8(100)
+ 2439 1070 30E0      		ldi r19,hi8(100)
+ 2440 1072 40E0      		ldi r20,hlo8(100)
+ 2441 1074 50E0      		ldi r21,hhi8(100)
+ 2442 1076 0E94 0000 		call __divmodsi4
+ 2443 107a 022F      		mov r16,r18
+ 2444 107c 6091 0000 		lds r22,ball_y
+ 2445 1080 7091 0000 		lds r23,(ball_y)+1
+ 2446 1084 8091 0000 		lds r24,(ball_y)+2
+ 2447 1088 9091 0000 		lds r25,(ball_y)+3
+ 2448 108c 24E6      		ldi r18,lo8(100)
+ 2449 108e 30E0      		ldi r19,hi8(100)
+ 2450 1090 40E0      		ldi r20,hlo8(100)
+ 2451 1092 50E0      		ldi r21,hhi8(100)
+ 2452 1094 0E94 0000 		call __divmodsi4
+ 2453 1098 122F      		mov r17,r18
+ 2454 109a 6091 0000 		lds r22,rightpaddle_y
+ 2455 109e 7091 0000 		lds r23,(rightpaddle_y)+1
+ 2456 10a2 8091 0000 		lds r24,(rightpaddle_y)+2
+ 2457 10a6 9091 0000 		lds r25,(rightpaddle_y)+3
+ 2458 10aa 24E6      		ldi r18,lo8(100)
+ 2459 10ac 30E0      		ldi r19,hi8(100)
+ 2460 10ae 40E0      		ldi r20,hlo8(100)
+ 2461 10b0 50E0      		ldi r21,hhi8(100)
+ 2462 10b2 0E94 0000 		call __divmodsi4
+ 2463 10b6 E22E      		mov r14,r18
+ 2464 10b8 802F      		mov r24,r16
+ 2465 10ba 612F      		mov r22,r17
+ 2466 10bc 44E0      		ldi r20,lo8(4)
+ 2467 10be 24E0      		ldi r18,lo8(4)
+ 2468 10c0 03E7      		ldi r16,lo8(115)
+ 2469 10c2 E3E0      		ldi r30,lo8(3)
+ 2470 10c4 CE2E      		mov r12,r30
+ 2471 10c6 7CE0      		ldi r23,lo8(12)
+ 2472 10c8 A72E      		mov r10,r23
+ 2473 10ca 0E94 0000 		call intersectrect
+ 2474 10ce 8823      		tst r24
+ 2475 10d0 01F0      		breq .L104
+ 387:anim_rat.c    ****     ball_dx *= -1;
+ 2477               	.LM181:
+ 2478 10d2 8091 0000 		lds r24,ball_dx
+ 2479 10d6 9091 0000 		lds r25,(ball_dx)+1
+ 2480 10da A091 0000 		lds r26,(ball_dx)+2
+ 2481 10de B091 0000 		lds r27,(ball_dx)+3
+ 2482 10e2 B095      		com r27
+ 2483 10e4 A095      		com r26
+ 2484 10e6 9095      		com r25
+ 2485 10e8 8195      		neg r24
+ 2486 10ea 9F4F      		sbci r25,lo8(-1)
+ 2487 10ec AF4F      		sbci r26,lo8(-1)
+ 2488 10ee BF4F      		sbci r27,lo8(-1)
+ 2489 10f0 8093 0000 		sts ball_dx,r24
+ 2490 10f4 9093 0000 		sts (ball_dx)+1,r25
+ 2491 10f8 A093 0000 		sts (ball_dx)+2,r26
+ 2492 10fc B093 0000 		sts (ball_dx)+3,r27
+ 388:anim_rat.c    ****     ball_x = RIGHTPADDLE_X_FIXED - (ball_radius*2*FIXED_MATH);
+ 2494               	.LM182:
+ 2495 1100 8CE5      		ldi r24,lo8(11100)
+ 2496 1102 9BE2      		ldi r25,hi8(11100)
+ 2497 1104 A0E0      		ldi r26,hlo8(11100)
+ 2498 1106 B0E0      		ldi r27,hhi8(11100)
+ 2499 1108 8093 0000 		sts ball_x,r24
+ 2500 110c 9093 0000 		sts (ball_x)+1,r25
+ 2501 1110 A093 0000 		sts (ball_x)+2,r26
+ 2502 1114 B093 0000 		sts (ball_x)+3,r27
+ 2503               	.L104:
+ 392:anim_rat.c    ****   if ((ball_dx < 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radi
+ 2505               	.LM183:
+ 2506 1118 8091 0000 		lds r24,ball_dx
+ 2507 111c 9091 0000 		lds r25,(ball_dx)+1
+ 2508 1120 A091 0000 		lds r26,(ball_dx)+2
+ 2509 1124 B091 0000 		lds r27,(ball_dx)+3
+ 2510 1128 B7FF      		sbrs r27,7
+ 2511 112a 00C0      		rjmp .L106
+ 2512 112c 6091 0000 		lds r22,ball_x
+ 2513 1130 7091 0000 		lds r23,(ball_x)+1
+ 2514 1134 8091 0000 		lds r24,(ball_x)+2
+ 2515 1138 9091 0000 		lds r25,(ball_x)+3
+ 2516 113c 24E6      		ldi r18,lo8(100)
+ 2517 113e 30E0      		ldi r19,hi8(100)
+ 2518 1140 40E0      		ldi r20,hlo8(100)
+ 2519 1142 50E0      		ldi r21,hhi8(100)
+ 2520 1144 0E94 0000 		call __divmodsi4
+ 2521 1148 022F      		mov r16,r18
+ 2522 114a 6091 0000 		lds r22,ball_y
+ 2523 114e 7091 0000 		lds r23,(ball_y)+1
+ 2524 1152 8091 0000 		lds r24,(ball_y)+2
+ 2525 1156 9091 0000 		lds r25,(ball_y)+3
+ 2526 115a 24E6      		ldi r18,lo8(100)
+ 2527 115c 30E0      		ldi r19,hi8(100)
+ 2528 115e 40E0      		ldi r20,hlo8(100)
+ 2529 1160 50E0      		ldi r21,hhi8(100)
+ 2530 1162 0E94 0000 		call __divmodsi4
+ 2531 1166 122F      		mov r17,r18
+ 2532 1168 6091 0000 		lds r22,leftpaddle_y
+ 2533 116c 7091 0000 		lds r23,(leftpaddle_y)+1
+ 2534 1170 8091 0000 		lds r24,(leftpaddle_y)+2
+ 2535 1174 9091 0000 		lds r25,(leftpaddle_y)+3
+ 2536 1178 24E6      		ldi r18,lo8(100)
+ 2537 117a 30E0      		ldi r19,hi8(100)
+ 2538 117c 40E0      		ldi r20,hlo8(100)
+ 2539 117e 50E0      		ldi r21,hhi8(100)
+ 2540 1180 0E94 0000 		call __divmodsi4
+ 2541 1184 E22E      		mov r14,r18
+ 2542 1186 802F      		mov r24,r16
+ 2543 1188 612F      		mov r22,r17
+ 2544 118a 44E0      		ldi r20,lo8(4)
+ 2545 118c 24E0      		ldi r18,lo8(4)
+ 2546 118e 0AE0      		ldi r16,lo8(10)
+ 2547 1190 53E0      		ldi r21,lo8(3)
+ 2548 1192 C52E      		mov r12,r21
+ 2549 1194 3CE0      		ldi r19,lo8(12)
+ 2550 1196 A32E      		mov r10,r19
+ 2551 1198 0E94 0000 		call intersectrect
+ 2552 119c 8823      		tst r24
+ 2553 119e 01F0      		breq .L106
+ 393:anim_rat.c    ****     ball_dx *= -1;
+ 2555               	.LM184:
+ 2556 11a0 8091 0000 		lds r24,ball_dx
+ 2557 11a4 9091 0000 		lds r25,(ball_dx)+1
+ 2558 11a8 A091 0000 		lds r26,(ball_dx)+2
+ 2559 11ac B091 0000 		lds r27,(ball_dx)+3
+ 2560 11b0 B095      		com r27
+ 2561 11b2 A095      		com r26
+ 2562 11b4 9095      		com r25
+ 2563 11b6 8195      		neg r24
+ 2564 11b8 9F4F      		sbci r25,lo8(-1)
+ 2565 11ba AF4F      		sbci r26,lo8(-1)
+ 2566 11bc BF4F      		sbci r27,lo8(-1)
+ 2567 11be 8093 0000 		sts ball_dx,r24
+ 2568 11c2 9093 0000 		sts (ball_dx)+1,r25
+ 2569 11c6 A093 0000 		sts (ball_dx)+2,r26
+ 2570 11ca B093 0000 		sts (ball_dx)+3,r27
+ 394:anim_rat.c    ****     ball_x = LEFTPADDLE_X_FIXED + PADDLE_W_FIXED;
+ 2572               	.LM185:
+ 2573 11ce 84E1      		ldi r24,lo8(1300)
+ 2574 11d0 95E0      		ldi r25,hi8(1300)
+ 2575 11d2 A0E0      		ldi r26,hlo8(1300)
+ 2576 11d4 B0E0      		ldi r27,hhi8(1300)
+ 2577 11d6 8093 0000 		sts ball_x,r24
+ 2578 11da 9093 0000 		sts (ball_x)+1,r25
+ 2579 11de A093 0000 		sts (ball_x)+2,r26
+ 2580 11e2 B093 0000 		sts (ball_x)+3,r27
+ 2581               	.L106:
+ 2582               	/* epilogue start */
+ 399:anim_rat.c    **** }
+ 2584               	.LM186:
+ 2585 11e6 1F91      		pop r17
+ 2586 11e8 0F91      		pop r16
+ 2587 11ea FF90      		pop r15
+ 2588 11ec EF90      		pop r14
+ 2589 11ee DF90      		pop r13
+ 2590 11f0 CF90      		pop r12
+ 2591 11f2 BF90      		pop r11
+ 2592 11f4 AF90      		pop r10
+ 2593 11f6 9F90      		pop r9
+ 2594 11f8 8F90      		pop r8
+ 2595 11fa 7F90      		pop r7
+ 2596 11fc 6F90      		pop r6
+ 2597 11fe 0895      		ret
+ 2611               	.Lscope12:
+ 2613               		.stabd	78,0,0
+ 2616               	.global	initdisplay_rat
+ 2618               	initdisplay_rat:
+ 2619               		.stabd	46,0,0
+ 170:anim_rat.c    **** void initdisplay_rat(uint8_t inverted) {
+ 2621               	.LM187:
+ 2622               	.LFBB13:
+ 2623 1200 FF92      		push r15
+ 2624 1202 0F93      		push r16
+ 2625 1204 1F93      		push r17
+ 2626               	/* prologue: function */
+ 2627               	/* frame size = 0 */
+ 2628 1206 F82E      		mov r15,r24
+ 172:anim_rat.c    ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
+ 2630               	.LM188:
+ 2631 1208 80E0      		ldi r24,lo8(0)
+ 2632 120a 60E0      		ldi r22,lo8(0)
+ 2633 120c 40E8      		ldi r20,lo8(-128)
+ 2634 120e 20E4      		ldi r18,lo8(64)
+ 2635 1210 0F2D      		mov r16,r15
+ 2636 1212 0E94 0000 		call glcdFillRectangle
+ 175:anim_rat.c    ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, 2, ! inverted);
+ 2638               	.LM189:
+ 2639 1216 10E0      		ldi r17,lo8(0)
+ 2640 1218 FF20      		tst r15
+ 2641 121a 01F4      		brne .L111
+ 2642 121c 11E0      		ldi r17,lo8(1)
+ 2643               	.L111:
+ 2644 121e 80E0      		ldi r24,lo8(0)
+ 2645 1220 60E0      		ldi r22,lo8(0)
+ 2646 1222 40E8      		ldi r20,lo8(-128)
+ 2647 1224 22E0      		ldi r18,lo8(2)
+ 2648 1226 012F      		mov r16,r17
+ 2649 1228 0E94 0000 		call glcdFillRectangle
+ 178:anim_rat.c    ****   glcdFillRectangle(0, GLCD_YPIXELS - 2, GLCD_XPIXELS, 2, ! inverted);
+ 2651               	.LM190:
+ 2652 122c 80E0      		ldi r24,lo8(0)
+ 2653 122e 6EE3      		ldi r22,lo8(62)
+ 2654 1230 40E8      		ldi r20,lo8(-128)
+ 2655 1232 22E0      		ldi r18,lo8(2)
+ 2656 1234 0E94 0000 		call glcdFillRectangle
+ 181:anim_rat.c    ****   glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+ 2658               	.LM191:
+ 2659 1238 6091 0000 		lds r22,leftpaddle_y
+ 2660 123c 7091 0000 		lds r23,(leftpaddle_y)+1
+ 2661 1240 8091 0000 		lds r24,(leftpaddle_y)+2
+ 2662 1244 9091 0000 		lds r25,(leftpaddle_y)+3
+ 2663 1248 24E6      		ldi r18,lo8(100)
+ 2664 124a 30E0      		ldi r19,hi8(100)
+ 2665 124c 40E0      		ldi r20,hlo8(100)
+ 2666 124e 50E0      		ldi r21,hhi8(100)
+ 2667 1250 0E94 0000 		call __divmodsi4
+ 2668 1254 8AE0      		ldi r24,lo8(10)
+ 2669 1256 622F      		mov r22,r18
+ 2670 1258 43E0      		ldi r20,lo8(3)
+ 2671 125a 2CE0      		ldi r18,lo8(12)
+ 2672 125c 0E94 0000 		call glcdFillRectangle
+ 183:anim_rat.c    ****   glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+ 2674               	.LM192:
+ 2675 1260 6091 0000 		lds r22,rightpaddle_y
+ 2676 1264 7091 0000 		lds r23,(rightpaddle_y)+1
+ 2677 1268 8091 0000 		lds r24,(rightpaddle_y)+2
+ 2678 126c 9091 0000 		lds r25,(rightpaddle_y)+3
+ 2679 1270 24E6      		ldi r18,lo8(100)
+ 2680 1272 30E0      		ldi r19,hi8(100)
+ 2681 1274 40E0      		ldi r20,hlo8(100)
+ 2682 1276 50E0      		ldi r21,hhi8(100)
+ 2683 1278 0E94 0000 		call __divmodsi4
+ 2684 127c 83E7      		ldi r24,lo8(115)
+ 2685 127e 622F      		mov r22,r18
+ 2686 1280 43E0      		ldi r20,lo8(3)
+ 2687 1282 2CE0      		ldi r18,lo8(12)
+ 2688 1284 0E94 0000 		call glcdFillRectangle
+ 187:anim_rat.c    **** 	setscore_rat();
+ 2690               	.LM193:
+ 2691 1288 0E94 0000 		call setscore_rat
+ 190:anim_rat.c    ****     drawbigdigit(DISPLAY_H10_X_RAT, DISPLAY_TIME_Y_RAT, left_score/10, inverted);
+ 2693               	.LM194:
+ 2694 128c 8091 0000 		lds r24,left_score
+ 2695 1290 6AE0      		ldi r22,lo8(10)
+ 2696 1292 0E94 0000 		call __udivmodqi4
+ 2697 1296 482F      		mov r20,r24
+ 2698 1298 8EE1      		ldi r24,lo8(30)
+ 2699 129a 64E0      		ldi r22,lo8(4)
+ 2700 129c 2F2D      		mov r18,r15
+ 2701 129e 0E94 0000 		call drawbigdigit
+ 191:anim_rat.c    ****     drawbigdigit(DISPLAY_H1_X_RAT, DISPLAY_TIME_Y_RAT, left_score%10, inverted);
+ 2703               	.LM195:
+ 2704 12a2 8091 0000 		lds r24,left_score
+ 2705 12a6 6AE0      		ldi r22,lo8(10)
+ 2706 12a8 0E94 0000 		call __udivmodqi4
+ 2707 12ac 8DE2      		ldi r24,lo8(45)
+ 2708 12ae 64E0      		ldi r22,lo8(4)
+ 2709 12b0 492F      		mov r20,r25
+ 2710 12b2 2F2D      		mov r18,r15
+ 2711 12b4 0E94 0000 		call drawbigdigit
+ 193:anim_rat.c    ****   drawbigdigit(DISPLAY_M10_X_RAT, DISPLAY_TIME_Y_RAT, right_score/10, inverted);
+ 2713               	.LM196:
+ 2714 12b8 8091 0000 		lds r24,right_score
+ 2715 12bc 6AE0      		ldi r22,lo8(10)
+ 2716 12be 0E94 0000 		call __udivmodqi4
+ 2717 12c2 482F      		mov r20,r24
+ 2718 12c4 86E4      		ldi r24,lo8(70)
+ 2719 12c6 64E0      		ldi r22,lo8(4)
+ 2720 12c8 2F2D      		mov r18,r15
+ 2721 12ca 0E94 0000 		call drawbigdigit
+ 194:anim_rat.c    ****   drawbigdigit(DISPLAY_M1_X_RAT, DISPLAY_TIME_Y_RAT, right_score%10, inverted);
+ 2723               	.LM197:
+ 2724 12ce 8091 0000 		lds r24,right_score
+ 2725 12d2 6AE0      		ldi r22,lo8(10)
+ 2726 12d4 0E94 0000 		call __udivmodqi4
+ 2727 12d8 85E5      		ldi r24,lo8(85)
+ 2728 12da 64E0      		ldi r22,lo8(4)
+ 2729 12dc 492F      		mov r20,r25
+ 2730 12de 2F2D      		mov r18,r15
+ 2731 12e0 0E94 0000 		call drawbigdigit
+ 196:anim_rat.c    ****   drawmidline(inverted);
+ 2733               	.LM198:
+ 2734 12e4 8F2D      		mov r24,r15
+ 2735 12e6 0E94 0000 		call drawmidline
+ 2736               	/* epilogue start */
+ 197:anim_rat.c    **** }
+ 2738               	.LM199:
+ 2739 12ea 1F91      		pop r17
+ 2740 12ec 0F91      		pop r16
+ 2741 12ee FF90      		pop r15
+ 2742 12f0 0895      		ret
+ 2744               	.Lscope13:
+ 2746               		.stabd	78,0,0
+ 2748               	.global	initanim_rat
+ 2750               	initanim_rat:
+ 2751               		.stabd	46,0,0
+ 153:anim_rat.c    **** void initanim_rat(void) {
+ 2753               	.LM200:
+ 2754               	.LFBB14:
+ 2755               	/* prologue: function */
+ 2756               	/* frame size = 0 */
+ 160:anim_rat.c    ****   oldball_x = ball_x = 2500;
+ 2758               	.LM201:
+ 2759 12f2 84EC      		ldi r24,lo8(2500)
+ 2760 12f4 99E0      		ldi r25,hi8(2500)
+ 2761 12f6 A0E0      		ldi r26,hlo8(2500)
+ 2762 12f8 B0E0      		ldi r27,hhi8(2500)
+ 2763 12fa 8093 0000 		sts ball_x,r24
+ 2764 12fe 9093 0000 		sts (ball_x)+1,r25
+ 2765 1302 A093 0000 		sts (ball_x)+2,r26
+ 2766 1306 B093 0000 		sts (ball_x)+3,r27
+ 2767 130a 8093 0000 		sts oldball_x,r24
+ 2768 130e 9093 0000 		sts (oldball_x)+1,r25
+ 2769 1312 A093 0000 		sts (oldball_x)+2,r26
+ 2770 1316 B093 0000 		sts (oldball_x)+3,r27
+ 161:anim_rat.c    ****   oldball_y = ball_y = 2500;	//Somewhere away from 0,0.
+ 2772               	.LM202:
+ 2773 131a 8093 0000 		sts ball_y,r24
+ 2774 131e 9093 0000 		sts (ball_y)+1,r25
+ 2775 1322 A093 0000 		sts (ball_y)+2,r26
+ 2776 1326 B093 0000 		sts (ball_y)+3,r27
+ 2777 132a 8093 0000 		sts oldball_y,r24
+ 2778 132e 9093 0000 		sts (oldball_y)+1,r25
+ 2779 1332 A093 0000 		sts (oldball_y)+2,r26
+ 2780 1336 B093 0000 		sts (oldball_y)+3,r27
+ 162:anim_rat.c    ****   oldleftpaddle_y = leftpaddle_y = 2500;
+ 2782               	.LM203:
+ 2783 133a 8093 0000 		sts leftpaddle_y,r24
+ 2784 133e 9093 0000 		sts (leftpaddle_y)+1,r25
+ 2785 1342 A093 0000 		sts (leftpaddle_y)+2,r26
+ 2786 1346 B093 0000 		sts (leftpaddle_y)+3,r27
+ 2787 134a 8093 0000 		sts oldleftpaddle_y,r24
+ 2788 134e 9093 0000 		sts (oldleftpaddle_y)+1,r25
+ 2789 1352 A093 0000 		sts (oldleftpaddle_y)+2,r26
+ 2790 1356 B093 0000 		sts (oldleftpaddle_y)+3,r27
+ 163:anim_rat.c    ****   oldrightpaddle_y = rightpaddle_y = 2500;
+ 2792               	.LM204:
+ 2793 135a 8093 0000 		sts rightpaddle_y,r24
+ 2794 135e 9093 0000 		sts (rightpaddle_y)+1,r25
+ 2795 1362 A093 0000 		sts (rightpaddle_y)+2,r26
+ 2796 1366 B093 0000 		sts (rightpaddle_y)+3,r27
+ 2797 136a 8093 0000 		sts oldrightpaddle_y,r24
+ 2798 136e 9093 0000 		sts (oldrightpaddle_y)+1,r25
+ 2799 1372 A093 0000 		sts (oldrightpaddle_y)+2,r26
+ 2800 1376 B093 0000 		sts (oldrightpaddle_y)+3,r27
+ 164:anim_rat.c    ****   init_crand();
+ 2802               	.LM205:
+ 2803 137a 0E94 0000 		call init_crand
+ 166:anim_rat.c    ****   ball_dx = ball_dy = 0;
+ 2805               	.LM206:
+ 2806 137e 1092 0000 		sts ball_dy,__zero_reg__
+ 2807 1382 1092 0000 		sts (ball_dy)+1,__zero_reg__
+ 2808 1386 1092 0000 		sts (ball_dy)+2,__zero_reg__
+ 2809 138a 1092 0000 		sts (ball_dy)+3,__zero_reg__
+ 2810 138e 1092 0000 		sts ball_dx,__zero_reg__
+ 2811 1392 1092 0000 		sts (ball_dx)+1,__zero_reg__
+ 2812 1396 1092 0000 		sts (ball_dx)+2,__zero_reg__
+ 2813 139a 1092 0000 		sts (ball_dx)+3,__zero_reg__
+ 167:anim_rat.c    ****   initdisplay_rat(0);
+ 2815               	.LM207:
+ 2816 139e 80E0      		ldi r24,lo8(0)
+ 2817 13a0 0E94 0000 		call initdisplay_rat
+ 2818               	/* epilogue start */
+ 168:anim_rat.c    **** }
+ 2820               	.LM208:
+ 2821 13a4 0895      		ret
+ 2823               	.Lscope14:
+ 2825               		.stabd	78,0,0
+ 2826               	.global	redraw_time_rat
+ 2827               	.global	redraw_time_rat
+ 2828               		.section .bss
+ 2831               	redraw_time_rat:
+ 2832 0000 00        		.skip 1,0
+ 2833               	.global	last_score_mode_rat
+ 2834               	.global	last_score_mode_rat
+ 2837               	last_score_mode_rat:
+ 2838 0001 00        		.skip 1,0
+ 2839               	.global	sine_table
+ 2840               		.data
+ 2843               	sine_table:
+ 2844 0000 0000      		.word	0
+ 2845 0002 2403      		.word	804
+ 2846 0004 4706      		.word	1607
+ 2847 0006 6A09      		.word	2410
+ 2848 0008 8B0C      		.word	3211
+ 2849 000a AB0F      		.word	4011
+ 2850 000c C812      		.word	4808
+ 2851 000e E215      		.word	5602
+ 2852 0010 F818      		.word	6392
+ 2853 0012 0B1C      		.word	7179
+ 2854 0014 191F      		.word	7961
+ 2855 0016 2322      		.word	8739
+ 2856 0018 2825      		.word	9512
+ 2857 001a 2628      		.word	10278
+ 2858 001c 1F2B      		.word	11039
+ 2859 001e 112E      		.word	11793
+ 2860 0020 FB30      		.word	12539
+ 2861 0022 DE33      		.word	13278
+ 2862 0024 BA36      		.word	14010
+ 2863 0026 8C39      		.word	14732
+ 2864 0028 563C      		.word	15446
+ 2865 002a 173F      		.word	16151
+ 2866 002c CE41      		.word	16846
+ 2867 002e 7A44      		.word	17530
+ 2868 0030 1C47      		.word	18204
+ 2869 0032 B449      		.word	18868
+ 2870 0034 3F4C      		.word	19519
+ 2871 0036 BF4E      		.word	20159
+ 2872 0038 3351      		.word	20787
+ 2873 003a 9B53      		.word	21403
+ 2874 003c F555      		.word	22005
+ 2875 003e 4258      		.word	22594
+ 2876 0040 825A      		.word	23170
+ 2877 0042 B45C      		.word	23732
+ 2878 0044 D75E      		.word	24279
+ 2879 0046 EC60      		.word	24812
+ 2880 0048 F262      		.word	25330
+ 2881 004a E864      		.word	25832
+ 2882 004c CF66      		.word	26319
+ 2883 004e A668      		.word	26790
+ 2884 0050 6D6A      		.word	27245
+ 2885 0052 246C      		.word	27684
+ 2886 0054 CA6D      		.word	28106
+ 2887 0056 5F6F      		.word	28511
+ 2888 0058 E270      		.word	28898
+ 2889 005a 5572      		.word	29269
+ 2890 005c B573      		.word	29621
+ 2891 005e 0475      		.word	29956
+ 2892 0060 4176      		.word	30273
+ 2893 0062 6C77      		.word	30572
+ 2894 0064 8478      		.word	30852
+ 2895 0066 8A79      		.word	31114
+ 2896 0068 7D7A      		.word	31357
+ 2897 006a 5D7B      		.word	31581
+ 2898 006c 297C      		.word	31785
+ 2899 006e E37C      		.word	31971
+ 2900 0070 8A7D      		.word	32138
+ 2901 0072 1D7E      		.word	32285
+ 2902 0074 9D7E      		.word	32413
+ 2903 0076 097F      		.word	32521
+ 2904 0078 627F      		.word	32610
+ 2905 007a A77F      		.word	32679
+ 2906 007c D87F      		.word	32728
+ 2907 007e F67F      		.word	32758
+ 2908               		.lcomm left_dest.2239,4
+ 2909               		.lcomm right_dest.2238,4
+ 2910               		.lcomm dest_paddle_pos.2237,4
+ 2911               		.lcomm left_keepout_bot.2234,1
+ 2912               		.lcomm left_keepout_top.2233,1
+ 2913               		.lcomm right_keepout_bot.2230,1
+ 2914               		.lcomm right_keepout_top.2229,1
+ 2915               		.comm left_score,1,1
+ 2916               		.comm right_score,1,1
+ 2917               		.comm ball_x,4,1
+ 2918               		.comm ball_y,4,1
+ 2919               		.comm oldball_x,4,1
+ 2920               		.comm oldball_y,4,1
+ 2921               		.comm ball_dx,4,1
+ 2922               		.comm ball_dy,4,1
+ 2923               		.comm rightpaddle_y,4,1
+ 2924               		.comm leftpaddle_y,4,1
+ 2925               		.comm oldleftpaddle_y,4,1
+ 2926               		.comm oldrightpaddle_y,4,1
+ 2927               		.comm rightpaddle_dy,4,1
+ 2928               		.comm leftpaddle_dy,4,1
+ 2929               		.comm ticksremaining,2,1
+ 2955               		.text
+ 2957               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 anim_rat.c
+     /tmp/ccx1Qs4c.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccx1Qs4c.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccx1Qs4c.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccx1Qs4c.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccx1Qs4c.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccx1Qs4c.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccx1Qs4c.s:139    .text:00000000 sine
+     /tmp/ccx1Qs4c.s:2843   .data:00000000 sine_table
+     /tmp/ccx1Qs4c.s:217    .text:0000005c cosine
+     /tmp/ccx1Qs4c.s:241    .text:00000064 move_paddle
+     /tmp/ccx1Qs4c.s:317    .text:000000b6 calculate_keepout
+     /tmp/ccx1Qs4c.s:705    .text:0000032c random_angle
+     /tmp/ccx1Qs4c.s:781    .text:00000388 calculate_dest_pos
+                            *COM*:00000004 ball_x
+                            *COM*:00000004 ball_y
+                            *COM*:00000004 ball_dx
+                            *COM*:00000004 ball_dy
+                            *COM*:00000002 ticksremaining
+     /tmp/ccx1Qs4c.s:1034   .text:0000053a check_ball_digit_collision
+                            *COM*:00000004 oldball_x
+                            *COM*:00000004 oldball_y
+     /tmp/ccx1Qs4c.s:1119   .text:000005ca draw_score_rat
+                            *COM*:00000001 left_score
+                            *COM*:00000001 right_score
+     /tmp/ccx1Qs4c.s:1184   .text:00000630 drawmidline
+     /tmp/ccx1Qs4c.s:1257   .text:00000670 setscore_rat
+     /tmp/ccx1Qs4c.s:2837   .bss:00000001 last_score_mode_rat
+     /tmp/ccx1Qs4c.s:2831   .bss:00000000 redraw_time_rat
+     /tmp/ccx1Qs4c.s:1388   .text:00000732 drawdisplay_rat
+                            *COM*:00000004 oldleftpaddle_y
+                            *COM*:00000004 leftpaddle_y
+                            *COM*:00000004 oldrightpaddle_y
+                            *COM*:00000004 rightpaddle_y
+     /tmp/ccx1Qs4c.s:1763   .text:00000a88 step_rat
+     /tmp/ccx1Qs4c.s:2911   .bss:0000000f left_keepout_top.2233
+     /tmp/ccx1Qs4c.s:2910   .bss:0000000e left_keepout_bot.2234
+     /tmp/ccx1Qs4c.s:2913   .bss:00000011 right_keepout_top.2229
+     /tmp/ccx1Qs4c.s:2912   .bss:00000010 right_keepout_bot.2230
+                             .bss:00000002 left_dest.2239
+     /tmp/ccx1Qs4c.s:2908   .bss:00000006 right_dest.2238
+     /tmp/ccx1Qs4c.s:2909   .bss:0000000a dest_paddle_pos.2237
+     /tmp/ccx1Qs4c.s:2618   .text:00001200 initdisplay_rat
+     /tmp/ccx1Qs4c.s:2750   .text:000012f2 initanim_rat
+                            *COM*:00000004 rightpaddle_dy
+                            *COM*:00000004 leftpaddle_dy
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__divmodsi4
+__mulsi3
+crand
+__udivmodsi4
+minute_changed
+hour_changed
+intersectrect
+drawbigdigit
+__udivmodqi4
+glcdSetAddress
+glcdDataWrite
+score_mode
+old_h
+hours
+old_m
+time_h
+time_m
+region
+date_m
+date_d
+date_y
+alarm_h
+alarm_m
+glcdFillRectangle
+init_crand

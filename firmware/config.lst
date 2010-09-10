@@ -1,0 +1,2855 @@
+   1               		.file	"config.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 132               	.global	print_style_setting
+ 134               	print_style_setting:
+ 135               		.stabd	46,0,0
+   0:config.c      **** #include <avr/io.h>      // this contains all the IO port definitions
+   1:config.c      **** #include <avr/interrupt.h>
+   2:config.c      **** #include <util/delay.h>
+   3:config.c      **** #include <avr/pgmspace.h>
+   4:config.c      **** #include <avr/eeprom.h>
+   5:config.c      **** #include <string.h>
+   6:config.c      **** #include "util.h"
+   7:config.c      **** #include "ratt.h"
+   8:config.c      **** #include "ks0108.h"
+   9:config.c      **** #include "glcd.h"
+  10:config.c      **** 
+  11:config.c      **** extern volatile uint8_t time_s, time_m, time_h;
+  12:config.c      **** extern volatile uint8_t date_m, date_d, date_y;
+  13:config.c      **** extern volatile uint8_t alarm_h, alarm_m;
+  14:config.c      **** extern volatile uint8_t last_buttonstate, just_pressed, pressed;
+  15:config.c      **** extern volatile uint8_t buttonholdcounter;
+  16:config.c      **** extern volatile uint8_t region;
+  17:config.c      **** extern volatile uint8_t time_format;
+  18:config.c      **** extern volatile uint8_t alarm_on;
+  19:config.c      **** 
+  20:config.c      **** //dataman - add access to display style
+  21:config.c      **** extern volatile uint8_t displaystyle;
+  22:config.c      **** extern volatile uint8_t RotateFlag;
+  23:config.c      **** 
+  24:config.c      **** extern volatile uint8_t displaymode;
+  25:config.c      **** // This variable keeps track of whether we have not pressed any
+  26:config.c      **** // buttons in a few seconds, and turns off the menu display
+  27:config.c      **** volatile uint8_t timeoutcounter = 0;
+  28:config.c      **** 
+  29:config.c      **** volatile uint8_t screenmutex = 0;
+  30:config.c      **** 
+  31:config.c      **** //Prototypes
+  32:config.c      **** void print_style_setting(uint8_t inverted);
+  33:config.c      **** void print_region_setting(uint8_t inverted);
+  34:config.c      **** //
+  35:config.c      **** 
+  36:config.c      **** void print_alarmline(uint8_t mode)
+  37:config.c      **** {
+  38:config.c      ****   glcdSetAddress(MENU_INDENT, 1);
+  39:config.c      ****   glcdPutStr("Set Alarm:  ", NORMAL);
+  40:config.c      ****   print_alarmhour(alarm_h, ((mode==SET_HOUR)?INVERTED:NORMAL));
+  41:config.c      ****   glcdWriteChar(':', NORMAL);
+  42:config.c      ****   printnumber(alarm_m, ((mode==SET_MIN)?INVERTED:NORMAL));
+  43:config.c      **** }
+  44:config.c      **** 
+  45:config.c      **** void print_time(uint8_t hour, uint8_t min, uint8_t sec, uint8_t mode)
+  46:config.c      **** {
+  47:config.c      ****   glcdSetAddress(MENU_INDENT, 2);
+  48:config.c      ****   glcdPutStr("Set Time: ", NORMAL);
+  49:config.c      ****   print_timehour(hour, ((mode==SET_HOUR)?INVERTED:NORMAL));
+  50:config.c      ****   glcdWriteChar(':', NORMAL);
+  51:config.c      ****   printnumber(min, ((mode==SET_MIN)?INVERTED:NORMAL));
+  52:config.c      ****   glcdWriteChar(':', NORMAL);
+  53:config.c      ****   printnumber(sec, ((mode==SET_SEC)?INVERTED:NORMAL));
+  54:config.c      ****   if (time_format == TIME_12H) {
+  55:config.c      ****     glcdWriteChar(' ', NORMAL);
+  56:config.c      ****     if (hour >= 12) {
+  57:config.c      ****       glcdWriteChar('P', ((mode==SET_HOUR)?INVERTED:NORMAL));
+  58:config.c      ****     } else {
+  59:config.c      ****       glcdWriteChar('A', ((mode==SET_HOUR)?INVERTED:NORMAL));
+  60:config.c      ****     }
+  61:config.c      ****   }
+  62:config.c      **** }
+  63:config.c      **** 
+  64:config.c      **** void print_backlight(uint8_t mode)
+  65:config.c      **** {
+  66:config.c      ****   glcdSetAddress(MENU_INDENT, 5);
+  67:config.c      ****   glcdPutStr("Set Backlight: ", NORMAL);
+  68:config.c      ****   printnumber(OCR2B>>OCR2B_BITSHIFT,((mode==SET_BRT)?INVERTED:NORMAL));
+  69:config.c      **** }
+  70:config.c      **** 
+  71:config.c      **** void display_menu(uint8_t line) {
+  72:config.c      ****   DEBUGP("display menu");
+  73:config.c      ****   
+  74:config.c      ****   screenmutex++;
+  75:config.c      **** 
+  76:config.c      ****   glcdClearScreen();
+  77:config.c      ****   
+  78:config.c      ****   //Dataman - Mode Menu Option
+  79:config.c      ****   //glcdSetAddress(0, 0);
+  80:config.c      ****   //glcdPutStr("Configuration Menu", NORMAL);
+  81:config.c      ****   glcdSetAddress(MENU_INDENT, 0);
+  82:config.c      ****   glcdPutStr("Mode:", NORMAL);
+  83:config.c      ****   print_style_setting(NORMAL);
+  84:config.c      ****  
+  85:config.c      ****   print_alarmline(SET_ALARM);
+  86:config.c      ****   
+  87:config.c      ****   print_time(time_h,time_m,time_s,SET_TIME);
+  88:config.c      ****   print_date(date_m,date_d,date_y,SET_DATE);
+  89:config.c      ****   print_region_setting(NORMAL);
+  90:config.c      ****   
+  91:config.c      **** #ifdef BACKLIGHT_ADJUST
+  92:config.c      ****   print_backlight(SET_BRIGHTNESS);
+  93:config.c      **** 
+  94:config.c      ****   if(displaymode == SET_BRIGHTNESS)
+  95:config.c      **** #else
+  96:config.c      ****   if(displaymode == SET_REGION)
+  97:config.c      **** #endif
+  98:config.c      ****   	  print_menu_exit();
+  99:config.c      ****   else
+ 100:config.c      ****   	print_menu_advance();
+ 101:config.c      **** 
+ 102:config.c      ****   drawArrow(0, (line*8)+3, MENU_INDENT -1);
+ 103:config.c      ****   screenmutex--;
+ 104:config.c      **** }
+ 105:config.c      **** 
+ 106:config.c      **** uint8_t init_set_menu(uint8_t line)
+ 107:config.c      **** {
+ 108:config.c      ****   display_menu(line);
+ 109:config.c      ****   timeoutcounter = INACTIVITYTIMEOUT;
+ 110:config.c      ****   return displaymode;
+ 111:config.c      **** }
+ 112:config.c      **** 
+ 113:config.c      **** 
+ 114:config.c      **** //Dataman - Handle setting style
+ 115:config.c      **** void set_style(void) {
+ 116:config.c      ****   displaystyle = eeprom_read_byte(&EE_STYLE);
+ 117:config.c      ****   uint8_t mode = init_set_menu(0);
+ 118:config.c      ****   while (!check_timeout()) {
+ 119:config.c      ****   
+ 120:config.c      ****     if (just_pressed & 0x2) {
+ 121:config.c      ****       just_pressed = 0;
+ 122:config.c      ****       screenmutex++;
+ 123:config.c      **** 
+ 124:config.c      ****       if (mode == SET_STYLE) {
+ 125:config.c      **** 	DEBUG(putstring("Setting mode"));
+ 126:config.c      **** 	// ok now its selected
+ 127:config.c      **** 	mode = SET_STL;
+ 128:config.c      **** 	// print the region 
+ 129:config.c      **** 	print_style_setting(INVERTED);
+ 130:config.c      ****  	
+ 131:config.c      **** 	// display instructions below
+ 132:config.c      **** 	print_menu_change();
+ 133:config.c      ****       } else {
+ 134:config.c      **** 	mode = SET_STYLE;
+ 135:config.c      **** 	// print the region normal
+ 136:config.c      **** 	print_style_setting(NORMAL);
+ 137:config.c      **** 	print_menu_advance();
+ 138:config.c      ****         // faster return?
+ 139:config.c      ****         RotateFlag = 0;
+ 140:config.c      ****         displaymode = SHOW_TIME;
+ 141:config.c      **** 		if (displaystyle<=STYLE_ROTATE) eeprom_write_byte(&EE_STYLE,displaystyle);
+ 142:config.c      ****         return;
+ 143:config.c      ****       }
+ 144:config.c      ****       screenmutex--;
+ 145:config.c      ****     }
+ 146:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 147:config.c      ****       just_pressed = 0;
+ 148:config.c      ****       
+ 149:config.c      ****       if (mode == SET_STL) {
+ 150:config.c      **** 	    displaystyle ++;
+ 151:config.c      **** 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_BASE + 1;
+ 152:config.c      **** 	screenmutex++;
+ 153:config.c      **** 	display_menu(0);
+ 154:config.c      **** 	print_menu_change();
+ 155:config.c      **** 
+ 156:config.c      **** 	// put a small arrow next to 'set 12h/24h'
+ 157:config.c      **** 	print_style_setting(INVERTED);
+ 158:config.c      ****  	
+ 159:config.c      **** 	screenmutex--;
+ 160:config.c      **** 	if(pressed & 4)
+ 161:config.c      **** 		delay_ms(200);
+ 162:config.c      **** 
+ 163:config.c      **** 	//eeprom_write_byte(&EE_BRIGHT, OCR2B);
+ 164:config.c      ****       }
+ 165:config.c      ****     }
+ 166:config.c      ****   }
+ 167:config.c      **** }
+ 168:config.c      **** 
+ 169:config.c      **** 
+ 170:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 171:config.c      **** void print_month(uint8_t inverted, uint8_t month) {
+ 172:config.c      ****   glcdWriteChar(smon(month,0),inverted);
+ 173:config.c      ****   glcdWriteChar(smon(month,1),inverted);
+ 174:config.c      ****   glcdWriteChar(smon(month,2),inverted);
+ 175:config.c      **** }
+ 176:config.c      **** 
+ 177:config.c      **** void print_dow(uint8_t inverted, uint8_t mon, uint8_t day, uint8_t yr) {
+ 178:config.c      ****  uint8_t t = dotw(mon,day,yr);
+ 179:config.c      ****  glcdWriteChar(sdotw(t,0),inverted);
+ 180:config.c      ****  glcdWriteChar(sdotw(t,1),inverted);
+ 181:config.c      ****  glcdWriteChar(sdotw(t,2),inverted);
+ 182:config.c      **** }  
+ 183:config.c      **** #endif
+ 184:config.c      **** 
+ 185:config.c      **** void print_number_slash(uint8_t number, uint8_t inverted)
+ 186:config.c      **** {
+ 187:config.c      **** 	printnumber(number, inverted);
+ 188:config.c      **** 	glcdWriteChar('/', NORMAL);
+ 189:config.c      **** }
+ 190:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 191:config.c      ****   #define MAX_ORDER 6
+ 192:config.c      **** #else
+ 193:config.c      ****   #define MAX_ORDER 2
+ 194:config.c      **** #endif
+ 195:config.c      **** 
+ 196:config.c      **** void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
+ 197:config.c      ****   glcdSetAddress(MENU_INDENT, 3);
+ 198:config.c      ****   glcdPutStr("Date:", NORMAL);
+ 199:config.c      ****   if (region == REGION_US) {
+ 200:config.c      ****   	glcdPutStr("     ",NORMAL);
+ 201:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 202:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 203:config.c      ****   } else if (region == REGION_EU) {
+ 204:config.c      ****   	glcdPutStr("     ",NORMAL);
+ 205:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 206:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 207:config.c      ****   }
+ 208:config.c      **** #ifdef OPTION_DOW_DATELONG 
+ 209:config.c      ****   else if ( region == DOW_REGION_US) {
+ 210:config.c      ****   	glcdWriteChar(' ', NORMAL);
+ 211:config.c      ****   	print_dow(NORMAL,month,day,year);
+ 212:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 213:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 214:config.c      ****   } else if ( region == DOW_REGION_EU) {
+ 215:config.c      ****   	glcdWriteChar(' ', NORMAL);
+ 216:config.c      ****   	print_dow(NORMAL,month,day,year);
+ 217:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 218:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 219:config.c      ****   } else if ( region == DATELONG) {
+ 220:config.c      ****   	glcdPutStr("   ",NORMAL);
+ 221:config.c      ****   	print_month((mode == SET_MONTH)?INVERTED:NORMAL,month);
+ 222:config.c      ****   	glcdWriteChar(' ', NORMAL);
+ 223:config.c      ****   	printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 224:config.c      ****   	glcdWriteChar(',', NORMAL);
+ 225:config.c      ****   	glcdWriteChar(' ', NORMAL);
+ 226:config.c      ****   } else {
+ 227:config.c      ****   	print_dow(NORMAL,month,day,year);
+ 228:config.c      ****   	print_month((mode == SET_MONTH)?INVERTED:NORMAL,month);
+ 229:config.c      ****   	glcdWriteChar(' ', NORMAL);
+ 230:config.c      ****   	printnumber(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 231:config.c      ****   	glcdWriteChar(',', NORMAL);
+ 232:config.c      ****   }
+ 233:config.c      **** #endif
+ 234:config.c      ****   printnumber(20,(mode == SET_YEAR)?INVERTED:NORMAL);
+ 235:config.c      ****   printnumber(year, (mode == SET_YEAR)?INVERTED:NORMAL);
+ 236:config.c      **** }
+ 237:config.c      **** 
+ 238:config.c      **** void print_monthday_help(uint8_t mode)
+ 239:config.c      **** {
+ 240:config.c      **** 	if(mode == SET_MONTH)
+ 241:config.c      **** 		print_menu_opts("change mon","set mon.");
+ 242:config.c      **** 	else if (mode == SET_DAY)
+ 243:config.c      **** 		print_menu_opts("change day","set date");
+ 244:config.c      **** 	else if (mode == SET_YEAR)
+ 245:config.c      **** 		print_menu_opts("change yr.","set year");
+ 246:config.c      **** 	else
+ 247:config.c      **** 		print_menu_advance();
+ 248:config.c      **** }
+ 249:config.c      **** 
+ 250:config.c      **** //Code optimization for set date / set deathchron date of birth.
+ 251:config.c      **** uint8_t next_mode_setdate[MAX_ORDER] = {
+ 252:config.c      **** 	SET_MONTH,
+ 253:config.c      **** 	SET_DAY,
+ 254:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 255:config.c      **** 	SET_MONTH,
+ 256:config.c      **** 	SET_DAY,
+ 257:config.c      **** 	SET_MONTH,
+ 258:config.c      **** 	SET_MONTH
+ 259:config.c      **** #endif
+ 260:config.c      **** };
+ 261:config.c      **** 
+ 262:config.c      **** uint8_t next_mode_setmonth[MAX_ORDER] = {
+ 263:config.c      **** 	SET_DAY,
+ 264:config.c      **** 	SET_YEAR,
+ 265:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 266:config.c      **** 	SET_DAY,
+ 267:config.c      **** 	SET_YEAR,
+ 268:config.c      **** 	SET_DAY,
+ 269:config.c      **** 	SET_DAY
+ 270:config.c      **** #endif
+ 271:config.c      **** };
+ 272:config.c      **** 
+ 273:config.c      **** uint8_t next_mode_setday[MAX_ORDER] = {
+ 274:config.c      **** 	SET_YEAR,
+ 275:config.c      **** 	SET_MONTH,
+ 276:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 277:config.c      **** 	SET_YEAR,
+ 278:config.c      **** 	SET_MONTH,
+ 279:config.c      **** 	SET_YEAR,
+ 280:config.c      **** 	SET_YEAR
+ 281:config.c      **** #endif
+ 282:config.c      **** };
+ 283:config.c      **** 
+ 284:config.c      **** void set_date(void) {
+ 285:config.c      ****   uint8_t mode = init_set_menu(3);
+ 286:config.c      ****   uint8_t day, month, year;
+ 287:config.c      ****     
+ 288:config.c      ****   day = date_d;
+ 289:config.c      ****   month = date_m;
+ 290:config.c      ****   year = date_y;
+ 291:config.c      ****   while (!check_timeout()) {
+ 292:config.c      ****     
+ 293:config.c      ****     if (just_pressed & 0x2) {
+ 294:config.c      ****       just_pressed = 0;
+ 295:config.c      ****       screenmutex++;
+ 296:config.c      **** 
+ 297:config.c      ****       if (mode == SET_DATE) {
+ 298:config.c      **** 	DEBUG(putstring("Set date month/day, depending on region"));
+ 299:config.c      **** 	// ok now its selected
+ 300:config.c      **** 	mode = next_mode_setdate[region];
+ 301:config.c      **** 	
+ 302:config.c      ****       } else if (mode == SET_MONTH) {
+ 303:config.c      **** 	DEBUG(putstring("Set date day/year, depending on region"));
+ 304:config.c      **** 	mode = next_mode_setmonth[region];
+ 305:config.c      ****       } else if (mode == SET_DAY) {
+ 306:config.c      **** 	DEBUG(putstring("Set date month/year, depending on region"));
+ 307:config.c      **** 	mode = next_mode_setday[region];
+ 308:config.c      ****       } else {
+ 309:config.c      **** 	// done!
+ 310:config.c      **** 	DEBUG(putstring("done setting date"));
+ 311:config.c      **** 	mode = SET_DATE;
+ 312:config.c      **** 	
+ 313:config.c      **** 	//Update the DS1307 with set date.
+ 314:config.c      **** 	writei2ctime(time_s, time_m, time_h, 0, day, month, year);
+ 315:config.c      **** 	date_y = year;
+ 316:config.c      **** 	date_m = month;
+ 317:config.c      **** 	date_d = day;
+ 318:config.c      **** 	
+ 319:config.c      ****       }
+ 320:config.c      ****       //Print the instructions below
+ 321:config.c      ****       print_monthday_help(mode);
+ 322:config.c      ****       //Refresh the date.
+ 323:config.c      ****       print_date(month,day,year,mode);
+ 324:config.c      ****       screenmutex--;
+ 325:config.c      ****     }
+ 326:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 327:config.c      ****       just_pressed = 0;
+ 328:config.c      **** 
+ 329:config.c      ****       screenmutex++;
+ 330:config.c      **** 
+ 331:config.c      ****       if (mode == SET_MONTH) {
+ 332:config.c      ****       month++;
+ 333:config.c      ****       }
+ 334:config.c      ****       if (mode == SET_DAY) {
+ 335:config.c      **** 	day++;
+ 336:config.c      ****       }
+ 337:config.c      ****       if (mode == SET_YEAR) {
+ 338:config.c      **** 	year = (year+1) % 100;
+ 339:config.c      ****       }
+ 340:config.c      ****       add_month(&month, &day, year);
+ 341:config.c      ****       print_date(month,day,year,mode);
+ 342:config.c      ****       screenmutex--;
+ 343:config.c      **** 
+ 344:config.c      ****       if (pressed & 0x4)
+ 345:config.c      **** 	delay_ms(200);  
+ 346:config.c      ****     }
+ 347:config.c      ****   }
+ 348:config.c      **** 
+ 349:config.c      **** }
+ 350:config.c      **** 
+ 351:config.c      **** #ifdef BACKLIGHT_ADJUST
+ 352:config.c      **** void set_backlight(void) {
+ 353:config.c      ****   uint8_t mode = init_set_menu(5);
+ 354:config.c      ****   while (!check_timeout()) {
+ 355:config.c      ****     
+ 356:config.c      ****   
+ 357:config.c      ****     if (just_pressed & 0x2) {
+ 358:config.c      ****       just_pressed = 0;
+ 359:config.c      ****       screenmutex++;
+ 360:config.c      **** 
+ 361:config.c      ****       if (mode == SET_BRIGHTNESS) {
+ 362:config.c      **** 	DEBUG(putstring("Setting backlight"));
+ 363:config.c      **** 	// ok now its selected
+ 364:config.c      **** 	mode = SET_BRT;
+ 365:config.c      **** 	// print the region 
+ 366:config.c      **** 	// display instructions below
+ 367:config.c      **** 	print_menu_change();
+ 368:config.c      **** 
+ 369:config.c      ****       } else {
+ 370:config.c      **** 	mode = SET_BRIGHTNESS;
+ 371:config.c      **** 	// print the region normal
+ 372:config.c      ****         print_menu_exit();
+ 373:config.c      ****       }
+ 374:config.c      ****       print_backlight(mode);
+ 375:config.c      ****       screenmutex--;
+ 376:config.c      ****     }
+ 377:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 378:config.c      ****       just_pressed = 0;
+ 379:config.c      ****       
+ 380:config.c      ****       if (mode == SET_BRT) {
+ 381:config.c      **** 	    OCR2B += OCR2B_PLUS;
+ 382:config.c      **** 	    if(OCR2B > OCR2A_VALUE)
+ 383:config.c      **** 	      OCR2B = 0;
+ 384:config.c      **** 	screenmutex++;
+ 385:config.c      **** 	print_backlight(mode);
+ 386:config.c      **** 	screenmutex--;
+ 387:config.c      **** 
+ 388:config.c      **** 	eeprom_write_byte(&EE_BRIGHT, OCR2B);
+ 389:config.c      ****       }
+ 390:config.c      ****     }
+ 391:config.c      ****   }
+ 392:config.c      **** }
+ 393:config.c      **** #endif
+ 394:config.c      **** 
+ 395:config.c      **** 
+ 396:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 397:config.c      **** uint8_t region_setting_table[12][13] PROGMEM = {
+ 398:config.c      **** #else
+ 399:config.c      **** uint8_t region_setting_table[4][13] PROGMEM = {
+ 400:config.c      **** #endif
+ 401:config.c      **** 	"     US 12hr",
+ 402:config.c      **** 	"     US 24hr",
+ 403:config.c      **** 	"     EU 12hr",
+ 404:config.c      **** 	"     EU 24hr",
+ 405:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 406:config.c      **** 	" US 12hr DOW",
+ 407:config.c      **** 	" US 24hr DOW",
+ 408:config.c      **** 	" EU 12hr DOW",
+ 409:config.c      **** 	" EU 24hr DOW",
+ 410:config.c      **** 	"   12hr LONG",
+ 411:config.c      **** 	"   24hr LONG",
+ 412:config.c      **** 	"12h LONG DOW",
+ 413:config.c      **** 	"24h LONG DOW"
+ 414:config.c      **** #endif
+ 415:config.c      **** };
+ 416:config.c      **** 
+ 417:config.c      **** void print_region_setting(uint8_t inverted) {
+ 418:config.c      ****   glcdSetAddress(MENU_INDENT, 4);
+ 419:config.c      ****   glcdPutStr("Region: ", NORMAL);
+ 420:config.c      ****   glcdPutStr_rom(&region_setting_table[(region * 2) + time_format][0], inverted);
+ 421:config.c      **** }
+ 422:config.c      **** 
+ 423:config.c      **** void set_region(void) {
+ 424:config.c      ****   uint8_t mode = init_set_menu(4);
+ 425:config.c      **** 
+ 426:config.c      ****   while (!check_timeout()) {
+ 427:config.c      ****     
+ 428:config.c      ****   
+ 429:config.c      ****     if (just_pressed & 0x2) {
+ 430:config.c      ****       just_pressed = 0;
+ 431:config.c      ****       screenmutex++;
+ 432:config.c      **** 
+ 433:config.c      ****       if (mode == SET_REGION) {
+ 434:config.c      **** 	DEBUG(putstring("Setting region"));
+ 435:config.c      **** 	// ok now its selected
+ 436:config.c      **** 	mode = SET_REG;
+ 437:config.c      **** 	// print the region 
+ 438:config.c      **** 	print_region_setting(INVERTED);
+ 439:config.c      **** 	// display instructions below
+ 440:config.c      **** 	print_menu_change();
+ 441:config.c      ****       } else {
+ 442:config.c      **** 	mode = SET_REGION;
+ 443:config.c      **** 	// print the region normal
+ 444:config.c      **** 	print_region_setting(NORMAL);
+ 445:config.c      **** #ifdef BACKLIGHT_ADJUST
+ 446:config.c      ****         print_menu_advance();
+ 447:config.c      **** #else
+ 448:config.c      **** 	print_menu_exit();
+ 449:config.c      **** #endif
+ 450:config.c      ****       }
+ 451:config.c      ****       screenmutex--;
+ 452:config.c      ****     }
+ 453:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 454:config.c      ****       just_pressed = 0;
+ 455:config.c      ****       
+ 456:config.c      ****       if (mode == SET_REG) {
+ 457:config.c      **** 	    if(time_format) {        
+ 458:config.c      **** 	      region++;
+ 459:config.c      **** #ifdef OPTION_DOW_DATELONG
+ 460:config.c      **** 	      if(region > DATELONG_DOW)
+ 461:config.c      **** #else
+ 462:config.c      ****           if(region > REGION_EU)
+ 463:config.c      **** #endif
+ 464:config.c      **** 	        region = 0;
+ 465:config.c      **** 		}
+ 466:config.c      **** 		time_format = !time_format;
+ 467:config.c      **** 	screenmutex++;
+ 468:config.c      **** 	display_menu(4);
+ 469:config.c      **** 	print_menu_change();
+ 470:config.c      **** 
+ 471:config.c      **** 	print_region_setting(INVERTED);
+ 472:config.c      **** 	screenmutex--;
+ 473:config.c      **** 
+ 474:config.c      **** 	eeprom_write_byte(&EE_REGION, region);
+ 475:config.c      **** 	eeprom_write_byte(&EE_TIME_FORMAT, time_format);    
+ 476:config.c      ****       }
+ 477:config.c      ****     }
+ 478:config.c      ****   }
+ 479:config.c      **** }
+ 480:config.c      **** 
+ 481:config.c      **** void set_alarm(void) {
+ 482:config.c      ****   uint8_t mode = init_set_menu(1);
+ 483:config.c      **** 
+ 484:config.c      ****   while (!check_timeout()) {
+ 485:config.c      ****     
+ 486:config.c      ****     if (just_pressed & 0x2) {
+ 487:config.c      ****       just_pressed = 0;
+ 488:config.c      ****       screenmutex++;
+ 489:config.c      **** 
+ 490:config.c      ****       if (mode == SET_ALARM) {
+ 491:config.c      **** 	DEBUG(putstring("Set alarm hour"));
+ 492:config.c      **** 	// ok now its selected
+ 493:config.c      **** 	mode = SET_HOUR;
+ 494:config.c      **** 	// display instructions below
+ 495:config.c      ****         print_menu_opts("change hr.","set hour");
+ 496:config.c      ****       } else if (mode == SET_HOUR) {
+ 497:config.c      **** 	DEBUG(putstring("Set alarm min"));
+ 498:config.c      **** 	mode = SET_MIN;
+ 499:config.c      **** 	// print the hour normal
+ 500:config.c      **** 	// display instructions below
+ 501:config.c      **** 	print_menu_opts("change min","set mins");
+ 502:config.c      ****       } else {
+ 503:config.c      **** 	mode = SET_ALARM;
+ 504:config.c      **** 	// print the hour normal
+ 505:config.c      **** 	// display instructions below
+ 506:config.c      **** 	print_menu_advance();
+ 507:config.c      ****       }
+ 508:config.c      ****       print_alarmline(mode);
+ 509:config.c      ****       screenmutex--;
+ 510:config.c      ****     }
+ 511:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 512:config.c      ****       just_pressed = 0;
+ 513:config.c      ****       screenmutex++;
+ 514:config.c      **** 
+ 515:config.c      ****       if (mode == SET_HOUR) {
+ 516:config.c      **** 	alarm_h = (alarm_h+1) % 24;
+ 517:config.c      **** 	// print the hour inverted
+ 518:config.c      **** 	eeprom_write_byte(&EE_ALARM_HOUR, alarm_h);    
+ 519:config.c      ****       }
+ 520:config.c      ****       if (mode == SET_MIN) {
+ 521:config.c      **** 	alarm_m = (alarm_m+1) % 60;
+ 522:config.c      **** 	eeprom_write_byte(&EE_ALARM_MIN, alarm_m);    
+ 523:config.c      ****       }
+ 524:config.c      ****       print_alarmline(mode);
+ 525:config.c      ****       screenmutex--;
+ 526:config.c      ****       if (pressed & 0x4)
+ 527:config.c      **** 	delay_ms(200);
+ 528:config.c      ****     }
+ 529:config.c      ****   }
+ 530:config.c      **** }
+ 531:config.c      **** 
+ 532:config.c      **** void set_time(void) {
+ 533:config.c      ****   uint8_t mode = init_set_menu(2);
+ 534:config.c      **** 
+ 535:config.c      ****   uint8_t hour, min, sec;
+ 536:config.c      ****     
+ 537:config.c      ****   hour = time_h;
+ 538:config.c      ****   min = time_m;
+ 539:config.c      ****   sec = time_s;
+ 540:config.c      **** 
+ 541:config.c      ****   while (!check_timeout()) {
+ 542:config.c      ****     
+ 543:config.c      ****     if (just_pressed & 0x2) {
+ 544:config.c      ****       just_pressed = 0;
+ 545:config.c      ****       screenmutex++;
+ 546:config.c      **** 
+ 547:config.c      ****       if (mode == SET_TIME) {
+ 548:config.c      **** 	DEBUG(putstring("Set time hour"));
+ 549:config.c      **** 	// ok now its selected
+ 550:config.c      **** 	mode = SET_HOUR;
+ 551:config.c      **** 	// display instructions below
+ 552:config.c      ****         print_menu_opts("change hr","set hour");
+ 553:config.c      ****       } else if (mode == SET_HOUR) {
+ 554:config.c      **** 	DEBUG(putstring("Set time min"));
+ 555:config.c      **** 	mode = SET_MIN;
+ 556:config.c      **** 	// display instructions below
+ 557:config.c      ****         print_menu_opts("change min","set mins");
+ 558:config.c      ****       } else if (mode == SET_MIN) {
+ 559:config.c      **** 	DEBUG(putstring("Set time sec"));
+ 560:config.c      **** 	mode = SET_SEC;
+ 561:config.c      **** 	// display instructions below
+ 562:config.c      ****         print_menu_opts("change sec","set secs");
+ 563:config.c      ****       } else {
+ 564:config.c      **** 	// done!
+ 565:config.c      **** 	DEBUG(putstring("done setting time"));
+ 566:config.c      **** 	mode = SET_TIME;
+ 567:config.c      **** 	// display instructions below
+ 568:config.c      **** 	print_menu_advance();
+ 569:config.c      **** 	
+ 570:config.c      **** 	writei2ctime(sec, min, hour, 0, date_d, date_m, date_y);
+ 571:config.c      **** 	time_h = hour;
+ 572:config.c      **** 	time_m = min;
+ 573:config.c      **** 	time_s = sec;
+ 574:config.c      **** 	
+ 575:config.c      ****       }
+ 576:config.c      ****       print_time(hour,min,sec,mode);
+ 577:config.c      ****       screenmutex--;
+ 578:config.c      ****     }
+ 579:config.c      ****     // was easter egg
+ 580:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 581:config.c      ****       just_pressed = 0;
+ 582:config.c      ****       screenmutex++;
+ 583:config.c      ****       if (mode == SET_HOUR) {
+ 584:config.c      **** 	hour = (hour+1) % 24;
+ 585:config.c      **** 	time_h = hour;
+ 586:config.c      ****       }
+ 587:config.c      ****       if (mode == SET_MIN) {
+ 588:config.c      **** 	min = (min+1) % 60;
+ 589:config.c      ****       }
+ 590:config.c      ****       if (mode == SET_SEC) {
+ 591:config.c      **** 	sec = (sec+1) % 60;
+ 592:config.c      ****       }
+ 593:config.c      ****       print_time(hour,min,sec,mode);
+ 594:config.c      ****       screenmutex--;
+ 595:config.c      ****       if (pressed & 0x4)
+ 596:config.c      **** 	delay_ms(200);
+ 597:config.c      ****     }
+ 598:config.c      ****   }
+ 599:config.c      **** }
+ 600:config.c      **** 
+ 601:config.c      **** void print_timehour(uint8_t h, uint8_t inverted) {
+ 602:config.c      ****   if (time_format == TIME_12H) {
+ 603:config.c      ****     if (((h + 23)%12 + 1) >= 10 ) {
+ 604:config.c      ****       printnumber((h + 23)%12 + 1, inverted);
+ 605:config.c      ****     } else {
+ 606:config.c      ****       glcdWriteChar(' ', NORMAL);
+ 607:config.c      ****       glcdWriteChar('0' + (h + 23)%12 + 1, inverted);
+ 608:config.c      ****     }
+ 609:config.c      ****   } else {
+ 610:config.c      ****     glcdWriteChar(' ', NORMAL);
+ 611:config.c      ****     glcdWriteChar(' ', NORMAL);
+ 612:config.c      ****     printnumber(h, inverted);
+ 613:config.c      ****   }
+ 614:config.c      **** }
+ 615:config.c      **** 
+ 616:config.c      **** void print_alarmhour(uint8_t h, uint8_t inverted) {
+ 617:config.c      ****   if (time_format == TIME_12H) {
+ 618:config.c      ****     glcdSetAddress(MENU_INDENT + 18*6, 1);
+ 619:config.c      ****     if (h >= 12) 
+ 620:config.c      ****       glcdWriteChar('P', NORMAL);
+ 621:config.c      ****     else
+ 622:config.c      ****       glcdWriteChar('A', NORMAL);
+ 623:config.c      ****     glcdWriteChar('M', NORMAL);
+ 624:config.c      ****     glcdSetAddress(MENU_INDENT + 12*6, 1);
+ 625:config.c      **** 
+ 626:config.c      ****     if (((h + 23)%12 + 1) >= 10 ) {
+ 627:config.c      ****       printnumber((h + 23)%12 + 1, inverted);
+ 628:config.c      ****     } else {
+ 629:config.c      ****       glcdWriteChar(' ', NORMAL);
+ 630:config.c      ****       glcdWriteChar('0' + (h + 23)%12 + 1, inverted);
+ 631:config.c      ****     }
+ 632:config.c      ****    } else {
+ 633:config.c      ****     glcdSetAddress(MENU_INDENT + 12*6, 1);
+ 634:config.c      ****     printnumber(h, inverted);
+ 635:config.c      ****   }
+ 636:config.c      **** }
+ 637:config.c      **** 
+ 638:config.c      **** uint8_t style_setting_str[] PROGMEM = { 
+ 639:config.c      **** #ifdef RATTCHRON
+ 640:config.c      **** 	STYLE_RAT,'R','A','T','T','C','h','r','o','n',0,
+ 641:config.c      **** #endif
+ 642:config.c      **** #ifdef INTRUDERCHRON
+ 643:config.c      **** 	STYLE_INT,'I','n','t','r','u','d','e','r','C','h','r','o','n',0,
+ 644:config.c      **** #endif
+ 645:config.c      **** #ifdef SEVENCHRON
+ 646:config.c      ****   STYLE_SEV, 'S','e','v','e','n','C','h','r','o','n',0,
+ 647:config.c      **** #endif
+ 648:config.c      **** #ifdef XDALICHRON
+ 649:config.c      ****   STYLE_XDA, 'X','D','A','L','I','C','h','r','o','n',0,
+ 650:config.c      **** #endif
+ 651:config.c      **** #ifdef TSCHRON
+ 652:config.c      ****   STYLE_TS, 'T','i','m','e','s','S','q','C','h','r','o','n',0,
+ 653:config.c      **** #endif
+ 654:config.c      **** #ifdef DEATHCHRON
+ 655:config.c      ****   STYLE_DEATH, 'D','e','a','t','h','C','h','r','o','n',0,
+ 656:config.c      **** #endif
+ 657:config.c      ****   STYLE_RANDOM, 'R','a','n','d','o','m',0,
+ 658:config.c      ****   STYLE_ROTATE, 'R','o','t','a','t','e',0,
+ 659:config.c      **** #ifdef DEATHCHRON
+ 660:config.c      ****   STYLE_DEATHCFG, 'D','e','a','t','h','C','h','r','o','n',' ','C','f','g',0,
+ 661:config.c      **** #endif
+ 662:config.c      **** #ifdef GPSENABLE
+ 663:config.c      ****   STYLE_GPS, 'G','P','S',' ','S','e','t','u','p',0,
+ 664:config.c      **** #endif
+ 665:config.c      ****   STYLE_ABOUT, 'A','b','o','u','t',0,
+ 666:config.c      ****   0xFF,
+ 667:config.c      **** };
+ 668:config.c      **** 
+ 669:config.c      **** void print_style_setting(uint8_t inverted) {
+ 137               	.LM0:
+ 138               	.LFBB1:
+ 139 0000 1F93      		push r17
+ 140               	/* prologue: function */
+ 141               	/* frame size = 0 */
+ 142 0002 182F      		mov r17,r24
+ 670:config.c      **** glcdSetAddress(43, 0);
+ 144               	.LM1:
+ 145 0004 8BE2      		ldi r24,lo8(43)
+ 146 0006 60E0      		ldi r22,lo8(0)
+ 147 0008 0E94 0000 		call glcdSetAddress
+ 148 000c 20E0      		ldi r18,lo8(0)
+ 149 000e 30E0      		ldi r19,hi8(0)
+ 150 0010 90E0      		ldi r25,lo8(0)
+ 151 0012 00C0      		rjmp .L2
+ 152               	.L4:
+ 671:config.c      ****   uint16_t i=0;
+ 672:config.c      ****   uint8_t j=0;
+ 673:config.c      ****   while((j!=displaystyle)&&(j!=0xFF))
+ 154               	.LM2:
+ 155 0014 F901      		movw r30,r18
+ 156 0016 E050      		subi r30,lo8(-(style_setting_str))
+ 157 0018 F040      		sbci r31,hi8(-(style_setting_str))
+ 158               	.LBB2:
+ 674:config.c      ****   	  j=pgm_read_byte(&style_setting_str[i++]);
+ 160               	.LM3:
+ 161 001a 2F5F      		subi r18,lo8(-(1))
+ 162 001c 3F4F      		sbci r19,hi8(-(1))
+ 163               	/* #APP */
+ 164               	 ;  675 "config.c" 1
+ 165 001e 9491      		lpm r25, Z
+ 166               		
+ 167               	 ;  0 "" 2
+ 168               	/* #NOAPP */
+ 169               	.L2:
+ 170               	.LBE2:
+ 674:config.c      ****   	  j=pgm_read_byte(&style_setting_str[i++]);
+ 172               	.LM4:
+ 173 0020 8091 0000 		lds r24,displaystyle
+ 174 0024 9817      		cp r25,r24
+ 175 0026 01F0      		breq .L3
+ 176 0028 9F3F      		cpi r25,lo8(-1)
+ 177 002a 01F4      		brne .L4
+ 178 002c 00C0      		rjmp .L6
+ 179               	.L3:
+ 675:config.c      ****   if(j==0xFF)
+ 181               	.LM5:
+ 182 002e 9F3F      		cpi r25,lo8(-1)
+ 183 0030 01F0      		breq .L6
+ 676:config.c      ****   	  return;
+ 677:config.c      ****   glcdPutStr_rom(&style_setting_str[i],inverted);
+ 185               	.LM6:
+ 186 0032 C901      		movw r24,r18
+ 187 0034 8050      		subi r24,lo8(-(style_setting_str))
+ 188 0036 9040      		sbci r25,hi8(-(style_setting_str))
+ 189 0038 612F      		mov r22,r17
+ 190 003a 0E94 0000 		call glcdPutStr_rom
+ 191               	.L6:
+ 192               	/* epilogue start */
+ 678:config.c      **** }
+ 194               	.LM7:
+ 195 003e 1F91      		pop r17
+ 196 0040 0895      		ret
+ 205               	.Lscope1:
+ 207               		.stabd	78,0,0
+ 210               	.global	print_region_setting
+ 212               	print_region_setting:
+ 213               		.stabd	46,0,0
+ 418:config.c      **** void print_region_setting(uint8_t inverted) {
+ 215               	.LM8:
+ 216               	.LFBB2:
+ 217 0042 1F93      		push r17
+ 218               	/* prologue: function */
+ 219               	/* frame size = 0 */
+ 220 0044 182F      		mov r17,r24
+ 419:config.c      ****   glcdSetAddress(MENU_INDENT, 4);
+ 222               	.LM9:
+ 223 0046 88E0      		ldi r24,lo8(8)
+ 224 0048 64E0      		ldi r22,lo8(4)
+ 225 004a 0E94 0000 		call glcdSetAddress
+ 420:config.c      ****   glcdPutStr("Region: ", NORMAL);
+ 227               	.LM10:
+ 228 004e 80E0      		ldi r24,lo8(__c.2161)
+ 229 0050 90E0      		ldi r25,hi8(__c.2161)
+ 230 0052 60E0      		ldi r22,lo8(0)
+ 231 0054 0E94 0000 		call glcdPutStr_rom
+ 421:config.c      ****   glcdPutStr_rom(&region_setting_table[(region * 2) + time_format][0], inverted);
+ 233               	.LM11:
+ 234 0058 8091 0000 		lds r24,region
+ 235 005c 2091 0000 		lds r18,time_format
+ 236 0060 90E0      		ldi r25,lo8(0)
+ 237 0062 880F      		lsl r24
+ 238 0064 991F      		rol r25
+ 239 0066 820F      		add r24,r18
+ 240 0068 911D      		adc r25,__zero_reg__
+ 241 006a 2DE0      		ldi r18,lo8(13)
+ 242 006c 30E0      		ldi r19,hi8(13)
+ 243 006e AC01      		movw r20,r24
+ 244 0070 429F      		mul r20,r18
+ 245 0072 C001      		movw r24,r0
+ 246 0074 439F      		mul r20,r19
+ 247 0076 900D      		add r25,r0
+ 248 0078 529F      		mul r21,r18
+ 249 007a 900D      		add r25,r0
+ 250 007c 1124      		clr r1
+ 251 007e 8050      		subi r24,lo8(-(region_setting_table))
+ 252 0080 9040      		sbci r25,hi8(-(region_setting_table))
+ 253 0082 612F      		mov r22,r17
+ 254 0084 0E94 0000 		call glcdPutStr_rom
+ 255               	/* epilogue start */
+ 422:config.c      **** }
+ 257               	.LM12:
+ 258 0088 1F91      		pop r17
+ 259 008a 0895      		ret
+ 261               	.Lscope2:
+ 263               		.stabd	78,0,0
+ 267               	.global	print_alarmhour
+ 269               	print_alarmhour:
+ 270               		.stabd	46,0,0
+ 617:config.c      **** void print_alarmhour(uint8_t h, uint8_t inverted) {
+ 272               	.LM13:
+ 273               	.LFBB3:
+ 274 008c 0F93      		push r16
+ 275 008e 1F93      		push r17
+ 276 0090 CF93      		push r28
+ 277 0092 DF93      		push r29
+ 278               	/* prologue: function */
+ 279               	/* frame size = 0 */
+ 280 0094 182F      		mov r17,r24
+ 281 0096 062F      		mov r16,r22
+ 618:config.c      ****   if (time_format == TIME_12H) {
+ 283               	.LM14:
+ 284 0098 8091 0000 		lds r24,time_format
+ 285 009c 8823      		tst r24
+ 286 009e 01F4      		brne .L10
+ 619:config.c      ****     glcdSetAddress(MENU_INDENT + 18*6, 1);
+ 288               	.LM15:
+ 289 00a0 84E7      		ldi r24,lo8(116)
+ 290 00a2 61E0      		ldi r22,lo8(1)
+ 291 00a4 0E94 0000 		call glcdSetAddress
+ 620:config.c      ****     if (h >= 12) 
+ 293               	.LM16:
+ 294 00a8 1C30      		cpi r17,lo8(12)
+ 295 00aa 00F0      		brlo .L11
+ 621:config.c      ****       glcdWriteChar('P', NORMAL);
+ 297               	.LM17:
+ 298 00ac 80E5      		ldi r24,lo8(80)
+ 299 00ae 00C0      		rjmp .L16
+ 300               	.L11:
+ 623:config.c      ****       glcdWriteChar('A', NORMAL);
+ 302               	.LM18:
+ 303 00b0 81E4      		ldi r24,lo8(65)
+ 304               	.L16:
+ 305 00b2 60E0      		ldi r22,lo8(0)
+ 306 00b4 0E94 0000 		call glcdWriteChar
+ 624:config.c      ****     glcdWriteChar('M', NORMAL);
+ 308               	.LM19:
+ 309 00b8 8DE4      		ldi r24,lo8(77)
+ 310 00ba 60E0      		ldi r22,lo8(0)
+ 311 00bc 0E94 0000 		call glcdWriteChar
+ 625:config.c      ****     glcdSetAddress(MENU_INDENT + 12*6, 1);
+ 313               	.LM20:
+ 314 00c0 80E5      		ldi r24,lo8(80)
+ 315 00c2 61E0      		ldi r22,lo8(1)
+ 316 00c4 0E94 0000 		call glcdSetAddress
+ 627:config.c      ****     if (((h + 23)%12 + 1) >= 10 ) {
+ 318               	.LM21:
+ 319 00c8 812F      		mov r24,r17
+ 320 00ca 90E0      		ldi r25,lo8(0)
+ 321 00cc 4796      		adiw r24,23
+ 322 00ce 6CE0      		ldi r22,lo8(12)
+ 323 00d0 70E0      		ldi r23,hi8(12)
+ 324 00d2 0E94 0000 		call __divmodhi4
+ 325 00d6 EC01      		movw r28,r24
+ 326 00d8 8930      		cpi r24,9
+ 327 00da 9105      		cpc r25,__zero_reg__
+ 328 00dc 04F0      		brlt .L13
+ 628:config.c      ****       printnumber((h + 23)%12 + 1, inverted);
+ 330               	.LM22:
+ 331 00de 9C01      		movw r18,r24
+ 332 00e0 2F5F      		subi r18,lo8(-(1))
+ 333 00e2 822F      		mov r24,r18
+ 334 00e4 00C0      		rjmp .L17
+ 335               	.L13:
+ 630:config.c      ****       glcdWriteChar(' ', NORMAL);
+ 337               	.LM23:
+ 338 00e6 80E2      		ldi r24,lo8(32)
+ 339 00e8 60E0      		ldi r22,lo8(0)
+ 340 00ea 0E94 0000 		call glcdWriteChar
+ 631:config.c      ****       glcdWriteChar('0' + (h + 23)%12 + 1, inverted);
+ 342               	.LM24:
+ 343 00ee 9E01      		movw r18,r28
+ 344 00f0 2F5C      		subi r18,lo8(-(49))
+ 345 00f2 822F      		mov r24,r18
+ 346 00f4 602F      		mov r22,r16
+ 347 00f6 0E94 0000 		call glcdWriteChar
+ 348 00fa 00C0      		rjmp .L15
+ 349               	.L10:
+ 634:config.c      ****     glcdSetAddress(MENU_INDENT + 12*6, 1);
+ 351               	.LM25:
+ 352 00fc 80E5      		ldi r24,lo8(80)
+ 353 00fe 61E0      		ldi r22,lo8(1)
+ 354 0100 0E94 0000 		call glcdSetAddress
+ 635:config.c      ****     printnumber(h, inverted);
+ 356               	.LM26:
+ 357 0104 812F      		mov r24,r17
+ 358               	.L17:
+ 359 0106 602F      		mov r22,r16
+ 360 0108 0E94 0000 		call printnumber
+ 361               	.L15:
+ 362               	/* epilogue start */
+ 637:config.c      **** }
+ 364               	.LM27:
+ 365 010c DF91      		pop r29
+ 366 010e CF91      		pop r28
+ 367 0110 1F91      		pop r17
+ 368 0112 0F91      		pop r16
+ 369 0114 0895      		ret
+ 371               	.Lscope3:
+ 373               		.stabd	78,0,0
+ 377               	.global	print_timehour
+ 379               	print_timehour:
+ 380               		.stabd	46,0,0
+ 602:config.c      **** void print_timehour(uint8_t h, uint8_t inverted) {
+ 382               	.LM28:
+ 383               	.LFBB4:
+ 384 0116 0F93      		push r16
+ 385 0118 1F93      		push r17
+ 386 011a CF93      		push r28
+ 387 011c DF93      		push r29
+ 388               	/* prologue: function */
+ 389               	/* frame size = 0 */
+ 390 011e 082F      		mov r16,r24
+ 391 0120 162F      		mov r17,r22
+ 603:config.c      ****   if (time_format == TIME_12H) {
+ 393               	.LM29:
+ 394 0122 8091 0000 		lds r24,time_format
+ 395 0126 8823      		tst r24
+ 396 0128 01F4      		brne .L19
+ 604:config.c      ****     if (((h + 23)%12 + 1) >= 10 ) {
+ 398               	.LM30:
+ 399 012a 802F      		mov r24,r16
+ 400 012c 90E0      		ldi r25,lo8(0)
+ 401 012e 4796      		adiw r24,23
+ 402 0130 6CE0      		ldi r22,lo8(12)
+ 403 0132 70E0      		ldi r23,hi8(12)
+ 404 0134 0E94 0000 		call __divmodhi4
+ 405 0138 EC01      		movw r28,r24
+ 406 013a 8930      		cpi r24,9
+ 407 013c 9105      		cpc r25,__zero_reg__
+ 408 013e 04F0      		brlt .L20
+ 605:config.c      ****       printnumber((h + 23)%12 + 1, inverted);
+ 410               	.LM31:
+ 411 0140 9C01      		movw r18,r24
+ 412 0142 2F5F      		subi r18,lo8(-(1))
+ 413 0144 822F      		mov r24,r18
+ 414 0146 00C0      		rjmp .L23
+ 415               	.L20:
+ 607:config.c      ****       glcdWriteChar(' ', NORMAL);
+ 417               	.LM32:
+ 418 0148 80E2      		ldi r24,lo8(32)
+ 419 014a 60E0      		ldi r22,lo8(0)
+ 420 014c 0E94 0000 		call glcdWriteChar
+ 608:config.c      ****       glcdWriteChar('0' + (h + 23)%12 + 1, inverted);
+ 422               	.LM33:
+ 423 0150 9E01      		movw r18,r28
+ 424 0152 2F5C      		subi r18,lo8(-(49))
+ 425 0154 822F      		mov r24,r18
+ 426 0156 612F      		mov r22,r17
+ 427 0158 0E94 0000 		call glcdWriteChar
+ 428 015c 00C0      		rjmp .L22
+ 429               	.L19:
+ 611:config.c      ****     glcdWriteChar(' ', NORMAL);
+ 431               	.LM34:
+ 432 015e 80E2      		ldi r24,lo8(32)
+ 433 0160 60E0      		ldi r22,lo8(0)
+ 434 0162 0E94 0000 		call glcdWriteChar
+ 612:config.c      ****     glcdWriteChar(' ', NORMAL);
+ 436               	.LM35:
+ 437 0166 80E2      		ldi r24,lo8(32)
+ 438 0168 60E0      		ldi r22,lo8(0)
+ 439 016a 0E94 0000 		call glcdWriteChar
+ 613:config.c      ****     printnumber(h, inverted);
+ 441               	.LM36:
+ 442 016e 802F      		mov r24,r16
+ 443               	.L23:
+ 444 0170 612F      		mov r22,r17
+ 445 0172 0E94 0000 		call printnumber
+ 446               	.L22:
+ 447               	/* epilogue start */
+ 615:config.c      **** }
+ 449               	.LM37:
+ 450 0176 DF91      		pop r29
+ 451 0178 CF91      		pop r28
+ 452 017a 1F91      		pop r17
+ 453 017c 0F91      		pop r16
+ 454 017e 0895      		ret
+ 456               	.Lscope4:
+ 458               		.stabd	78,0,0
+ 462               	.global	print_number_slash
+ 464               	print_number_slash:
+ 465               		.stabd	46,0,0
+ 187:config.c      **** {
+ 467               	.LM38:
+ 468               	.LFBB5:
+ 469               	/* prologue: function */
+ 470               	/* frame size = 0 */
+ 188:config.c      **** 	printnumber(number, inverted);
+ 472               	.LM39:
+ 473 0180 0E94 0000 		call printnumber
+ 189:config.c      **** 	glcdWriteChar('/', NORMAL);
+ 475               	.LM40:
+ 476 0184 8FE2      		ldi r24,lo8(47)
+ 477 0186 60E0      		ldi r22,lo8(0)
+ 478 0188 0E94 0000 		call glcdWriteChar
+ 479               	/* epilogue start */
+ 190:config.c      **** }
+ 481               	.LM41:
+ 482 018c 0895      		ret
+ 484               	.Lscope5:
+ 486               		.stabd	78,0,0
+ 492               	.global	print_date
+ 494               	print_date:
+ 495               		.stabd	46,0,0
+ 197:config.c      **** void print_date(uint8_t month, uint8_t day, uint8_t year, uint8_t mode) {
+ 497               	.LM42:
+ 498               	.LFBB6:
+ 499 018e EF92      		push r14
+ 500 0190 FF92      		push r15
+ 501 0192 0F93      		push r16
+ 502 0194 1F93      		push r17
+ 503               	/* prologue: function */
+ 504               	/* frame size = 0 */
+ 505 0196 F82E      		mov r15,r24
+ 506 0198 162F      		mov r17,r22
+ 507 019a E42E      		mov r14,r20
+ 508 019c 022F      		mov r16,r18
+ 198:config.c      ****   glcdSetAddress(MENU_INDENT, 3);
+ 510               	.LM43:
+ 511 019e 88E0      		ldi r24,lo8(8)
+ 512 01a0 63E0      		ldi r22,lo8(3)
+ 513 01a2 0E94 0000 		call glcdSetAddress
+ 199:config.c      ****   glcdPutStr("Date:", NORMAL);
+ 515               	.LM44:
+ 516 01a6 80E0      		ldi r24,lo8(__c.2030)
+ 517 01a8 90E0      		ldi r25,hi8(__c.2030)
+ 518 01aa 60E0      		ldi r22,lo8(0)
+ 519 01ac 0E94 0000 		call glcdPutStr_rom
+ 200:config.c      ****   if (region == REGION_US) {
+ 521               	.LM45:
+ 522 01b0 8091 0000 		lds r24,region
+ 523 01b4 8823      		tst r24
+ 524 01b6 01F4      		brne .L27
+ 201:config.c      ****   	glcdPutStr("     ",NORMAL);
+ 526               	.LM46:
+ 527 01b8 80E0      		ldi r24,lo8(__c.2032)
+ 528 01ba 90E0      		ldi r25,hi8(__c.2032)
+ 529 01bc 60E0      		ldi r22,lo8(0)
+ 530 01be 0E94 0000 		call glcdPutStr_rom
+ 202:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 532               	.LM47:
+ 533 01c2 60E0      		ldi r22,lo8(0)
+ 534 01c4 0031      		cpi r16,lo8(16)
+ 535 01c6 01F4      		brne .L28
+ 536 01c8 61E0      		ldi r22,lo8(1)
+ 537               	.L28:
+ 538 01ca 8F2D      		mov r24,r15
+ 539 01cc 0E94 0000 		call print_number_slash
+ 203:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 541               	.LM48:
+ 542 01d0 60E0      		ldi r22,lo8(0)
+ 543 01d2 0131      		cpi r16,lo8(17)
+ 544 01d4 01F4      		brne .L29
+ 545 01d6 61E0      		ldi r22,lo8(1)
+ 546               	.L29:
+ 547 01d8 812F      		mov r24,r17
+ 548 01da 00C0      		rjmp .L35
+ 549               	.L27:
+ 204:config.c      ****   } else if (region == REGION_EU) {
+ 551               	.LM49:
+ 552 01dc 8091 0000 		lds r24,region
+ 553 01e0 8130      		cpi r24,lo8(1)
+ 554 01e2 01F4      		brne .L30
+ 205:config.c      ****   	glcdPutStr("     ",NORMAL);
+ 556               	.LM50:
+ 557 01e4 80E0      		ldi r24,lo8(__c.2034)
+ 558 01e6 90E0      		ldi r25,hi8(__c.2034)
+ 559 01e8 60E0      		ldi r22,lo8(0)
+ 560 01ea 0E94 0000 		call glcdPutStr_rom
+ 206:config.c      ****   	print_number_slash(day, (mode == SET_DAY)?INVERTED:NORMAL);
+ 562               	.LM51:
+ 563 01ee 60E0      		ldi r22,lo8(0)
+ 564 01f0 0131      		cpi r16,lo8(17)
+ 565 01f2 01F4      		brne .L31
+ 566 01f4 61E0      		ldi r22,lo8(1)
+ 567               	.L31:
+ 568 01f6 812F      		mov r24,r17
+ 569 01f8 0E94 0000 		call print_number_slash
+ 207:config.c      ****   	print_number_slash(month,(mode == SET_MONTH)?INVERTED:NORMAL);
+ 571               	.LM52:
+ 572 01fc 60E0      		ldi r22,lo8(0)
+ 573 01fe 0031      		cpi r16,lo8(16)
+ 574 0200 01F4      		brne .L32
+ 575 0202 61E0      		ldi r22,lo8(1)
+ 576               	.L32:
+ 577 0204 8F2D      		mov r24,r15
+ 578               	.L35:
+ 579 0206 0E94 0000 		call print_number_slash
+ 580               	.L30:
+ 235:config.c      ****   printnumber(20,(mode == SET_YEAR)?INVERTED:NORMAL);
+ 582               	.LM53:
+ 583 020a 10E0      		ldi r17,lo8(0)
+ 584 020c 0231      		cpi r16,lo8(18)
+ 585 020e 01F4      		brne .L33
+ 586 0210 11E0      		ldi r17,lo8(1)
+ 587               	.L33:
+ 588 0212 84E1      		ldi r24,lo8(20)
+ 589 0214 612F      		mov r22,r17
+ 590 0216 0E94 0000 		call printnumber
+ 236:config.c      ****   printnumber(year, (mode == SET_YEAR)?INVERTED:NORMAL);
+ 592               	.LM54:
+ 593 021a 8E2D      		mov r24,r14
+ 594 021c 612F      		mov r22,r17
+ 595 021e 0E94 0000 		call printnumber
+ 596               	/* epilogue start */
+ 237:config.c      **** }
+ 598               	.LM55:
+ 599 0222 1F91      		pop r17
+ 600 0224 0F91      		pop r16
+ 601 0226 FF90      		pop r15
+ 602 0228 EF90      		pop r14
+ 603 022a 0895      		ret
+ 605               	.Lscope6:
+ 607               		.stabd	78,0,0
+ 610               	.global	print_backlight
+ 612               	print_backlight:
+ 613               		.stabd	46,0,0
+  66:config.c      **** {
+ 615               	.LM56:
+ 616               	.LFBB7:
+ 617 022c 1F93      		push r17
+ 618               	/* prologue: function */
+ 619               	/* frame size = 0 */
+ 620 022e 182F      		mov r17,r24
+  67:config.c      ****   glcdSetAddress(MENU_INDENT, 5);
+ 622               	.LM57:
+ 623 0230 88E0      		ldi r24,lo8(8)
+ 624 0232 65E0      		ldi r22,lo8(5)
+ 625 0234 0E94 0000 		call glcdSetAddress
+  68:config.c      ****   glcdPutStr("Set Backlight: ", NORMAL);
+ 627               	.LM58:
+ 628 0238 80E0      		ldi r24,lo8(__c.1950)
+ 629 023a 90E0      		ldi r25,hi8(__c.1950)
+ 630 023c 60E0      		ldi r22,lo8(0)
+ 631 023e 0E94 0000 		call glcdPutStr_rom
+  69:config.c      ****   printnumber(OCR2B>>OCR2B_BITSHIFT,((mode==SET_BRT)?INVERTED:NORMAL));
+ 633               	.LM59:
+ 634 0242 8091 B400 		lds r24,180
+ 635 0246 60E0      		ldi r22,lo8(0)
+ 636 0248 1936      		cpi r17,lo8(105)
+ 637 024a 01F4      		brne .L37
+ 638 024c 61E0      		ldi r22,lo8(1)
+ 639               	.L37:
+ 640 024e 0E94 0000 		call printnumber
+ 641               	/* epilogue start */
+  70:config.c      **** }
+ 643               	.LM60:
+ 644 0252 1F91      		pop r17
+ 645 0254 0895      		ret
+ 647               	.Lscope7:
+ 649               		.stabd	78,0,0
+ 655               	.global	print_time
+ 657               	print_time:
+ 658               		.stabd	46,0,0
+  47:config.c      **** {
+ 660               	.LM61:
+ 661               	.LFBB8:
+ 662 0256 DF92      		push r13
+ 663 0258 EF92      		push r14
+ 664 025a FF92      		push r15
+ 665 025c 0F93      		push r16
+ 666 025e 1F93      		push r17
+ 667               	/* prologue: function */
+ 668               	/* frame size = 0 */
+ 669 0260 E82E      		mov r14,r24
+ 670 0262 F62E      		mov r15,r22
+ 671 0264 D42E      		mov r13,r20
+ 672 0266 122F      		mov r17,r18
+  48:config.c      ****   glcdSetAddress(MENU_INDENT, 2);
+ 674               	.LM62:
+ 675 0268 88E0      		ldi r24,lo8(8)
+ 676 026a 62E0      		ldi r22,lo8(2)
+ 677 026c 0E94 0000 		call glcdSetAddress
+  49:config.c      ****   glcdPutStr("Set Time: ", NORMAL);
+ 679               	.LM63:
+ 680 0270 80E0      		ldi r24,lo8(__c.1941)
+ 681 0272 90E0      		ldi r25,hi8(__c.1941)
+ 682 0274 60E0      		ldi r22,lo8(0)
+ 683 0276 0E94 0000 		call glcdPutStr_rom
+  50:config.c      ****   print_timehour(hour, ((mode==SET_HOUR)?INVERTED:NORMAL));
+ 685               	.LM64:
+ 686 027a 00E0      		ldi r16,lo8(0)
+ 687 027c 1536      		cpi r17,lo8(101)
+ 688 027e 01F4      		brne .L40
+ 689 0280 01E0      		ldi r16,lo8(1)
+ 690               	.L40:
+ 691 0282 8E2D      		mov r24,r14
+ 692 0284 602F      		mov r22,r16
+ 693 0286 0E94 0000 		call print_timehour
+  51:config.c      ****   glcdWriteChar(':', NORMAL);
+ 695               	.LM65:
+ 696 028a 8AE3      		ldi r24,lo8(58)
+ 697 028c 60E0      		ldi r22,lo8(0)
+ 698 028e 0E94 0000 		call glcdWriteChar
+  52:config.c      ****   printnumber(min, ((mode==SET_MIN)?INVERTED:NORMAL));
+ 700               	.LM66:
+ 701 0292 60E0      		ldi r22,lo8(0)
+ 702 0294 1636      		cpi r17,lo8(102)
+ 703 0296 01F4      		brne .L41
+ 704 0298 61E0      		ldi r22,lo8(1)
+ 705               	.L41:
+ 706 029a 8F2D      		mov r24,r15
+ 707 029c 0E94 0000 		call printnumber
+  53:config.c      ****   glcdWriteChar(':', NORMAL);
+ 709               	.LM67:
+ 710 02a0 8AE3      		ldi r24,lo8(58)
+ 711 02a2 60E0      		ldi r22,lo8(0)
+ 712 02a4 0E94 0000 		call glcdWriteChar
+  54:config.c      ****   printnumber(sec, ((mode==SET_SEC)?INVERTED:NORMAL));
+ 714               	.LM68:
+ 715 02a8 60E0      		ldi r22,lo8(0)
+ 716 02aa 1736      		cpi r17,lo8(103)
+ 717 02ac 01F4      		brne .L42
+ 718 02ae 61E0      		ldi r22,lo8(1)
+ 719               	.L42:
+ 720 02b0 8D2D      		mov r24,r13
+ 721 02b2 0E94 0000 		call printnumber
+  55:config.c      ****   if (time_format == TIME_12H) {
+ 723               	.LM69:
+ 724 02b6 8091 0000 		lds r24,time_format
+ 725 02ba 8823      		tst r24
+ 726 02bc 01F4      		brne .L45
+  56:config.c      ****     glcdWriteChar(' ', NORMAL);
+ 728               	.LM70:
+ 729 02be 80E2      		ldi r24,lo8(32)
+ 730 02c0 60E0      		ldi r22,lo8(0)
+ 731 02c2 0E94 0000 		call glcdWriteChar
+  57:config.c      ****     if (hour >= 12) {
+ 733               	.LM71:
+ 734 02c6 8BE0      		ldi r24,lo8(11)
+ 735 02c8 8E15      		cp r24,r14
+ 736 02ca 00F4      		brsh .L44
+  58:config.c      ****       glcdWriteChar('P', ((mode==SET_HOUR)?INVERTED:NORMAL));
+ 738               	.LM72:
+ 739 02cc 80E5      		ldi r24,lo8(80)
+ 740 02ce 00C0      		rjmp .L46
+ 741               	.L44:
+  60:config.c      ****       glcdWriteChar('A', ((mode==SET_HOUR)?INVERTED:NORMAL));
+ 743               	.LM73:
+ 744 02d0 81E4      		ldi r24,lo8(65)
+ 745               	.L46:
+ 746 02d2 602F      		mov r22,r16
+ 747 02d4 0E94 0000 		call glcdWriteChar
+ 748               	.L45:
+ 749               	/* epilogue start */
+  63:config.c      **** }
+ 751               	.LM74:
+ 752 02d8 1F91      		pop r17
+ 753 02da 0F91      		pop r16
+ 754 02dc FF90      		pop r15
+ 755 02de EF90      		pop r14
+ 756 02e0 DF90      		pop r13
+ 757 02e2 0895      		ret
+ 759               	.Lscope8:
+ 761               		.stabd	78,0,0
+ 764               	.global	print_alarmline
+ 766               	print_alarmline:
+ 767               		.stabd	46,0,0
+  38:config.c      **** {
+ 769               	.LM75:
+ 770               	.LFBB9:
+ 771 02e4 1F93      		push r17
+ 772               	/* prologue: function */
+ 773               	/* frame size = 0 */
+ 774 02e6 182F      		mov r17,r24
+  39:config.c      ****   glcdSetAddress(MENU_INDENT, 1);
+ 776               	.LM76:
+ 777 02e8 88E0      		ldi r24,lo8(8)
+ 778 02ea 61E0      		ldi r22,lo8(1)
+ 779 02ec 0E94 0000 		call glcdSetAddress
+  40:config.c      ****   glcdPutStr("Set Alarm:  ", NORMAL);
+ 781               	.LM77:
+ 782 02f0 80E0      		ldi r24,lo8(__c.1929)
+ 783 02f2 90E0      		ldi r25,hi8(__c.1929)
+ 784 02f4 60E0      		ldi r22,lo8(0)
+ 785 02f6 0E94 0000 		call glcdPutStr_rom
+  41:config.c      ****   print_alarmhour(alarm_h, ((mode==SET_HOUR)?INVERTED:NORMAL));
+ 787               	.LM78:
+ 788 02fa 8091 0000 		lds r24,alarm_h
+ 789 02fe 60E0      		ldi r22,lo8(0)
+ 790 0300 1536      		cpi r17,lo8(101)
+ 791 0302 01F4      		brne .L48
+ 792 0304 61E0      		ldi r22,lo8(1)
+ 793               	.L48:
+ 794 0306 0E94 0000 		call print_alarmhour
+  42:config.c      ****   glcdWriteChar(':', NORMAL);
+ 796               	.LM79:
+ 797 030a 8AE3      		ldi r24,lo8(58)
+ 798 030c 60E0      		ldi r22,lo8(0)
+ 799 030e 0E94 0000 		call glcdWriteChar
+  43:config.c      ****   printnumber(alarm_m, ((mode==SET_MIN)?INVERTED:NORMAL));
+ 801               	.LM80:
+ 802 0312 8091 0000 		lds r24,alarm_m
+ 803 0316 60E0      		ldi r22,lo8(0)
+ 804 0318 1636      		cpi r17,lo8(102)
+ 805 031a 01F4      		brne .L49
+ 806 031c 61E0      		ldi r22,lo8(1)
+ 807               	.L49:
+ 808 031e 0E94 0000 		call printnumber
+ 809               	/* epilogue start */
+  44:config.c      **** }
+ 811               	.LM81:
+ 812 0322 1F91      		pop r17
+ 813 0324 0895      		ret
+ 815               	.Lscope9:
+ 817               		.stabd	78,0,0
+ 820               	.global	print_monthday_help
+ 822               	print_monthday_help:
+ 823               		.stabd	46,0,0
+ 240:config.c      **** {
+ 825               	.LM82:
+ 826               	.LFBB10:
+ 827               	/* prologue: function */
+ 828               	/* frame size = 0 */
+ 241:config.c      **** 	if(mode == SET_MONTH)
+ 830               	.LM83:
+ 831 0326 8031      		cpi r24,lo8(16)
+ 832 0328 01F4      		brne .L52
+ 242:config.c      **** 		print_menu_opts("change mon","set mon.");
+ 834               	.LM84:
+ 835 032a 80E0      		ldi r24,lo8(__c.2044)
+ 836 032c 90E0      		ldi r25,hi8(__c.2044)
+ 837 032e 60E0      		ldi r22,lo8(__c.2046)
+ 838 0330 70E0      		ldi r23,hi8(__c.2046)
+ 839 0332 00C0      		rjmp .L57
+ 840               	.L52:
+ 243:config.c      **** 	else if (mode == SET_DAY)
+ 842               	.LM85:
+ 843 0334 8131      		cpi r24,lo8(17)
+ 844 0336 01F4      		brne .L54
+ 244:config.c      **** 		print_menu_opts("change day","set date");
+ 846               	.LM86:
+ 847 0338 80E0      		ldi r24,lo8(__c.2048)
+ 848 033a 90E0      		ldi r25,hi8(__c.2048)
+ 849 033c 60E0      		ldi r22,lo8(__c.2050)
+ 850 033e 70E0      		ldi r23,hi8(__c.2050)
+ 851 0340 00C0      		rjmp .L57
+ 852               	.L54:
+ 245:config.c      **** 	else if (mode == SET_YEAR)
+ 854               	.LM87:
+ 855 0342 8231      		cpi r24,lo8(18)
+ 856 0344 01F4      		brne .L55
+ 246:config.c      **** 		print_menu_opts("change yr.","set year");
+ 858               	.LM88:
+ 859 0346 80E0      		ldi r24,lo8(__c.2052)
+ 860 0348 90E0      		ldi r25,hi8(__c.2052)
+ 861 034a 60E0      		ldi r22,lo8(__c.2054)
+ 862 034c 70E0      		ldi r23,hi8(__c.2054)
+ 863               	.L57:
+ 864 034e 0E94 0000 		call PRINT_MENU_OPTS
+ 865 0352 0895      		ret
+ 866               	.L55:
+ 248:config.c      **** 		print_menu_advance();
+ 868               	.LM89:
+ 869 0354 0E94 0000 		call print_menu_advance
+ 870 0358 0895      		ret
+ 872               	.Lscope10:
+ 874               		.stabd	78,0,0
+ 877               	.global	display_menu
+ 879               	display_menu:
+ 880               		.stabd	46,0,0
+  72:config.c      **** void display_menu(uint8_t line) {
+ 882               	.LM90:
+ 883               	.LFBB11:
+ 884 035a 1F93      		push r17
+ 885               	/* prologue: function */
+ 886               	/* frame size = 0 */
+ 887 035c 182F      		mov r17,r24
+  75:config.c      ****   screenmutex++;
+ 889               	.LM91:
+ 890 035e 8091 0000 		lds r24,screenmutex
+ 891 0362 8F5F      		subi r24,lo8(-(1))
+ 892 0364 8093 0000 		sts screenmutex,r24
+  77:config.c      ****   glcdClearScreen();
+ 894               	.LM92:
+ 895 0368 0E94 0000 		call glcdClearScreen
+  82:config.c      ****   glcdSetAddress(MENU_INDENT, 0);
+ 897               	.LM93:
+ 898 036c 88E0      		ldi r24,lo8(8)
+ 899 036e 60E0      		ldi r22,lo8(0)
+ 900 0370 0E94 0000 		call glcdSetAddress
+  83:config.c      ****   glcdPutStr("Mode:", NORMAL);
+ 902               	.LM94:
+ 903 0374 80E0      		ldi r24,lo8(__c.1960)
+ 904 0376 90E0      		ldi r25,hi8(__c.1960)
+ 905 0378 60E0      		ldi r22,lo8(0)
+ 906 037a 0E94 0000 		call glcdPutStr_rom
+  84:config.c      ****   print_style_setting(NORMAL);
+ 908               	.LM95:
+ 909 037e 80E0      		ldi r24,lo8(0)
+ 910 0380 0E94 0000 		call print_style_setting
+  86:config.c      ****   print_alarmline(SET_ALARM);
+ 912               	.LM96:
+ 913 0384 84E0      		ldi r24,lo8(4)
+ 914 0386 0E94 0000 		call print_alarmline
+  88:config.c      ****   print_time(time_h,time_m,time_s,SET_TIME);
+ 916               	.LM97:
+ 917 038a 8091 0000 		lds r24,time_h
+ 918 038e 6091 0000 		lds r22,time_m
+ 919 0392 4091 0000 		lds r20,time_s
+ 920 0396 23E0      		ldi r18,lo8(3)
+ 921 0398 0E94 0000 		call print_time
+  89:config.c      ****   print_date(date_m,date_d,date_y,SET_DATE);
+ 923               	.LM98:
+ 924 039c 8091 0000 		lds r24,date_m
+ 925 03a0 6091 0000 		lds r22,date_d
+ 926 03a4 4091 0000 		lds r20,date_y
+ 927 03a8 25E0      		ldi r18,lo8(5)
+ 928 03aa 0E94 0000 		call print_date
+  90:config.c      ****   print_region_setting(NORMAL);
+ 930               	.LM99:
+ 931 03ae 80E0      		ldi r24,lo8(0)
+ 932 03b0 0E94 0000 		call print_region_setting
+  93:config.c      ****   print_backlight(SET_BRIGHTNESS);
+ 934               	.LM100:
+ 935 03b4 86E0      		ldi r24,lo8(6)
+ 936 03b6 0E94 0000 		call print_backlight
+  95:config.c      ****   if(displaymode == SET_BRIGHTNESS)
+ 938               	.LM101:
+ 939 03ba 8091 0000 		lds r24,displaymode
+ 940 03be 8630      		cpi r24,lo8(6)
+ 941 03c0 01F4      		brne .L59
+  99:config.c      ****   	  print_menu_exit();
+ 943               	.LM102:
+ 944 03c2 0E94 0000 		call print_menu_exit
+ 945 03c6 00C0      		rjmp .L60
+ 946               	.L59:
+ 101:config.c      ****   	print_menu_advance();
+ 948               	.LM103:
+ 949 03c8 0E94 0000 		call print_menu_advance
+ 950               	.L60:
+ 103:config.c      ****   drawArrow(0, (line*8)+3, MENU_INDENT -1);
+ 952               	.LM104:
+ 953 03cc 110F      		lsl r17
+ 954 03ce 110F      		lsl r17
+ 955 03d0 110F      		lsl r17
+ 956 03d2 1D5F      		subi r17,lo8(-(3))
+ 957 03d4 80E0      		ldi r24,lo8(0)
+ 958 03d6 612F      		mov r22,r17
+ 959 03d8 47E0      		ldi r20,lo8(7)
+ 960 03da 0E94 0000 		call drawArrow
+ 104:config.c      ****   screenmutex--;
+ 962               	.LM105:
+ 963 03de 8091 0000 		lds r24,screenmutex
+ 964 03e2 8150      		subi r24,lo8(-(-1))
+ 965 03e4 8093 0000 		sts screenmutex,r24
+ 966               	/* epilogue start */
+ 105:config.c      **** }
+ 968               	.LM106:
+ 969 03e8 1F91      		pop r17
+ 970 03ea 0895      		ret
+ 972               	.Lscope11:
+ 974               		.stabd	78,0,0
+ 977               	.global	init_set_menu
+ 979               	init_set_menu:
+ 980               		.stabd	46,0,0
+ 108:config.c      **** {
+ 982               	.LM107:
+ 983               	.LFBB12:
+ 984               	/* prologue: function */
+ 985               	/* frame size = 0 */
+ 109:config.c      ****   display_menu(line);
+ 987               	.LM108:
+ 988 03ec 0E94 0000 		call display_menu
+ 110:config.c      ****   timeoutcounter = INACTIVITYTIMEOUT;
+ 990               	.LM109:
+ 991 03f0 8AE0      		ldi r24,lo8(10)
+ 992 03f2 8093 0000 		sts timeoutcounter,r24
+ 111:config.c      ****   return displaymode;
+ 994               	.LM110:
+ 995 03f6 8091 0000 		lds r24,displaymode
+ 996               	/* epilogue start */
+ 112:config.c      **** }
+ 998               	.LM111:
+ 999 03fa 0895      		ret
+ 1001               	.Lscope12:
+ 1003               		.stabd	78,0,0
+ 1005               	.global	set_time
+ 1007               	set_time:
+ 1008               		.stabd	46,0,0
+ 533:config.c      **** void set_time(void) {
+ 1010               	.LM112:
+ 1011               	.LFBB13:
+ 1012 03fc CF92      		push r12
+ 1013 03fe DF92      		push r13
+ 1014 0400 EF92      		push r14
+ 1015 0402 FF92      		push r15
+ 1016 0404 0F93      		push r16
+ 1017 0406 1F93      		push r17
+ 1018               	/* prologue: function */
+ 1019               	/* frame size = 0 */
+ 534:config.c      ****   uint8_t mode = init_set_menu(2);
+ 1021               	.LM113:
+ 1022 0408 82E0      		ldi r24,lo8(2)
+ 1023 040a 0E94 0000 		call init_set_menu
+ 1024 040e 082F      		mov r16,r24
+ 538:config.c      ****   hour = time_h;
+ 1026               	.LM114:
+ 1027 0410 1091 0000 		lds r17,time_h
+ 539:config.c      ****   min = time_m;
+ 1029               	.LM115:
+ 1030 0414 D090 0000 		lds r13,time_m
+ 540:config.c      ****   sec = time_s;
+ 1032               	.LM116:
+ 1033 0418 F090 0000 		lds r15,time_s
+ 1034 041c 00C0      		rjmp .L79
+ 1035               	.L75:
+ 544:config.c      ****     if (just_pressed & 0x2) {
+ 1037               	.LM117:
+ 1038 041e 8091 0000 		lds r24,just_pressed
+ 1039 0422 81FF      		sbrs r24,1
+ 1040 0424 00C0      		rjmp .L66
+ 545:config.c      ****       just_pressed = 0;
+ 1042               	.LM118:
+ 1043 0426 1092 0000 		sts just_pressed,__zero_reg__
+ 546:config.c      ****       screenmutex++;
+ 1045               	.LM119:
+ 1046 042a 8091 0000 		lds r24,screenmutex
+ 1047 042e 8F5F      		subi r24,lo8(-(1))
+ 1048 0430 8093 0000 		sts screenmutex,r24
+ 548:config.c      ****       if (mode == SET_TIME) {
+ 1050               	.LM120:
+ 1051 0434 0330      		cpi r16,lo8(3)
+ 1052 0436 01F4      		brne .L67
+ 553:config.c      ****         print_menu_opts("change hr","set hour");
+ 1054               	.LM121:
+ 1055 0438 80E0      		ldi r24,lo8(__c.2275)
+ 1056 043a 90E0      		ldi r25,hi8(__c.2275)
+ 1057 043c 60E0      		ldi r22,lo8(__c.2277)
+ 1058 043e 70E0      		ldi r23,hi8(__c.2277)
+ 1059 0440 0E94 0000 		call PRINT_MENU_OPTS
+ 1060 0444 05E6      		ldi r16,lo8(101)
+ 1061 0446 00C0      		rjmp .L68
+ 1062               	.L67:
+ 554:config.c      ****       } else if (mode == SET_HOUR) {
+ 1064               	.LM122:
+ 1065 0448 0536      		cpi r16,lo8(101)
+ 1066 044a 01F4      		brne .L69
+ 558:config.c      ****         print_menu_opts("change min","set mins");
+ 1068               	.LM123:
+ 1069 044c 80E0      		ldi r24,lo8(__c.2281)
+ 1070 044e 90E0      		ldi r25,hi8(__c.2281)
+ 1071 0450 60E0      		ldi r22,lo8(__c.2283)
+ 1072 0452 70E0      		ldi r23,hi8(__c.2283)
+ 1073 0454 0E94 0000 		call PRINT_MENU_OPTS
+ 1074 0458 06E6      		ldi r16,lo8(102)
+ 1075 045a 00C0      		rjmp .L68
+ 1076               	.L69:
+ 559:config.c      ****       } else if (mode == SET_MIN) {
+ 1078               	.LM124:
+ 1079 045c 0636      		cpi r16,lo8(102)
+ 1080 045e 01F4      		brne .L70
+ 563:config.c      ****         print_menu_opts("change sec","set secs");
+ 1082               	.LM125:
+ 1083 0460 80E0      		ldi r24,lo8(__c.2287)
+ 1084 0462 90E0      		ldi r25,hi8(__c.2287)
+ 1085 0464 60E0      		ldi r22,lo8(__c.2289)
+ 1086 0466 70E0      		ldi r23,hi8(__c.2289)
+ 1087 0468 0E94 0000 		call PRINT_MENU_OPTS
+ 1088 046c 07E6      		ldi r16,lo8(103)
+ 1089 046e 00C0      		rjmp .L68
+ 1090               	.L70:
+ 569:config.c      **** 	print_menu_advance();
+ 1092               	.LM126:
+ 1093 0470 0E94 0000 		call print_menu_advance
+ 571:config.c      **** 	writei2ctime(sec, min, hour, 0, date_d, date_m, date_y);
+ 1095               	.LM127:
+ 1096 0474 0091 0000 		lds r16,date_d
+ 1097 0478 E090 0000 		lds r14,date_m
+ 1098 047c C090 0000 		lds r12,date_y
+ 1099 0480 8F2D      		mov r24,r15
+ 1100 0482 6D2D      		mov r22,r13
+ 1101 0484 412F      		mov r20,r17
+ 1102 0486 20E0      		ldi r18,lo8(0)
+ 1103 0488 0E94 0000 		call writei2ctime
+ 572:config.c      **** 	time_h = hour;
+ 1105               	.LM128:
+ 1106 048c 1093 0000 		sts time_h,r17
+ 573:config.c      **** 	time_m = min;
+ 1108               	.LM129:
+ 1109 0490 D092 0000 		sts time_m,r13
+ 574:config.c      **** 	time_s = sec;
+ 1111               	.LM130:
+ 1112 0494 F092 0000 		sts time_s,r15
+ 1113 0498 03E0      		ldi r16,lo8(3)
+ 1114               	.L68:
+ 577:config.c      ****       print_time(hour,min,sec,mode);
+ 1116               	.LM131:
+ 1117 049a 812F      		mov r24,r17
+ 1118 049c 6D2D      		mov r22,r13
+ 1119 049e 4F2D      		mov r20,r15
+ 1120 04a0 202F      		mov r18,r16
+ 1121 04a2 0E94 0000 		call print_time
+ 578:config.c      ****       screenmutex--;
+ 1123               	.LM132:
+ 1124 04a6 8091 0000 		lds r24,screenmutex
+ 1125 04aa 8150      		subi r24,lo8(-(-1))
+ 1126 04ac 8093 0000 		sts screenmutex,r24
+ 1127               	.L66:
+ 581:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 1129               	.LM133:
+ 1130 04b0 8091 0000 		lds r24,just_pressed
+ 1131 04b4 82FD      		sbrc r24,2
+ 1132 04b6 00C0      		rjmp .L71
+ 1133 04b8 8091 0000 		lds r24,pressed
+ 1134 04bc 82FF      		sbrs r24,2
+ 1135 04be 00C0      		rjmp .L79
+ 1136               	.L71:
+ 582:config.c      ****       just_pressed = 0;
+ 1138               	.LM134:
+ 1139 04c0 1092 0000 		sts just_pressed,__zero_reg__
+ 583:config.c      ****       screenmutex++;
+ 1141               	.LM135:
+ 1142 04c4 8091 0000 		lds r24,screenmutex
+ 1143 04c8 8F5F      		subi r24,lo8(-(1))
+ 1144 04ca 8093 0000 		sts screenmutex,r24
+ 584:config.c      ****       if (mode == SET_HOUR) {
+ 1146               	.LM136:
+ 1147 04ce 0536      		cpi r16,lo8(101)
+ 1148 04d0 01F4      		brne .L72
+ 585:config.c      **** 	hour = (hour+1) % 24;
+ 1150               	.LM137:
+ 1151 04d2 812F      		mov r24,r17
+ 1152 04d4 90E0      		ldi r25,lo8(0)
+ 1153 04d6 0196      		adiw r24,1
+ 1154 04d8 68E1      		ldi r22,lo8(24)
+ 1155 04da 70E0      		ldi r23,hi8(24)
+ 1156 04dc 0E94 0000 		call __divmodhi4
+ 1157 04e0 182F      		mov r17,r24
+ 586:config.c      **** 	time_h = hour;
+ 1159               	.LM138:
+ 1160 04e2 8093 0000 		sts time_h,r24
+ 1161 04e6 00C0      		rjmp .L73
+ 1162               	.L72:
+ 588:config.c      ****       if (mode == SET_MIN) {
+ 1164               	.LM139:
+ 1165 04e8 0636      		cpi r16,lo8(102)
+ 1166 04ea 01F4      		brne .L74
+ 589:config.c      **** 	min = (min+1) % 60;
+ 1168               	.LM140:
+ 1169 04ec 8D2D      		mov r24,r13
+ 1170 04ee 90E0      		ldi r25,lo8(0)
+ 1171 04f0 0196      		adiw r24,1
+ 1172 04f2 6CE3      		ldi r22,lo8(60)
+ 1173 04f4 70E0      		ldi r23,hi8(60)
+ 1174 04f6 0E94 0000 		call __divmodhi4
+ 1175 04fa D82E      		mov r13,r24
+ 1176 04fc 00C0      		rjmp .L73
+ 1177               	.L74:
+ 591:config.c      ****       if (mode == SET_SEC) {
+ 1179               	.LM141:
+ 1180 04fe 0736      		cpi r16,lo8(103)
+ 1181 0500 01F4      		brne .L73
+ 592:config.c      **** 	sec = (sec+1) % 60;
+ 1183               	.LM142:
+ 1184 0502 8F2D      		mov r24,r15
+ 1185 0504 90E0      		ldi r25,lo8(0)
+ 1186 0506 0196      		adiw r24,1
+ 1187 0508 6CE3      		ldi r22,lo8(60)
+ 1188 050a 70E0      		ldi r23,hi8(60)
+ 1189 050c 0E94 0000 		call __divmodhi4
+ 1190 0510 F82E      		mov r15,r24
+ 1191               	.L73:
+ 594:config.c      ****       print_time(hour,min,sec,mode);
+ 1193               	.LM143:
+ 1194 0512 812F      		mov r24,r17
+ 1195 0514 6D2D      		mov r22,r13
+ 1196 0516 4F2D      		mov r20,r15
+ 1197 0518 202F      		mov r18,r16
+ 1198 051a 0E94 0000 		call print_time
+ 595:config.c      ****       screenmutex--;
+ 1200               	.LM144:
+ 1201 051e 8091 0000 		lds r24,screenmutex
+ 1202 0522 8150      		subi r24,lo8(-(-1))
+ 1203 0524 8093 0000 		sts screenmutex,r24
+ 596:config.c      ****       if (pressed & 0x4)
+ 1205               	.LM145:
+ 1206 0528 8091 0000 		lds r24,pressed
+ 1207 052c 82FF      		sbrs r24,2
+ 1208 052e 00C0      		rjmp .L79
+ 597:config.c      **** 	delay_ms(200);
+ 1210               	.LM146:
+ 1211 0530 88EC      		ldi r24,lo8(200)
+ 1212 0532 90E0      		ldi r25,hi8(200)
+ 1213 0534 0E94 0000 		call delay_ms
+ 1214               	.L79:
+ 542:config.c      ****   while (!check_timeout()) {
+ 1216               	.LM147:
+ 1217 0538 0E94 0000 		call check_timeout
+ 1218 053c 8823      		tst r24
+ 1219 053e 01F4      		brne .+2
+ 1220 0540 00C0      		rjmp .L75
+ 1221               	/* epilogue start */
+ 600:config.c      **** }
+ 1223               	.LM148:
+ 1224 0542 1F91      		pop r17
+ 1225 0544 0F91      		pop r16
+ 1226 0546 FF90      		pop r15
+ 1227 0548 EF90      		pop r14
+ 1228 054a DF90      		pop r13
+ 1229 054c CF90      		pop r12
+ 1230 054e 0895      		ret
+ 1238               	.Lscope13:
+ 1240               		.stabd	78,0,0
+ 1242               	.global	set_alarm
+ 1244               	set_alarm:
+ 1245               		.stabd	46,0,0
+ 482:config.c      **** void set_alarm(void) {
+ 1247               	.LM149:
+ 1248               	.LFBB14:
+ 1249 0550 1F93      		push r17
+ 1250               	/* prologue: function */
+ 1251               	/* frame size = 0 */
+ 483:config.c      ****   uint8_t mode = init_set_menu(1);
+ 1253               	.LM150:
+ 1254 0552 81E0      		ldi r24,lo8(1)
+ 1255 0554 0E94 0000 		call init_set_menu
+ 1256 0558 182F      		mov r17,r24
+ 1257 055a 00C0      		rjmp .L93
+ 1258               	.L89:
+ 487:config.c      ****     if (just_pressed & 0x2) {
+ 1260               	.LM151:
+ 1261 055c 8091 0000 		lds r24,just_pressed
+ 1262 0560 81FF      		sbrs r24,1
+ 1263 0562 00C0      		rjmp .L82
+ 488:config.c      ****       just_pressed = 0;
+ 1265               	.LM152:
+ 1266 0564 1092 0000 		sts just_pressed,__zero_reg__
+ 489:config.c      ****       screenmutex++;
+ 1268               	.LM153:
+ 1269 0568 8091 0000 		lds r24,screenmutex
+ 1270 056c 8F5F      		subi r24,lo8(-(1))
+ 1271 056e 8093 0000 		sts screenmutex,r24
+ 491:config.c      ****       if (mode == SET_ALARM) {
+ 1273               	.LM154:
+ 1274 0572 1430      		cpi r17,lo8(4)
+ 1275 0574 01F4      		brne .L83
+ 496:config.c      ****         print_menu_opts("change hr.","set hour");
+ 1277               	.LM155:
+ 1278 0576 80E0      		ldi r24,lo8(__c.2217)
+ 1279 0578 90E0      		ldi r25,hi8(__c.2217)
+ 1280 057a 60E0      		ldi r22,lo8(__c.2219)
+ 1281 057c 70E0      		ldi r23,hi8(__c.2219)
+ 1282 057e 0E94 0000 		call PRINT_MENU_OPTS
+ 1283 0582 15E6      		ldi r17,lo8(101)
+ 1284 0584 00C0      		rjmp .L84
+ 1285               	.L83:
+ 497:config.c      ****       } else if (mode == SET_HOUR) {
+ 1287               	.LM156:
+ 1288 0586 1536      		cpi r17,lo8(101)
+ 1289 0588 01F4      		brne .L85
+ 502:config.c      **** 	print_menu_opts("change min","set mins");
+ 1291               	.LM157:
+ 1292 058a 80E0      		ldi r24,lo8(__c.2223)
+ 1293 058c 90E0      		ldi r25,hi8(__c.2223)
+ 1294 058e 60E0      		ldi r22,lo8(__c.2225)
+ 1295 0590 70E0      		ldi r23,hi8(__c.2225)
+ 1296 0592 0E94 0000 		call PRINT_MENU_OPTS
+ 1297 0596 16E6      		ldi r17,lo8(102)
+ 1298 0598 00C0      		rjmp .L84
+ 1299               	.L85:
+ 507:config.c      **** 	print_menu_advance();
+ 1301               	.LM158:
+ 1302 059a 0E94 0000 		call print_menu_advance
+ 1303 059e 14E0      		ldi r17,lo8(4)
+ 1304               	.L84:
+ 509:config.c      ****       print_alarmline(mode);
+ 1306               	.LM159:
+ 1307 05a0 812F      		mov r24,r17
+ 1308 05a2 0E94 0000 		call print_alarmline
+ 510:config.c      ****       screenmutex--;
+ 1310               	.LM160:
+ 1311 05a6 8091 0000 		lds r24,screenmutex
+ 1312 05aa 8150      		subi r24,lo8(-(-1))
+ 1313 05ac 8093 0000 		sts screenmutex,r24
+ 1314               	.L82:
+ 512:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 1316               	.LM161:
+ 1317 05b0 8091 0000 		lds r24,just_pressed
+ 1318 05b4 82FD      		sbrc r24,2
+ 1319 05b6 00C0      		rjmp .L86
+ 1320 05b8 8091 0000 		lds r24,pressed
+ 1321 05bc 82FF      		sbrs r24,2
+ 1322 05be 00C0      		rjmp .L93
+ 1323               	.L86:
+ 513:config.c      ****       just_pressed = 0;
+ 1325               	.LM162:
+ 1326 05c0 1092 0000 		sts just_pressed,__zero_reg__
+ 514:config.c      ****       screenmutex++;
+ 1328               	.LM163:
+ 1329 05c4 8091 0000 		lds r24,screenmutex
+ 1330 05c8 8F5F      		subi r24,lo8(-(1))
+ 1331 05ca 8093 0000 		sts screenmutex,r24
+ 516:config.c      ****       if (mode == SET_HOUR) {
+ 1333               	.LM164:
+ 1334 05ce 1536      		cpi r17,lo8(101)
+ 1335 05d0 01F4      		brne .L87
+ 517:config.c      **** 	alarm_h = (alarm_h+1) % 24;
+ 1337               	.LM165:
+ 1338 05d2 8091 0000 		lds r24,alarm_h
+ 1339 05d6 90E0      		ldi r25,lo8(0)
+ 1340 05d8 0196      		adiw r24,1
+ 1341 05da 68E1      		ldi r22,lo8(24)
+ 1342 05dc 70E0      		ldi r23,hi8(24)
+ 1343 05de 0E94 0000 		call __divmodhi4
+ 1344 05e2 8093 0000 		sts alarm_h,r24
+ 519:config.c      **** 	eeprom_write_byte(&EE_ALARM_HOUR, alarm_h);    
+ 1346               	.LM166:
+ 1347 05e6 6091 0000 		lds r22,alarm_h
+ 1348 05ea 80E0      		ldi r24,lo8(EE_ALARM_HOUR)
+ 1349 05ec 90E0      		ldi r25,hi8(EE_ALARM_HOUR)
+ 1350 05ee 00C0      		rjmp .L94
+ 1351               	.L87:
+ 521:config.c      ****       if (mode == SET_MIN) {
+ 1353               	.LM167:
+ 1354 05f0 1636      		cpi r17,lo8(102)
+ 1355 05f2 01F4      		brne .L88
+ 522:config.c      **** 	alarm_m = (alarm_m+1) % 60;
+ 1357               	.LM168:
+ 1358 05f4 8091 0000 		lds r24,alarm_m
+ 1359 05f8 90E0      		ldi r25,lo8(0)
+ 1360 05fa 0196      		adiw r24,1
+ 1361 05fc 6CE3      		ldi r22,lo8(60)
+ 1362 05fe 70E0      		ldi r23,hi8(60)
+ 1363 0600 0E94 0000 		call __divmodhi4
+ 1364 0604 8093 0000 		sts alarm_m,r24
+ 523:config.c      **** 	eeprom_write_byte(&EE_ALARM_MIN, alarm_m);    
+ 1366               	.LM169:
+ 1367 0608 6091 0000 		lds r22,alarm_m
+ 1368 060c 80E0      		ldi r24,lo8(EE_ALARM_MIN)
+ 1369 060e 90E0      		ldi r25,hi8(EE_ALARM_MIN)
+ 1370               	.L94:
+ 1371 0610 0E94 0000 		call __eewr_byte_m328p
+ 1372               	.L88:
+ 525:config.c      ****       print_alarmline(mode);
+ 1374               	.LM170:
+ 1375 0614 812F      		mov r24,r17
+ 1376 0616 0E94 0000 		call print_alarmline
+ 526:config.c      ****       screenmutex--;
+ 1378               	.LM171:
+ 1379 061a 8091 0000 		lds r24,screenmutex
+ 1380 061e 8150      		subi r24,lo8(-(-1))
+ 1381 0620 8093 0000 		sts screenmutex,r24
+ 527:config.c      ****       if (pressed & 0x4)
+ 1383               	.LM172:
+ 1384 0624 8091 0000 		lds r24,pressed
+ 1385 0628 82FF      		sbrs r24,2
+ 1386 062a 00C0      		rjmp .L93
+ 528:config.c      **** 	delay_ms(200);
+ 1388               	.LM173:
+ 1389 062c 88EC      		ldi r24,lo8(200)
+ 1390 062e 90E0      		ldi r25,hi8(200)
+ 1391 0630 0E94 0000 		call delay_ms
+ 1392               	.L93:
+ 485:config.c      ****   while (!check_timeout()) {
+ 1394               	.LM174:
+ 1395 0634 0E94 0000 		call check_timeout
+ 1396 0638 8823      		tst r24
+ 1397 063a 01F4      		brne .+2
+ 1398 063c 00C0      		rjmp .L89
+ 1399               	/* epilogue start */
+ 531:config.c      **** }
+ 1401               	.LM175:
+ 1402 063e 1F91      		pop r17
+ 1403 0640 0895      		ret
+ 1408               	.Lscope14:
+ 1410               		.stabd	78,0,0
+ 1412               	.global	set_backlight
+ 1414               	set_backlight:
+ 1415               		.stabd	46,0,0
+ 353:config.c      **** void set_backlight(void) {
+ 1417               	.LM176:
+ 1418               	.LFBB15:
+ 1419 0642 1F93      		push r17
+ 1420               	/* prologue: function */
+ 1421               	/* frame size = 0 */
+ 354:config.c      ****   uint8_t mode = init_set_menu(5);
+ 1423               	.LM177:
+ 1424 0644 85E0      		ldi r24,lo8(5)
+ 1425 0646 0E94 0000 		call init_set_menu
+ 1426 064a 182F      		mov r17,r24
+ 1427 064c 00C0      		rjmp .L106
+ 1428               	.L102:
+ 358:config.c      ****     if (just_pressed & 0x2) {
+ 1430               	.LM178:
+ 1431 064e 8091 0000 		lds r24,just_pressed
+ 1432 0652 81FF      		sbrs r24,1
+ 1433 0654 00C0      		rjmp .L97
+ 359:config.c      ****       just_pressed = 0;
+ 1435               	.LM179:
+ 1436 0656 1092 0000 		sts just_pressed,__zero_reg__
+ 360:config.c      ****       screenmutex++;
+ 1438               	.LM180:
+ 1439 065a 8091 0000 		lds r24,screenmutex
+ 1440 065e 8F5F      		subi r24,lo8(-(1))
+ 1441 0660 8093 0000 		sts screenmutex,r24
+ 362:config.c      ****       if (mode == SET_BRIGHTNESS) {
+ 1443               	.LM181:
+ 1444 0664 1630      		cpi r17,lo8(6)
+ 1445 0666 01F4      		brne .L98
+ 368:config.c      **** 	print_menu_change();
+ 1447               	.LM182:
+ 1448 0668 0E94 0000 		call print_menu_change
+ 1449 066c 19E6      		ldi r17,lo8(105)
+ 1450 066e 00C0      		rjmp .L99
+ 1451               	.L98:
+ 373:config.c      ****         print_menu_exit();
+ 1453               	.LM183:
+ 1454 0670 0E94 0000 		call print_menu_exit
+ 1455 0674 16E0      		ldi r17,lo8(6)
+ 1456               	.L99:
+ 375:config.c      ****       print_backlight(mode);
+ 1458               	.LM184:
+ 1459 0676 812F      		mov r24,r17
+ 1460 0678 0E94 0000 		call print_backlight
+ 376:config.c      ****       screenmutex--;
+ 1462               	.LM185:
+ 1463 067c 8091 0000 		lds r24,screenmutex
+ 1464 0680 8150      		subi r24,lo8(-(-1))
+ 1465 0682 8093 0000 		sts screenmutex,r24
+ 1466               	.L97:
+ 378:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 1468               	.LM186:
+ 1469 0686 8091 0000 		lds r24,just_pressed
+ 1470 068a 82FD      		sbrc r24,2
+ 1471 068c 00C0      		rjmp .L100
+ 1472 068e 8091 0000 		lds r24,pressed
+ 1473 0692 82FF      		sbrs r24,2
+ 1474 0694 00C0      		rjmp .L106
+ 1475               	.L100:
+ 379:config.c      ****       just_pressed = 0;
+ 1477               	.LM187:
+ 1478 0696 1092 0000 		sts just_pressed,__zero_reg__
+ 381:config.c      ****       if (mode == SET_BRT) {
+ 1480               	.LM188:
+ 1481 069a 1936      		cpi r17,lo8(105)
+ 1482 069c 01F4      		brne .L106
+ 382:config.c      **** 	    OCR2B += OCR2B_PLUS;
+ 1484               	.LM189:
+ 1485 069e 8091 B400 		lds r24,180
+ 1486 06a2 8F5F      		subi r24,lo8(-(1))
+ 1487 06a4 8093 B400 		sts 180,r24
+ 383:config.c      **** 	    if(OCR2B > OCR2A_VALUE)
+ 1489               	.LM190:
+ 1490 06a8 8091 B400 		lds r24,180
+ 1491 06ac 8131      		cpi r24,lo8(17)
+ 1492 06ae 00F0      		brlo .L101
+ 384:config.c      **** 	      OCR2B = 0;
+ 1494               	.LM191:
+ 1495 06b0 1092 B400 		sts 180,__zero_reg__
+ 1496               	.L101:
+ 385:config.c      **** 	screenmutex++;
+ 1498               	.LM192:
+ 1499 06b4 8091 0000 		lds r24,screenmutex
+ 1500 06b8 8F5F      		subi r24,lo8(-(1))
+ 1501 06ba 8093 0000 		sts screenmutex,r24
+ 386:config.c      **** 	print_backlight(mode);
+ 1503               	.LM193:
+ 1504 06be 89E6      		ldi r24,lo8(105)
+ 1505 06c0 0E94 0000 		call print_backlight
+ 387:config.c      **** 	screenmutex--;
+ 1507               	.LM194:
+ 1508 06c4 8091 0000 		lds r24,screenmutex
+ 1509 06c8 8150      		subi r24,lo8(-(-1))
+ 1510 06ca 8093 0000 		sts screenmutex,r24
+ 389:config.c      **** 	eeprom_write_byte(&EE_BRIGHT, OCR2B);
+ 1512               	.LM195:
+ 1513 06ce 6091 B400 		lds r22,180
+ 1514 06d2 80E0      		ldi r24,lo8(EE_BRIGHT)
+ 1515 06d4 90E0      		ldi r25,hi8(EE_BRIGHT)
+ 1516 06d6 0E94 0000 		call __eewr_byte_m328p
+ 1517               	.L106:
+ 355:config.c      ****   while (!check_timeout()) {
+ 1519               	.LM196:
+ 1520 06da 0E94 0000 		call check_timeout
+ 1521 06de 8823      		tst r24
+ 1522 06e0 01F4      		brne .+2
+ 1523 06e2 00C0      		rjmp .L102
+ 1524               	/* epilogue start */
+ 393:config.c      **** }
+ 1526               	.LM197:
+ 1527 06e4 1F91      		pop r17
+ 1528 06e6 0895      		ret
+ 1533               	.Lscope15:
+ 1535               		.stabd	78,0,0
+ 1537               	.global	set_date
+ 1539               	set_date:
+ 1540               		.stabd	46,0,0
+ 285:config.c      **** void set_date(void) {
+ 1542               	.LM198:
+ 1543               	.LFBB16:
+ 1544 06e8 8F92      		push r8
+ 1545 06ea 9F92      		push r9
+ 1546 06ec AF92      		push r10
+ 1547 06ee BF92      		push r11
+ 1548 06f0 CF92      		push r12
+ 1549 06f2 EF92      		push r14
+ 1550 06f4 0F93      		push r16
+ 1551 06f6 1F93      		push r17
+ 1552 06f8 DF93      		push r29
+ 1553 06fa CF93      		push r28
+ 1554 06fc 00D0      		rcall .
+ 1555 06fe CDB7      		in r28,__SP_L__
+ 1556 0700 DEB7      		in r29,__SP_H__
+ 1557               	/* prologue: function */
+ 1558               	/* frame size = 2 */
+ 286:config.c      ****   uint8_t mode = init_set_menu(3);
+ 1560               	.LM199:
+ 1561 0702 83E0      		ldi r24,lo8(3)
+ 1562 0704 0E94 0000 		call init_set_menu
+ 1563 0708 082F      		mov r16,r24
+ 289:config.c      ****   day = date_d;
+ 1565               	.LM200:
+ 1566 070a 8091 0000 		lds r24,date_d
+ 1567 070e 8983      		std Y+1,r24
+ 290:config.c      ****   month = date_m;
+ 1569               	.LM201:
+ 1570 0710 8091 0000 		lds r24,date_m
+ 1571 0714 8A83      		std Y+2,r24
+ 291:config.c      ****   year = date_y;
+ 1573               	.LM202:
+ 1574 0716 1091 0000 		lds r17,date_y
+ 341:config.c      ****       add_month(&month, &day, year);
+ 1576               	.LM203:
+ 1577 071a 42E0      		ldi r20,lo8(2)
+ 1578 071c 842E      		mov r8,r20
+ 1579 071e 912C      		mov r9,__zero_reg__
+ 1580 0720 8C0E      		add r8,r28
+ 1581 0722 9D1E      		adc r9,r29
+ 1582 0724 5E01      		movw r10,r28
+ 1583 0726 0894      		sec
+ 1584 0728 A11C      		adc r10,__zero_reg__
+ 1585 072a B11C      		adc r11,__zero_reg__
+ 1586 072c 00C0      		rjmp .L122
+ 1587               	.L118:
+ 294:config.c      ****     if (just_pressed & 0x2) {
+ 1589               	.LM204:
+ 1590 072e 8091 0000 		lds r24,just_pressed
+ 1591 0732 81FF      		sbrs r24,1
+ 1592 0734 00C0      		rjmp .L109
+ 295:config.c      ****       just_pressed = 0;
+ 1594               	.LM205:
+ 1595 0736 1092 0000 		sts just_pressed,__zero_reg__
+ 296:config.c      ****       screenmutex++;
+ 1597               	.LM206:
+ 1598 073a 8091 0000 		lds r24,screenmutex
+ 1599 073e 8F5F      		subi r24,lo8(-(1))
+ 1600 0740 8093 0000 		sts screenmutex,r24
+ 298:config.c      ****       if (mode == SET_DATE) {
+ 1602               	.LM207:
+ 1603 0744 0530      		cpi r16,lo8(5)
+ 1604 0746 01F4      		brne .L110
+ 301:config.c      **** 	mode = next_mode_setdate[region];
+ 1606               	.LM208:
+ 1607 0748 E091 0000 		lds r30,region
+ 1608 074c F0E0      		ldi r31,lo8(0)
+ 1609 074e E050      		subi r30,lo8(-(next_mode_setdate))
+ 1610 0750 F040      		sbci r31,hi8(-(next_mode_setdate))
+ 1611 0752 00C0      		rjmp .L123
+ 1612               	.L110:
+ 303:config.c      ****       } else if (mode == SET_MONTH) {
+ 1614               	.LM209:
+ 1615 0754 0031      		cpi r16,lo8(16)
+ 1616 0756 01F4      		brne .L112
+ 305:config.c      **** 	mode = next_mode_setmonth[region];
+ 1618               	.LM210:
+ 1619 0758 E091 0000 		lds r30,region
+ 1620 075c F0E0      		ldi r31,lo8(0)
+ 1621 075e E050      		subi r30,lo8(-(next_mode_setmonth))
+ 1622 0760 F040      		sbci r31,hi8(-(next_mode_setmonth))
+ 1623               	.L123:
+ 1624 0762 0081      		ld r16,Z
+ 1625 0764 00C0      		rjmp .L111
+ 1626               	.L112:
+ 306:config.c      ****       } else if (mode == SET_DAY) {
+ 1628               	.LM211:
+ 1629 0766 0131      		cpi r16,lo8(17)
+ 1630 0768 01F4      		brne .L113
+ 308:config.c      **** 	mode = next_mode_setday[region];
+ 1632               	.LM212:
+ 1633 076a E091 0000 		lds r30,region
+ 1634 076e F0E0      		ldi r31,lo8(0)
+ 1635 0770 E050      		subi r30,lo8(-(next_mode_setday))
+ 1636 0772 F040      		sbci r31,hi8(-(next_mode_setday))
+ 1637 0774 00C0      		rjmp .L123
+ 1638               	.L113:
+ 315:config.c      **** 	writei2ctime(time_s, time_m, time_h, 0, day, month, year);
+ 1640               	.LM213:
+ 1641 0776 8091 0000 		lds r24,time_s
+ 1642 077a 6091 0000 		lds r22,time_m
+ 1643 077e 4091 0000 		lds r20,time_h
+ 1644 0782 20E0      		ldi r18,lo8(0)
+ 1645 0784 0981      		ldd r16,Y+1
+ 1646 0786 EA80      		ldd r14,Y+2
+ 1647 0788 C12E      		mov r12,r17
+ 1648 078a 0E94 0000 		call writei2ctime
+ 316:config.c      **** 	date_y = year;
+ 1650               	.LM214:
+ 1651 078e 1093 0000 		sts date_y,r17
+ 317:config.c      **** 	date_m = month;
+ 1653               	.LM215:
+ 1654 0792 8A81      		ldd r24,Y+2
+ 1655 0794 8093 0000 		sts date_m,r24
+ 318:config.c      **** 	date_d = day;
+ 1657               	.LM216:
+ 1658 0798 8981      		ldd r24,Y+1
+ 1659 079a 8093 0000 		sts date_d,r24
+ 1660 079e 05E0      		ldi r16,lo8(5)
+ 1661               	.L111:
+ 322:config.c      ****       print_monthday_help(mode);
+ 1663               	.LM217:
+ 1664 07a0 802F      		mov r24,r16
+ 1665 07a2 0E94 0000 		call print_monthday_help
+ 324:config.c      ****       print_date(month,day,year,mode);
+ 1667               	.LM218:
+ 1668 07a6 8A81      		ldd r24,Y+2
+ 1669 07a8 6981      		ldd r22,Y+1
+ 1670 07aa 412F      		mov r20,r17
+ 1671 07ac 202F      		mov r18,r16
+ 1672 07ae 0E94 0000 		call print_date
+ 325:config.c      ****       screenmutex--;
+ 1674               	.LM219:
+ 1675 07b2 8091 0000 		lds r24,screenmutex
+ 1676 07b6 8150      		subi r24,lo8(-(-1))
+ 1677 07b8 8093 0000 		sts screenmutex,r24
+ 1678               	.L109:
+ 327:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 1680               	.LM220:
+ 1681 07bc 8091 0000 		lds r24,just_pressed
+ 1682 07c0 82FD      		sbrc r24,2
+ 1683 07c2 00C0      		rjmp .L114
+ 1684 07c4 8091 0000 		lds r24,pressed
+ 1685 07c8 82FF      		sbrs r24,2
+ 1686 07ca 00C0      		rjmp .L122
+ 1687               	.L114:
+ 328:config.c      ****       just_pressed = 0;
+ 1689               	.LM221:
+ 1690 07cc 1092 0000 		sts just_pressed,__zero_reg__
+ 330:config.c      ****       screenmutex++;
+ 1692               	.LM222:
+ 1693 07d0 8091 0000 		lds r24,screenmutex
+ 1694 07d4 8F5F      		subi r24,lo8(-(1))
+ 1695 07d6 8093 0000 		sts screenmutex,r24
+ 332:config.c      ****       if (mode == SET_MONTH) {
+ 1697               	.LM223:
+ 1698 07da 0031      		cpi r16,lo8(16)
+ 1699 07dc 01F4      		brne .L115
+ 333:config.c      ****       month++;
+ 1701               	.LM224:
+ 1702 07de 8A81      		ldd r24,Y+2
+ 1703 07e0 8F5F      		subi r24,lo8(-(1))
+ 1704 07e2 8A83      		std Y+2,r24
+ 1705 07e4 00C0      		rjmp .L116
+ 1706               	.L115:
+ 335:config.c      ****       if (mode == SET_DAY) {
+ 1708               	.LM225:
+ 1709 07e6 0131      		cpi r16,lo8(17)
+ 1710 07e8 01F4      		brne .L117
+ 336:config.c      **** 	day++;
+ 1712               	.LM226:
+ 1713 07ea 8981      		ldd r24,Y+1
+ 1714 07ec 8F5F      		subi r24,lo8(-(1))
+ 1715 07ee 8983      		std Y+1,r24
+ 1716 07f0 00C0      		rjmp .L116
+ 1717               	.L117:
+ 338:config.c      ****       if (mode == SET_YEAR) {
+ 1719               	.LM227:
+ 1720 07f2 0231      		cpi r16,lo8(18)
+ 1721 07f4 01F4      		brne .L116
+ 339:config.c      **** 	year = (year+1) % 100;
+ 1723               	.LM228:
+ 1724 07f6 812F      		mov r24,r17
+ 1725 07f8 90E0      		ldi r25,lo8(0)
+ 1726 07fa 0196      		adiw r24,1
+ 1727 07fc 64E6      		ldi r22,lo8(100)
+ 1728 07fe 70E0      		ldi r23,hi8(100)
+ 1729 0800 0E94 0000 		call __divmodhi4
+ 1730 0804 182F      		mov r17,r24
+ 1731               	.L116:
+ 341:config.c      ****       add_month(&month, &day, year);
+ 1733               	.LM229:
+ 1734 0806 C401      		movw r24,r8
+ 1735 0808 B501      		movw r22,r10
+ 1736 080a 412F      		mov r20,r17
+ 1737 080c 50E0      		ldi r21,lo8(0)
+ 1738 080e 0E94 0000 		call add_month
+ 342:config.c      ****       print_date(month,day,year,mode);
+ 1740               	.LM230:
+ 1741 0812 8A81      		ldd r24,Y+2
+ 1742 0814 6981      		ldd r22,Y+1
+ 1743 0816 412F      		mov r20,r17
+ 1744 0818 202F      		mov r18,r16
+ 1745 081a 0E94 0000 		call print_date
+ 343:config.c      ****       screenmutex--;
+ 1747               	.LM231:
+ 1748 081e 8091 0000 		lds r24,screenmutex
+ 1749 0822 8150      		subi r24,lo8(-(-1))
+ 1750 0824 8093 0000 		sts screenmutex,r24
+ 345:config.c      ****       if (pressed & 0x4)
+ 1752               	.LM232:
+ 1753 0828 8091 0000 		lds r24,pressed
+ 1754 082c 82FF      		sbrs r24,2
+ 1755 082e 00C0      		rjmp .L122
+ 346:config.c      **** 	delay_ms(200);  
+ 1757               	.LM233:
+ 1758 0830 88EC      		ldi r24,lo8(200)
+ 1759 0832 90E0      		ldi r25,hi8(200)
+ 1760 0834 0E94 0000 		call delay_ms
+ 1761               	.L122:
+ 292:config.c      ****   while (!check_timeout()) {
+ 1763               	.LM234:
+ 1764 0838 0E94 0000 		call check_timeout
+ 1765 083c 8823      		tst r24
+ 1766 083e 01F4      		brne .+2
+ 1767 0840 00C0      		rjmp .L118
+ 1768               	/* epilogue start */
+ 350:config.c      **** }
+ 1770               	.LM235:
+ 1771 0842 0F90      		pop __tmp_reg__
+ 1772 0844 0F90      		pop __tmp_reg__
+ 1773 0846 CF91      		pop r28
+ 1774 0848 DF91      		pop r29
+ 1775 084a 1F91      		pop r17
+ 1776 084c 0F91      		pop r16
+ 1777 084e EF90      		pop r14
+ 1778 0850 CF90      		pop r12
+ 1779 0852 BF90      		pop r11
+ 1780 0854 AF90      		pop r10
+ 1781 0856 9F90      		pop r9
+ 1782 0858 8F90      		pop r8
+ 1783 085a 0895      		ret
+ 1791               	.Lscope16:
+ 1793               		.stabd	78,0,0
+ 1795               	.global	set_region
+ 1797               	set_region:
+ 1798               		.stabd	46,0,0
+ 424:config.c      **** void set_region(void) {
+ 1800               	.LM236:
+ 1801               	.LFBB17:
+ 1802 085c 1F93      		push r17
+ 1803               	/* prologue: function */
+ 1804               	/* frame size = 0 */
+ 425:config.c      ****   uint8_t mode = init_set_menu(4);
+ 1806               	.LM237:
+ 1807 085e 84E0      		ldi r24,lo8(4)
+ 1808 0860 0E94 0000 		call init_set_menu
+ 1809 0864 182F      		mov r17,r24
+ 1810 0866 00C0      		rjmp .L136
+ 1811               	.L132:
+ 430:config.c      ****     if (just_pressed & 0x2) {
+ 1813               	.LM238:
+ 1814 0868 8091 0000 		lds r24,just_pressed
+ 1815 086c 81FF      		sbrs r24,1
+ 1816 086e 00C0      		rjmp .L126
+ 431:config.c      ****       just_pressed = 0;
+ 1818               	.LM239:
+ 1819 0870 1092 0000 		sts just_pressed,__zero_reg__
+ 432:config.c      ****       screenmutex++;
+ 1821               	.LM240:
+ 1822 0874 8091 0000 		lds r24,screenmutex
+ 1823 0878 8F5F      		subi r24,lo8(-(1))
+ 1824 087a 8093 0000 		sts screenmutex,r24
+ 434:config.c      ****       if (mode == SET_REGION) {
+ 1826               	.LM241:
+ 1827 087e 1830      		cpi r17,lo8(8)
+ 1828 0880 01F4      		brne .L127
+ 439:config.c      **** 	print_region_setting(INVERTED);
+ 1830               	.LM242:
+ 1831 0882 81E0      		ldi r24,lo8(1)
+ 1832 0884 0E94 0000 		call print_region_setting
+ 441:config.c      **** 	print_menu_change();
+ 1834               	.LM243:
+ 1835 0888 0E94 0000 		call print_menu_change
+ 1836 088c 18E6      		ldi r17,lo8(104)
+ 1837 088e 00C0      		rjmp .L128
+ 1838               	.L127:
+ 445:config.c      **** 	print_region_setting(NORMAL);
+ 1840               	.LM244:
+ 1841 0890 80E0      		ldi r24,lo8(0)
+ 1842 0892 0E94 0000 		call print_region_setting
+ 447:config.c      ****         print_menu_advance();
+ 1844               	.LM245:
+ 1845 0896 0E94 0000 		call print_menu_advance
+ 1846 089a 18E0      		ldi r17,lo8(8)
+ 1847               	.L128:
+ 452:config.c      ****       screenmutex--;
+ 1849               	.LM246:
+ 1850 089c 8091 0000 		lds r24,screenmutex
+ 1851 08a0 8150      		subi r24,lo8(-(-1))
+ 1852 08a2 8093 0000 		sts screenmutex,r24
+ 1853               	.L126:
+ 454:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 1855               	.LM247:
+ 1856 08a6 8091 0000 		lds r24,just_pressed
+ 1857 08aa 82FD      		sbrc r24,2
+ 1858 08ac 00C0      		rjmp .L129
+ 1859 08ae 8091 0000 		lds r24,pressed
+ 1860 08b2 82FF      		sbrs r24,2
+ 1861 08b4 00C0      		rjmp .L136
+ 1862               	.L129:
+ 455:config.c      ****       just_pressed = 0;
+ 1864               	.LM248:
+ 1865 08b6 1092 0000 		sts just_pressed,__zero_reg__
+ 457:config.c      ****       if (mode == SET_REG) {
+ 1867               	.LM249:
+ 1868 08ba 1836      		cpi r17,lo8(104)
+ 1869 08bc 01F4      		brne .L136
+ 458:config.c      **** 	    if(time_format) {        
+ 1871               	.LM250:
+ 1872 08be 8091 0000 		lds r24,time_format
+ 1873 08c2 8823      		tst r24
+ 1874 08c4 01F0      		breq .L130
+ 459:config.c      **** 	      region++;
+ 1876               	.LM251:
+ 1877 08c6 8091 0000 		lds r24,region
+ 1878 08ca 8F5F      		subi r24,lo8(-(1))
+ 1879 08cc 8093 0000 		sts region,r24
+ 463:config.c      ****           if(region > REGION_EU)
+ 1881               	.LM252:
+ 1882 08d0 8091 0000 		lds r24,region
+ 1883 08d4 8230      		cpi r24,lo8(2)
+ 1884 08d6 00F0      		brlo .L130
+ 465:config.c      **** 	        region = 0;
+ 1886               	.LM253:
+ 1887 08d8 1092 0000 		sts region,__zero_reg__
+ 1888               	.L130:
+ 467:config.c      **** 		time_format = !time_format;
+ 1890               	.LM254:
+ 1891 08dc 8091 0000 		lds r24,time_format
+ 1892 08e0 90E0      		ldi r25,lo8(0)
+ 1893 08e2 8823      		tst r24
+ 1894 08e4 01F4      		brne .L131
+ 1895 08e6 91E0      		ldi r25,lo8(1)
+ 1896               	.L131:
+ 1897 08e8 9093 0000 		sts time_format,r25
+ 468:config.c      **** 	screenmutex++;
+ 1899               	.LM255:
+ 1900 08ec 8091 0000 		lds r24,screenmutex
+ 1901 08f0 8F5F      		subi r24,lo8(-(1))
+ 1902 08f2 8093 0000 		sts screenmutex,r24
+ 469:config.c      **** 	display_menu(4);
+ 1904               	.LM256:
+ 1905 08f6 84E0      		ldi r24,lo8(4)
+ 1906 08f8 0E94 0000 		call display_menu
+ 470:config.c      **** 	print_menu_change();
+ 1908               	.LM257:
+ 1909 08fc 0E94 0000 		call print_menu_change
+ 472:config.c      **** 	print_region_setting(INVERTED);
+ 1911               	.LM258:
+ 1912 0900 81E0      		ldi r24,lo8(1)
+ 1913 0902 0E94 0000 		call print_region_setting
+ 473:config.c      **** 	screenmutex--;
+ 1915               	.LM259:
+ 1916 0906 8091 0000 		lds r24,screenmutex
+ 1917 090a 8150      		subi r24,lo8(-(-1))
+ 1918 090c 8093 0000 		sts screenmutex,r24
+ 475:config.c      **** 	eeprom_write_byte(&EE_REGION, region);
+ 1920               	.LM260:
+ 1921 0910 6091 0000 		lds r22,region
+ 1922 0914 80E0      		ldi r24,lo8(EE_REGION)
+ 1923 0916 90E0      		ldi r25,hi8(EE_REGION)
+ 1924 0918 0E94 0000 		call __eewr_byte_m328p
+ 476:config.c      **** 	eeprom_write_byte(&EE_TIME_FORMAT, time_format);    
+ 1926               	.LM261:
+ 1927 091c 6091 0000 		lds r22,time_format
+ 1928 0920 80E0      		ldi r24,lo8(EE_TIME_FORMAT)
+ 1929 0922 90E0      		ldi r25,hi8(EE_TIME_FORMAT)
+ 1930 0924 0E94 0000 		call __eewr_byte_m328p
+ 1931               	.L136:
+ 427:config.c      ****   while (!check_timeout()) {
+ 1933               	.LM262:
+ 1934 0928 0E94 0000 		call check_timeout
+ 1935 092c 8823      		tst r24
+ 1936 092e 01F4      		brne .+2
+ 1937 0930 00C0      		rjmp .L132
+ 1938               	/* epilogue start */
+ 480:config.c      **** }
+ 1940               	.LM263:
+ 1941 0932 1F91      		pop r17
+ 1942 0934 0895      		ret
+ 1947               	.Lscope17:
+ 1949               		.stabd	78,0,0
+ 1951               	.global	set_style
+ 1953               	set_style:
+ 1954               		.stabd	46,0,0
+ 116:config.c      **** void set_style(void) {
+ 1956               	.LM264:
+ 1957               	.LFBB18:
+ 1958 0936 0F93      		push r16
+ 1959 0938 1F93      		push r17
+ 1960               	/* prologue: function */
+ 1961               	/* frame size = 0 */
+ 117:config.c      ****   displaystyle = eeprom_read_byte(&EE_STYLE);
+ 1963               	.LM265:
+ 1964 093a 80E0      		ldi r24,lo8(EE_STYLE)
+ 1965 093c 90E0      		ldi r25,hi8(EE_STYLE)
+ 1966 093e 0E94 0000 		call __eerd_byte_m328p
+ 1967 0942 8093 0000 		sts displaystyle,r24
+ 118:config.c      ****   uint8_t mode = init_set_menu(0);
+ 1969               	.LM266:
+ 1970 0946 80E0      		ldi r24,lo8(0)
+ 1971 0948 0E94 0000 		call init_set_menu
+ 1972 094c 182F      		mov r17,r24
+ 152:config.c      **** 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_BASE + 1;
+ 1974               	.LM267:
+ 1975 094e 02ED      		ldi r16,lo8(-46)
+ 1976 0950 00C0      		rjmp .L148
+ 1977               	.L144:
+ 121:config.c      ****     if (just_pressed & 0x2) {
+ 1979               	.LM268:
+ 1980 0952 8091 0000 		lds r24,just_pressed
+ 1981 0956 81FF      		sbrs r24,1
+ 1982 0958 00C0      		rjmp .L139
+ 122:config.c      ****       just_pressed = 0;
+ 1984               	.LM269:
+ 1985 095a 1092 0000 		sts just_pressed,__zero_reg__
+ 123:config.c      ****       screenmutex++;
+ 1987               	.LM270:
+ 1988 095e 8091 0000 		lds r24,screenmutex
+ 1989 0962 8F5F      		subi r24,lo8(-(1))
+ 1990 0964 8093 0000 		sts screenmutex,r24
+ 125:config.c      ****       if (mode == SET_STYLE) {
+ 1992               	.LM271:
+ 1993 0968 183C      		cpi r17,lo8(-56)
+ 1994 096a 01F4      		brne .L140
+ 130:config.c      **** 	print_style_setting(INVERTED);
+ 1996               	.LM272:
+ 1997 096c 81E0      		ldi r24,lo8(1)
+ 1998 096e 0E94 0000 		call print_style_setting
+ 133:config.c      **** 	print_menu_change();
+ 2000               	.LM273:
+ 2001 0972 0E94 0000 		call print_menu_change
+ 145:config.c      ****       screenmutex--;
+ 2003               	.LM274:
+ 2004 0976 8091 0000 		lds r24,screenmutex
+ 2005 097a 8150      		subi r24,lo8(-(-1))
+ 2006 097c 8093 0000 		sts screenmutex,r24
+ 2007 0980 19EC      		ldi r17,lo8(-55)
+ 2008 0982 00C0      		rjmp .L139
+ 2009               	.L140:
+ 137:config.c      **** 	print_style_setting(NORMAL);
+ 2011               	.LM275:
+ 2012 0984 80E0      		ldi r24,lo8(0)
+ 2013 0986 0E94 0000 		call print_style_setting
+ 138:config.c      **** 	print_menu_advance();
+ 2015               	.LM276:
+ 2016 098a 0E94 0000 		call print_menu_advance
+ 140:config.c      ****         RotateFlag = 0;
+ 2018               	.LM277:
+ 2019 098e 1092 0000 		sts RotateFlag,__zero_reg__
+ 141:config.c      ****         displaymode = SHOW_TIME;
+ 2021               	.LM278:
+ 2022 0992 1092 0000 		sts displaymode,__zero_reg__
+ 142:config.c      **** 		if (displaystyle<=STYLE_ROTATE) eeprom_write_byte(&EE_STYLE,displaystyle);
+ 2024               	.LM279:
+ 2025 0996 8091 0000 		lds r24,displaystyle
+ 2026 099a 863D      		cpi r24,lo8(-42)
+ 2027 099c 00F4      		brsh .L145
+ 2028 099e 6091 0000 		lds r22,displaystyle
+ 2029 09a2 80E0      		ldi r24,lo8(EE_STYLE)
+ 2030 09a4 90E0      		ldi r25,hi8(EE_STYLE)
+ 2031 09a6 0E94 0000 		call __eewr_byte_m328p
+ 2032 09aa 00C0      		rjmp .L145
+ 2033               	.L139:
+ 147:config.c      ****     if ((just_pressed & 0x4) || (pressed & 0x4)) {
+ 2035               	.LM280:
+ 2036 09ac 8091 0000 		lds r24,just_pressed
+ 2037 09b0 82FD      		sbrc r24,2
+ 2038 09b2 00C0      		rjmp .L142
+ 2039 09b4 8091 0000 		lds r24,pressed
+ 2040 09b8 82FF      		sbrs r24,2
+ 2041 09ba 00C0      		rjmp .L148
+ 2042               	.L142:
+ 148:config.c      ****       just_pressed = 0;
+ 2044               	.LM281:
+ 2045 09bc 1092 0000 		sts just_pressed,__zero_reg__
+ 150:config.c      ****       if (mode == SET_STL) {
+ 2047               	.LM282:
+ 2048 09c0 193C      		cpi r17,lo8(-55)
+ 2049 09c2 01F4      		brne .L148
+ 151:config.c      **** 	    displaystyle ++;
+ 2051               	.LM283:
+ 2052 09c4 8091 0000 		lds r24,displaystyle
+ 2053 09c8 8F5F      		subi r24,lo8(-(1))
+ 2054 09ca 8093 0000 		sts displaystyle,r24
+ 152:config.c      **** 	    if (displaystyle>STYLE_ABOUT) displaystyle=STYLE_BASE + 1;
+ 2056               	.LM284:
+ 2057 09ce 8091 0000 		lds r24,displaystyle
+ 2058 09d2 893D      		cpi r24,lo8(-39)
+ 2059 09d4 00F0      		brlo .L143
+ 2060 09d6 0093 0000 		sts displaystyle,r16
+ 2061               	.L143:
+ 153:config.c      **** 	screenmutex++;
+ 2063               	.LM285:
+ 2064 09da 8091 0000 		lds r24,screenmutex
+ 2065 09de 8F5F      		subi r24,lo8(-(1))
+ 2066 09e0 8093 0000 		sts screenmutex,r24
+ 154:config.c      **** 	display_menu(0);
+ 2068               	.LM286:
+ 2069 09e4 80E0      		ldi r24,lo8(0)
+ 2070 09e6 0E94 0000 		call display_menu
+ 155:config.c      **** 	print_menu_change();
+ 2072               	.LM287:
+ 2073 09ea 0E94 0000 		call print_menu_change
+ 158:config.c      **** 	print_style_setting(INVERTED);
+ 2075               	.LM288:
+ 2076 09ee 81E0      		ldi r24,lo8(1)
+ 2077 09f0 0E94 0000 		call print_style_setting
+ 160:config.c      **** 	screenmutex--;
+ 2079               	.LM289:
+ 2080 09f4 8091 0000 		lds r24,screenmutex
+ 2081 09f8 8150      		subi r24,lo8(-(-1))
+ 2082 09fa 8093 0000 		sts screenmutex,r24
+ 161:config.c      **** 	if(pressed & 4)
+ 2084               	.LM290:
+ 2085 09fe 8091 0000 		lds r24,pressed
+ 2086 0a02 82FF      		sbrs r24,2
+ 2087 0a04 00C0      		rjmp .L148
+ 162:config.c      **** 		delay_ms(200);
+ 2089               	.LM291:
+ 2090 0a06 88EC      		ldi r24,lo8(200)
+ 2091 0a08 90E0      		ldi r25,hi8(200)
+ 2092 0a0a 0E94 0000 		call delay_ms
+ 2093               	.L148:
+ 119:config.c      ****   while (!check_timeout()) {
+ 2095               	.LM292:
+ 2096 0a0e 0E94 0000 		call check_timeout
+ 2097 0a12 8823      		tst r24
+ 2098 0a14 01F4      		brne .+2
+ 2099 0a16 00C0      		rjmp .L144
+ 2100               	.L145:
+ 2101               	/* epilogue start */
+ 168:config.c      **** }
+ 2103               	.LM293:
+ 2104 0a18 1F91      		pop r17
+ 2105 0a1a 0F91      		pop r16
+ 2106 0a1c 0895      		ret
+ 2111               	.Lscope18:
+ 2113               		.stabd	78,0,0
+ 2114               	.global	timeoutcounter
+ 2115               	.global	timeoutcounter
+ 2116               		.section .bss
+ 2119               	timeoutcounter:
+ 2120 0000 00        		.skip 1,0
+ 2121               	.global	screenmutex
+ 2122               	.global	screenmutex
+ 2125               	screenmutex:
+ 2126 0001 00        		.skip 1,0
+ 2127               	.global	next_mode_setdate
+ 2128               		.data
+ 2131               	next_mode_setdate:
+ 2132 0000 10        		.byte	16
+ 2133 0001 11        		.byte	17
+ 2134               	.global	next_mode_setmonth
+ 2137               	next_mode_setmonth:
+ 2138 0002 11        		.byte	17
+ 2139 0003 12        		.byte	18
+ 2140               	.global	next_mode_setday
+ 2143               	next_mode_setday:
+ 2144 0004 12        		.byte	18
+ 2145 0005 10        		.byte	16
+ 2146               	.global	region_setting_table
+ 2147               		.section	.progmem.data,"a",@progbits
+ 2150               	region_setting_table:
+ 2151 0000 2020 2020 		.string	"     US 12hr"
+ 2151      2055 5320 
+ 2151      3132 6872 
+ 2151      00
+ 2152 000d 2020 2020 		.string	"     US 24hr"
+ 2152      2055 5320 
+ 2152      3234 6872 
+ 2152      00
+ 2153 001a 2020 2020 		.string	"     EU 12hr"
+ 2153      2045 5520 
+ 2153      3132 6872 
+ 2153      00
+ 2154 0027 2020 2020 		.string	"     EU 24hr"
+ 2154      2045 5520 
+ 2154      3234 6872 
+ 2154      00
+ 2155               	.global	style_setting_str
+ 2158               	style_setting_str:
+ 2159 0034 D2        		.byte	-46
+ 2160 0035 52        		.byte	82
+ 2161 0036 41        		.byte	65
+ 2162 0037 54        		.byte	84
+ 2163 0038 54        		.byte	84
+ 2164 0039 43        		.byte	67
+ 2165 003a 68        		.byte	104
+ 2166 003b 72        		.byte	114
+ 2167 003c 6F        		.byte	111
+ 2168 003d 6E        		.byte	110
+ 2169 003e 00        		.byte	0
+ 2170 003f D3        		.byte	-45
+ 2171 0040 44        		.byte	68
+ 2172 0041 65        		.byte	101
+ 2173 0042 61        		.byte	97
+ 2174 0043 74        		.byte	116
+ 2175 0044 68        		.byte	104
+ 2176 0045 43        		.byte	67
+ 2177 0046 68        		.byte	104
+ 2178 0047 72        		.byte	114
+ 2179 0048 6F        		.byte	111
+ 2180 0049 6E        		.byte	110
+ 2181 004a 00        		.byte	0
+ 2182 004b D4        		.byte	-44
+ 2183 004c 52        		.byte	82
+ 2184 004d 61        		.byte	97
+ 2185 004e 6E        		.byte	110
+ 2186 004f 64        		.byte	100
+ 2187 0050 6F        		.byte	111
+ 2188 0051 6D        		.byte	109
+ 2189 0052 00        		.byte	0
+ 2190 0053 D5        		.byte	-43
+ 2191 0054 52        		.byte	82
+ 2192 0055 6F        		.byte	111
+ 2193 0056 74        		.byte	116
+ 2194 0057 61        		.byte	97
+ 2195 0058 74        		.byte	116
+ 2196 0059 65        		.byte	101
+ 2197 005a 00        		.byte	0
+ 2198 005b D6        		.byte	-42
+ 2199 005c 44        		.byte	68
+ 2200 005d 65        		.byte	101
+ 2201 005e 61        		.byte	97
+ 2202 005f 74        		.byte	116
+ 2203 0060 68        		.byte	104
+ 2204 0061 43        		.byte	67
+ 2205 0062 68        		.byte	104
+ 2206 0063 72        		.byte	114
+ 2207 0064 6F        		.byte	111
+ 2208 0065 6E        		.byte	110
+ 2209 0066 20        		.byte	32
+ 2210 0067 43        		.byte	67
+ 2211 0068 66        		.byte	102
+ 2212 0069 67        		.byte	103
+ 2213 006a 00        		.byte	0
+ 2214 006b D7        		.byte	-41
+ 2215 006c 47        		.byte	71
+ 2216 006d 50        		.byte	80
+ 2217 006e 53        		.byte	83
+ 2218 006f 20        		.byte	32
+ 2219 0070 53        		.byte	83
+ 2220 0071 65        		.byte	101
+ 2221 0072 74        		.byte	116
+ 2222 0073 75        		.byte	117
+ 2223 0074 70        		.byte	112
+ 2224 0075 00        		.byte	0
+ 2225 0076 D8        		.byte	-40
+ 2226 0077 41        		.byte	65
+ 2227 0078 62        		.byte	98
+ 2228 0079 6F        		.byte	111
+ 2229 007a 75        		.byte	117
+ 2230 007b 74        		.byte	116
+ 2231 007c 00        		.byte	0
+ 2232 007d FF        		.byte	-1
+ 2235               	__c.2289:
+ 2236 007e 7365 7420 		.string	"set secs"
+ 2236      7365 6373 
+ 2236      00
+ 2239               	__c.2287:
+ 2240 0087 6368 616E 		.string	"change sec"
+ 2240      6765 2073 
+ 2240      6563 00
+ 2243               	__c.2283:
+ 2244 0092 7365 7420 		.string	"set mins"
+ 2244      6D69 6E73 
+ 2244      00
+ 2247               	__c.2281:
+ 2248 009b 6368 616E 		.string	"change min"
+ 2248      6765 206D 
+ 2248      696E 00
+ 2251               	__c.2277:
+ 2252 00a6 7365 7420 		.string	"set hour"
+ 2252      686F 7572 
+ 2252      00
+ 2255               	__c.2275:
+ 2256 00af 6368 616E 		.string	"change hr"
+ 2256      6765 2068 
+ 2256      7200 
+ 2259               	__c.2225:
+ 2260 00b9 7365 7420 		.string	"set mins"
+ 2260      6D69 6E73 
+ 2260      00
+ 2263               	__c.2223:
+ 2264 00c2 6368 616E 		.string	"change min"
+ 2264      6765 206D 
+ 2264      696E 00
+ 2267               	__c.2219:
+ 2268 00cd 7365 7420 		.string	"set hour"
+ 2268      686F 7572 
+ 2268      00
+ 2271               	__c.2217:
+ 2272 00d6 6368 616E 		.string	"change hr."
+ 2272      6765 2068 
+ 2272      722E 00
+ 2275               	__c.2161:
+ 2276 00e1 5265 6769 		.string	"Region: "
+ 2276      6F6E 3A20 
+ 2276      00
+ 2279               	__c.2054:
+ 2280 00ea 7365 7420 		.string	"set year"
+ 2280      7965 6172 
+ 2280      00
+ 2283               	__c.2052:
+ 2284 00f3 6368 616E 		.string	"change yr."
+ 2284      6765 2079 
+ 2284      722E 00
+ 2287               	__c.2050:
+ 2288 00fe 7365 7420 		.string	"set date"
+ 2288      6461 7465 
+ 2288      00
+ 2291               	__c.2048:
+ 2292 0107 6368 616E 		.string	"change day"
+ 2292      6765 2064 
+ 2292      6179 00
+ 2295               	__c.2046:
+ 2296 0112 7365 7420 		.string	"set mon."
+ 2296      6D6F 6E2E 
+ 2296      00
+ 2299               	__c.2044:
+ 2300 011b 6368 616E 		.string	"change mon"
+ 2300      6765 206D 
+ 2300      6F6E 00
+ 2303               	__c.2034:
+ 2304 0126 2020 2020 		.string	"     "
+ 2304      2000 
+ 2307               	__c.2032:
+ 2308 012c 2020 2020 		.string	"     "
+ 2308      2000 
+ 2311               	__c.2030:
+ 2312 0132 4461 7465 		.string	"Date:"
+ 2312      3A00 
+ 2315               	__c.1960:
+ 2316 0138 4D6F 6465 		.string	"Mode:"
+ 2316      3A00 
+ 2319               	__c.1950:
+ 2320 013e 5365 7420 		.string	"Set Backlight: "
+ 2320      4261 636B 
+ 2320      6C69 6768 
+ 2320      743A 2000 
+ 2323               	__c.1941:
+ 2324 014e 5365 7420 		.string	"Set Time: "
+ 2324      5469 6D65 
+ 2324      3A20 00
+ 2327               	__c.1929:
+ 2328 0159 5365 7420 		.string	"Set Alarm:  "
+ 2328      416C 6172 
+ 2328      6D3A 2020 
+ 2328      00
+ 2360               		.text
+ 2362               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 config.c
+     /tmp/ccn1Y7ze.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccn1Y7ze.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccn1Y7ze.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccn1Y7ze.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccn1Y7ze.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccn1Y7ze.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccn1Y7ze.s:134    .text:00000000 print_style_setting
+     /tmp/ccn1Y7ze.s:2158   .progmem.data:00000034 style_setting_str
+     /tmp/ccn1Y7ze.s:212    .text:00000042 print_region_setting
+     /tmp/ccn1Y7ze.s:2275   .progmem.data:000000e1 __c.2161
+     /tmp/ccn1Y7ze.s:2150   .progmem.data:00000000 region_setting_table
+     /tmp/ccn1Y7ze.s:269    .text:0000008c print_alarmhour
+     /tmp/ccn1Y7ze.s:379    .text:00000116 print_timehour
+     /tmp/ccn1Y7ze.s:464    .text:00000180 print_number_slash
+     /tmp/ccn1Y7ze.s:494    .text:0000018e print_date
+     /tmp/ccn1Y7ze.s:2311   .progmem.data:00000132 __c.2030
+     /tmp/ccn1Y7ze.s:2307   .progmem.data:0000012c __c.2032
+     /tmp/ccn1Y7ze.s:2303   .progmem.data:00000126 __c.2034
+     /tmp/ccn1Y7ze.s:612    .text:0000022c print_backlight
+     /tmp/ccn1Y7ze.s:2319   .progmem.data:0000013e __c.1950
+     /tmp/ccn1Y7ze.s:657    .text:00000256 print_time
+     /tmp/ccn1Y7ze.s:2323   .progmem.data:0000014e __c.1941
+     /tmp/ccn1Y7ze.s:766    .text:000002e4 print_alarmline
+     /tmp/ccn1Y7ze.s:2327   .progmem.data:00000159 __c.1929
+     /tmp/ccn1Y7ze.s:822    .text:00000326 print_monthday_help
+     /tmp/ccn1Y7ze.s:2299   .progmem.data:0000011b __c.2044
+     /tmp/ccn1Y7ze.s:2295   .progmem.data:00000112 __c.2046
+     /tmp/ccn1Y7ze.s:2291   .progmem.data:00000107 __c.2048
+     /tmp/ccn1Y7ze.s:2287   .progmem.data:000000fe __c.2050
+     /tmp/ccn1Y7ze.s:2283   .progmem.data:000000f3 __c.2052
+     /tmp/ccn1Y7ze.s:2279   .progmem.data:000000ea __c.2054
+     /tmp/ccn1Y7ze.s:879    .text:0000035a display_menu
+     /tmp/ccn1Y7ze.s:2125   .bss:00000001 screenmutex
+     /tmp/ccn1Y7ze.s:2315   .progmem.data:00000138 __c.1960
+     /tmp/ccn1Y7ze.s:979    .text:000003ec init_set_menu
+     /tmp/ccn1Y7ze.s:2119   .bss:00000000 timeoutcounter
+     /tmp/ccn1Y7ze.s:1007   .text:000003fc set_time
+     /tmp/ccn1Y7ze.s:2255   .progmem.data:000000af __c.2275
+     /tmp/ccn1Y7ze.s:2251   .progmem.data:000000a6 __c.2277
+     /tmp/ccn1Y7ze.s:2247   .progmem.data:0000009b __c.2281
+     /tmp/ccn1Y7ze.s:2243   .progmem.data:00000092 __c.2283
+     /tmp/ccn1Y7ze.s:2239   .progmem.data:00000087 __c.2287
+     /tmp/ccn1Y7ze.s:2235   .progmem.data:0000007e __c.2289
+     /tmp/ccn1Y7ze.s:1244   .text:00000550 set_alarm
+     /tmp/ccn1Y7ze.s:2271   .progmem.data:000000d6 __c.2217
+     /tmp/ccn1Y7ze.s:2267   .progmem.data:000000cd __c.2219
+     /tmp/ccn1Y7ze.s:2263   .progmem.data:000000c2 __c.2223
+     /tmp/ccn1Y7ze.s:2259   .progmem.data:000000b9 __c.2225
+     /tmp/ccn1Y7ze.s:1414   .text:00000642 set_backlight
+     /tmp/ccn1Y7ze.s:1539   .text:000006e8 set_date
+     /tmp/ccn1Y7ze.s:2131   .data:00000000 next_mode_setdate
+     /tmp/ccn1Y7ze.s:2137   .data:00000002 next_mode_setmonth
+     /tmp/ccn1Y7ze.s:2143   .data:00000004 next_mode_setday
+     /tmp/ccn1Y7ze.s:1797   .text:0000085c set_region
+     /tmp/ccn1Y7ze.s:1953   .text:00000936 set_style
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+glcdSetAddress
+displaystyle
+glcdPutStr_rom
+region
+time_format
+glcdWriteChar
+__divmodhi4
+printnumber
+alarm_h
+alarm_m
+PRINT_MENU_OPTS
+print_menu_advance
+glcdClearScreen
+time_h
+time_m
+time_s
+date_m
+date_d
+date_y
+displaymode
+print_menu_exit
+drawArrow
+just_pressed
+writei2ctime
+pressed
+delay_ms
+check_timeout
+EE_ALARM_HOUR
+EE_ALARM_MIN
+__eewr_byte_m328p
+print_menu_change
+EE_BRIGHT
+add_month
+EE_REGION
+EE_TIME_FORMAT
+EE_STYLE
+__eerd_byte_m328p
+RotateFlag

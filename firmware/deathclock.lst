@@ -1,0 +1,2239 @@
+   1               		.file	"deathclock.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 105               	.global	is_leap_year
+ 107               	is_leap_year:
+ 108               		.stabd	46,0,0
+   0:deathclock.c  **** /***************************************************************************
+   1:deathclock.c  ****  MonoChron Death Clock firmware July 28, 2010
+   2:deathclock.c  ****  (c) 2010 Damien Good
+   3:deathclock.c  **** 
+   4:deathclock.c  **** Permission is hereby granted, free of charge, to any person obtaining a copy
+   5:deathclock.c  **** of this software and associated documentation files (the "Software"), to deal
+   6:deathclock.c  **** in the Software without restriction, including without limitation the rights
+   7:deathclock.c  **** to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   8:deathclock.c  **** copies of the Software, and to permit persons to whom the Software is
+   9:deathclock.c  **** furnished to do so, subject to the following conditions:
+  10:deathclock.c  **** 
+  11:deathclock.c  **** The above copyright notice and this permission notice shall be included in
+  12:deathclock.c  **** all copies or substantial portions of the Software.
+  13:deathclock.c  **** 
+  14:deathclock.c  **** THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  15:deathclock.c  **** IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  16:deathclock.c  **** FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  17:deathclock.c  **** AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  18:deathclock.c  **** LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  19:deathclock.c  **** OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  20:deathclock.c  **** THE SOFTWARE.
+  21:deathclock.c  **** ****************************************************************************/
+  22:deathclock.c  **** 
+  23:deathclock.c  **** #include <avr/io.h>      
+  24:deathclock.c  **** #include <string.h>
+  25:deathclock.c  **** #include <avr/interrupt.h>   // Interrupts and timers
+  26:deathclock.c  **** #include <util/delay.h>      // Blocking delay functions
+  27:deathclock.c  **** #include <avr/pgmspace.h>    // So we can store the 'font table' in ROM
+  28:deathclock.c  **** #include <avr/eeprom.h>      // Date/time/pref backup in permanent EEPROM
+  29:deathclock.c  **** #include <avr/wdt.h>     // Watchdog timer to repair lockups
+  30:deathclock.c  **** 
+  31:deathclock.c  **** #include "deathclock.h"
+  32:deathclock.c  **** #include "ratt.h"
+  33:deathclock.c  **** #include "util.h"
+  34:deathclock.c  **** 
+  35:deathclock.c  **** 
+  36:deathclock.c  **** #ifdef DEATHCHRON
+  37:deathclock.c  **** extern volatile uint8_t time_s, time_m, time_h;
+  38:deathclock.c  **** extern volatile uint8_t date_m, date_d, date_y;
+  39:deathclock.c  **** volatile uint8_t death_m, death_d, death_y;
+  40:deathclock.c  **** 
+  41:deathclock.c  **** volatile int32_t minutes_left=0;
+  42:deathclock.c  **** volatile int32_t old_minutes_left;
+  43:deathclock.c  **** volatile uint8_t dc_mode;
+  44:deathclock.c  **** volatile uint8_t reaper_tow_rip;
+  45:deathclock.c  **** 
+  46:deathclock.c  **** const uint8_t bmi_table_offset[] = {
+  47:deathclock.c  **** 	0,5,	//normal
+  48:deathclock.c  **** 	0,5,	//pessimistic
+  49:deathclock.c  **** 	0,5,	//optimistic
+  50:deathclock.c  **** 	11,12,	//Sadistic
+  51:deathclock.c  **** };
+  52:deathclock.c  **** 
+  53:deathclock.c  **** const uint8_t bmi_table_count[] = {
+  54:deathclock.c  **** 	5,6,	//normal
+  55:deathclock.c  **** 	5,6,	//pessimistic
+  56:deathclock.c  **** 	5,6,	//optimistic
+  57:deathclock.c  **** 	1,2,	//Sadistic
+  58:deathclock.c  **** };
+  59:deathclock.c  **** 
+  60:deathclock.c  **** const uint8_t normal_bmi_male[5][11] PROGMEM = {
+  61:deathclock.c  ****   { 40,0x00,0x11,0x11,0x22,0x23,0x33,0x44,0x45,0x56,0x68 },
+  62:deathclock.c  ****   { 50,0x00,0x01,0x11,0x12,0x22,0x23,0x34,0x44,0x55,0x57 },
+  63:deathclock.c  ****   { 60,0x00,0x00,0x11,0x11,0x22,0x23,0x33,0x44,0x45,0x56 },
+  64:deathclock.c  ****   { 70,0x00,0x11,0x11,0x12,0x22,0x23,0x33,0x44,0x44,0x00 },
+  65:deathclock.c  ****   { 200,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x05 }
+  66:deathclock.c  **** };
+  67:deathclock.c  **** 
+  68:deathclock.c  **** const uint8_t normal_bmi_female[6][11] PROGMEM = {
+  69:deathclock.c  ****   { 30,0x01,0x11,0x12,0x23,0x33,0x44,0x55,0x66,0x77,0x8D },
+  70:deathclock.c  ****   { 40,0x01,0x11,0x12,0x22,0x33,0x34,0x45,0x56,0x66,0x7B },
+  71:deathclock.c  ****   { 50,0x00,0x01,0x11,0x22,0x23,0x33,0x44,0x45,0x56,0x6A },
+  72:deathclock.c  ****   { 60,0x00,0x00,0x01,0x11,0x12,0x22,0x33,0x34,0x44,0x57 },
+  73:deathclock.c  ****   { 70,0x00,0x00,0x00,0x11,0x11,0x22,0x22,0x23,0x33,0x35 },
+  74:deathclock.c  ****   { 200,0x00,0x00,0x00,0x00,0x00,0x11,0x11,0x11,0x11,0x22 }
+  75:deathclock.c  **** };
+  76:deathclock.c  **** 
+  77:deathclock.c  **** const uint8_t sadistic_bmi_male[1][11] PROGMEM = {
+  78:deathclock.c  ****   { 200,0x00,0x00,0x00,0x11,0x11,0x11,0x22,0x22,0x23,0x34 }
+  79:deathclock.c  **** };
+  80:deathclock.c  **** 
+  81:deathclock.c  **** const uint8_t sadistic_bmi_female[2][11] PROGMEM = {
+  82:deathclock.c  ****   { 30,0x00,0x00,0x01,0x11,0x11,0x22,0x22,0x33,0x33,0x46 },
+  83:deathclock.c  ****   { 200,0x00,0x00,0x01,0x11,0x11,0x12,0x22,0x23,0x33,0x35 }
+  84:deathclock.c  **** };
+  85:deathclock.c  **** 
+  86:deathclock.c  **** const uint8_t smoking_table_offset[] = {
+  87:deathclock.c  **** 	0,10,	//normal
+  88:deathclock.c  **** 	0,10,	//pessimistic
+  89:deathclock.c  **** 	0,10,	//optimistic
+  90:deathclock.c  **** 	19,21,	//Sadistic
+  91:deathclock.c  **** };
+  92:deathclock.c  **** 
+  93:deathclock.c  **** const uint8_t smoking_table_count[] = {
+  94:deathclock.c  **** 	10,9,	//normal
+  95:deathclock.c  **** 	10,9,	//pessimistic
+  96:deathclock.c  **** 	10,9,	//optimistic
+  97:deathclock.c  **** 	2,2,	//Sadistic
+  98:deathclock.c  **** };
+  99:deathclock.c  **** 
+ 100:deathclock.c  **** const uint16_t normal_smoking_male[10][2] PROGMEM = {
+ 101:deathclock.c  ****   { 30,2739 },
+ 102:deathclock.c  ****   { 35,2703 },
+ 103:deathclock.c  ****   { 40,2557 },
+ 104:deathclock.c  ****   { 45,2520 },
+ 105:deathclock.c  ****   { 50,2410 },
+ 106:deathclock.c  ****   { 55,2265 },
+ 107:deathclock.c  ****   { 60,2046 },
+ 108:deathclock.c  ****   { 65,1790 },
+ 109:deathclock.c  ****   { 70,1607 },
+ 110:deathclock.c  ****   { 200,1205 }
+ 111:deathclock.c  **** };
+ 112:deathclock.c  **** 
+ 113:deathclock.c  **** const uint16_t normal_smoking_female[9][2] PROGMEM = {
+ 114:deathclock.c  ****   { 30, 2367 },
+ 115:deathclock.c  ****   { 45, 2331 },
+ 116:deathclock.c  ****   { 50, 2294 },
+ 117:deathclock.c  ****   { 55, 2257 },
+ 118:deathclock.c  ****   { 60, 2192 },
+ 119:deathclock.c  ****   { 65, 1782 },
+ 120:deathclock.c  ****   { 70, 1826 },
+ 121:deathclock.c  ****   { 75, 1381 },
+ 122:deathclock.c  ****   { 200, 1096 }
+ 123:deathclock.c  **** };
+ 124:deathclock.c  **** 
+ 125:deathclock.c  **** const uint16_t sadistic_smoking_male[2][2] PROGMEM = {
+ 126:deathclock.c  ****   { 30, 1278 },
+ 127:deathclock.c  ****   { 200, 1242 }
+ 128:deathclock.c  **** };
+ 129:deathclock.c  **** 
+ 130:deathclock.c  **** const uint16_t sadistic_smoking_female[2][2] PROGMEM = {
+ 131:deathclock.c  ****   { 30, 1424 },
+ 132:deathclock.c  ****   { 200, 1388 }
+ 133:deathclock.c  **** };
+ 134:deathclock.c  **** 
+ 135:deathclock.c  **** 
+ 136:deathclock.c  **** const uint8_t day_in_month[12] PROGMEM = {31,28,31,30,31,30,31,31,30,31,30,31};
+ 137:deathclock.c  **** 
+ 138:deathclock.c  **** uint8_t is_leap_year ( uint16_t year )
+ 139:deathclock.c  **** {
+ 110               	.LM0:
+ 111               	.LFBB1:
+ 112               	/* prologue: function */
+ 113               	/* frame size = 0 */
+ 114 0000 9C01      		movw r18,r24
+ 140:deathclock.c  ****   if ((year % 400) == 0)
+ 116               	.LM1:
+ 117 0002 60E9      		ldi r22,lo8(400)
+ 118 0004 71E0      		ldi r23,hi8(400)
+ 119 0006 0E94 0000 		call __udivmodhi4
+ 120 000a 892B      		or r24,r25
+ 121 000c 01F4      		brne .L2
+ 122 000e 81E0      		ldi r24,lo8(1)
+ 123 0010 0895      		ret
+ 124               	.L2:
+ 141:deathclock.c  ****     return 1;
+ 142:deathclock.c  ****   if ((year % 100) == 0)
+ 126               	.LM2:
+ 127 0012 C901      		movw r24,r18
+ 128 0014 64E6      		ldi r22,lo8(100)
+ 129 0016 70E0      		ldi r23,hi8(100)
+ 130 0018 0E94 0000 		call __udivmodhi4
+ 131 001c 892B      		or r24,r25
+ 132 001e 01F4      		brne .L4
+ 133 0020 80E0      		ldi r24,lo8(0)
+ 134 0022 0895      		ret
+ 135               	.L4:
+ 136 0024 80E0      		ldi r24,lo8(0)
+ 137 0026 2370      		andi r18,lo8(3)
+ 138 0028 3070      		andi r19,hi8(3)
+ 139 002a 232B      		or r18,r19
+ 140 002c 01F4      		brne .L3
+ 141 002e 81E0      		ldi r24,lo8(1)
+ 142               	.L3:
+ 143:deathclock.c  ****     return 0;
+ 144:deathclock.c  ****   if ((year % 4) == 0)
+ 145:deathclock.c  ****     return 1;
+ 146:deathclock.c  ****   return 0;
+ 147:deathclock.c  **** }
+ 144               	.LM3:
+ 145 0030 0895      		ret
+ 147               	.Lscope1:
+ 149               		.stabd	78,0,0
+ 157               	.global	date_diff
+ 159               	date_diff:
+ 160               		.stabd	46,0,0
+ 148:deathclock.c  **** 
+ 149:deathclock.c  **** uint32_t date_diff ( uint8_t month1, uint8_t day1, uint8_t year1, uint8_t month2, uint8_t day2, uin
+ 150:deathclock.c  **** {
+ 162               	.LM4:
+ 163               	.LFBB2:
+ 164 0032 4F92      		push r4
+ 165 0034 5F92      		push r5
+ 166 0036 6F92      		push r6
+ 167 0038 7F92      		push r7
+ 168 003a 8F92      		push r8
+ 169 003c 9F92      		push r9
+ 170 003e AF92      		push r10
+ 171 0040 BF92      		push r11
+ 172 0042 CF92      		push r12
+ 173 0044 DF92      		push r13
+ 174 0046 EF92      		push r14
+ 175 0048 FF92      		push r15
+ 176 004a 0F93      		push r16
+ 177 004c 1F93      		push r17
+ 178 004e CF93      		push r28
+ 179 0050 DF93      		push r29
+ 180               	/* prologue: function */
+ 181               	/* frame size = 0 */
+ 182 0052 382F      		mov r19,r24
+ 183 0054 562F      		mov r21,r22
+ 184 0056 942E      		mov r9,r20
+ 185 0058 522E      		mov r5,r18
+ 186 005a 402E      		mov r4,r16
+ 187 005c 8E2C      		mov r8,r14
+ 151:deathclock.c  ****   uint32_t diff = 0;
+ 152:deathclock.c  ****   int i;
+ 153:deathclock.c  **** 
+ 154:deathclock.c  ****   if((year2 < year1) || ((year2 == year1) && (month2 < month1)))
+ 189               	.LM5:
+ 190 005e E416      		cp r14,r20
+ 191 0060 00F0      		brlo .L8
+ 192 0062 E416      		cp r14,r20
+ 193 0064 01F4      		brne .L9
+ 194 0066 2817      		cp r18,r24
+ 195 0068 00F4      		brsh .L9
+ 196               	.L8:
+ 155:deathclock.c  ****     return date_diff( month2, day2, year2, month1, day1, year1 ) * -1;
+ 198               	.LM6:
+ 199 006a 852D      		mov r24,r5
+ 200 006c 642D      		mov r22,r4
+ 201 006e 482D      		mov r20,r8
+ 202 0070 232F      		mov r18,r19
+ 203 0072 052F      		mov r16,r21
+ 204 0074 E92C      		mov r14,r9
+ 205 0076 0E94 0000 		call date_diff
+ 206 007a 2227      		clr r18
+ 207 007c 3327      		clr r19
+ 208 007e A901      		movw r20,r18
+ 209 0080 261B      		sub r18,r22
+ 210 0082 370B      		sbc r19,r23
+ 211 0084 480B      		sbc r20,r24
+ 212 0086 590B      		sbc r21,r25
+ 213 0088 00C0      		rjmp .L10
+ 214               	.L9:
+ 156:deathclock.c  **** 
+ 157:deathclock.c  ****   if((month1 == month2) && (year1 == year2))
+ 216               	.LM7:
+ 217 008a 3515      		cp r19,r5
+ 218 008c 01F4      		brne .L11
+ 219 008e 9814      		cp r9,r8
+ 220 0090 01F0      		breq .+2
+ 221 0092 00C0      		rjmp .L12
+ 158:deathclock.c  ****     return day2 - day1;
+ 223               	.LM8:
+ 224 0094 842D      		mov r24,r4
+ 225 0096 90E0      		ldi r25,lo8(0)
+ 226 0098 851B      		sub r24,r21
+ 227 009a 9109      		sbc r25,__zero_reg__
+ 228 009c 9C01      		movw r18,r24
+ 229 009e 4427      		clr r20
+ 230 00a0 37FD      		sbrc r19,7
+ 231 00a2 4095      		com r20
+ 232 00a4 542F      		mov r21,r20
+ 233 00a6 00C0      		rjmp .L10
+ 234               	.L11:
+ 159:deathclock.c  ****   if(year1==year2)
+ 236               	.LM9:
+ 237 00a8 9814      		cp r9,r8
+ 238 00aa 01F0      		breq .+2
+ 239 00ac 00C0      		rjmp .L12
+ 240               	.LBB2:
+ 160:deathclock.c  ****   {
+ 161:deathclock.c  ****     diff = pgm_read_byte(&day_in_month[month1-1]) - day1;
+ 242               	.LM10:
+ 243 00ae C32F      		mov r28,r19
+ 244 00b0 D0E0      		ldi r29,lo8(0)
+ 245 00b2 FE01      		movw r30,r28
+ 246 00b4 E050      		subi r30,lo8(-(day_in_month-1))
+ 247 00b6 F040      		sbci r31,hi8(-(day_in_month-1))
+ 248               	/* #APP */
+ 249               	 ;  162 "deathclock.c" 1
+ 250 00b8 E491      		lpm r30, Z
+ 251               		
+ 252               	 ;  0 "" 2
+ 253               	/* #NOAPP */
+ 254               	.LBE2:
+ 255 00ba 8E2F      		mov r24,r30
+ 256 00bc 90E0      		ldi r25,lo8(0)
+ 257 00be 851B      		sub r24,r21
+ 258 00c0 9109      		sbc r25,__zero_reg__
+ 259 00c2 7C01      		movw r14,r24
+ 260 00c4 0027      		clr r16
+ 261 00c6 F7FC      		sbrc r15,7
+ 262 00c8 0095      		com r16
+ 263 00ca 102F      		mov r17,r16
+ 162:deathclock.c  ****     if(month1 == 2)
+ 265               	.LM11:
+ 266 00cc 3230      		cpi r19,lo8(2)
+ 267 00ce 01F4      		brne .L13
+ 163:deathclock.c  ****       diff += is_leap_year(year1);
+ 269               	.LM12:
+ 270 00d0 892D      		mov r24,r9
+ 271 00d2 90E0      		ldi r25,lo8(0)
+ 272 00d4 0E94 0000 		call is_leap_year
+ 273 00d8 E80E      		add r14,r24
+ 274 00da F11C      		adc r15,__zero_reg__
+ 275 00dc 011D      		adc r16,__zero_reg__
+ 276 00de 111D      		adc r17,__zero_reg__
+ 277               	.L13:
+ 278 00e0 90E0      		ldi r25,lo8(day_in_month)
+ 279 00e2 A92E      		mov r10,r25
+ 280 00e4 90E0      		ldi r25,hi8(day_in_month)
+ 281 00e6 B92E      		mov r11,r25
+ 282 00e8 AC0E      		add r10,r28
+ 283 00ea BD1E      		adc r11,r29
+ 284 00ec CC24      		clr r12
+ 285 00ee DD24      		clr r13
+ 164:deathclock.c  ****     for(i=month1+1;i<month2;i++)
+ 165:deathclock.c  ****     {
+ 166:deathclock.c  ****       diff+=pgm_read_byte(&day_in_month[i-1]);
+ 167:deathclock.c  ****       if(i==2)
+ 168:deathclock.c  ****         diff+=is_leap_year(year1);
+ 287               	.LM13:
+ 288 00f0 3E01      		movw r6,r28
+ 289 00f2 0894      		sec
+ 290 00f4 611C      		adc r6,__zero_reg__
+ 291 00f6 711C      		adc r7,__zero_reg__
+ 165:deathclock.c  ****     for(i=month1+1;i<month2;i++)
+ 293               	.LM14:
+ 294 00f8 C52D      		mov r28,r5
+ 295 00fa D0E0      		ldi r29,lo8(0)
+ 296 00fc 00C0      		rjmp .L14
+ 297               	.L16:
+ 298               	.LBB3:
+ 167:deathclock.c  ****       diff+=pgm_read_byte(&day_in_month[i-1]);
+ 300               	.LM15:
+ 301 00fe F501      		movw r30,r10
+ 302               	/* #APP */
+ 303               	 ;  167 "deathclock.c" 1
+ 304 0100 8491      		lpm r24, Z
+ 305               		
+ 306               	 ;  0 "" 2
+ 307               	/* #NOAPP */
+ 308               	.LBE3:
+ 309 0102 E80E      		add r14,r24
+ 310 0104 F11C      		adc r15,__zero_reg__
+ 311 0106 011D      		adc r16,__zero_reg__
+ 312 0108 111D      		adc r17,__zero_reg__
+ 168:deathclock.c  ****       if(i==2)
+ 314               	.LM16:
+ 315 010a 2230      		cpi r18,2
+ 316 010c 3105      		cpc r19,__zero_reg__
+ 317 010e 01F4      		brne .L15
+ 319               	.LM17:
+ 320 0110 892D      		mov r24,r9
+ 321 0112 90E0      		ldi r25,lo8(0)
+ 322 0114 0E94 0000 		call is_leap_year
+ 323 0118 E80E      		add r14,r24
+ 324 011a F11C      		adc r15,__zero_reg__
+ 325 011c 011D      		adc r16,__zero_reg__
+ 326 011e 111D      		adc r17,__zero_reg__
+ 327               	.L15:
+ 328 0120 0894      		sec
+ 329 0122 C11C      		adc r12,__zero_reg__
+ 330 0124 D11C      		adc r13,__zero_reg__
+ 331 0126 0894      		sec
+ 332 0128 A11C      		adc r10,__zero_reg__
+ 333 012a B11C      		adc r11,__zero_reg__
+ 334               	.L14:
+ 335 012c 9301      		movw r18,r6
+ 336 012e 2C0D      		add r18,r12
+ 337 0130 3D1D      		adc r19,r13
+ 165:deathclock.c  ****     for(i=month1+1;i<month2;i++)
+ 339               	.LM18:
+ 340 0132 2C17      		cp r18,r28
+ 341 0134 3D07      		cpc r19,r29
+ 342 0136 04F0      		brlt .L16
+ 343 0138 00C0      		rjmp .L27
+ 344               	.L12:
+ 345               	.LBB4:
+ 169:deathclock.c  ****     }
+ 170:deathclock.c  ****     diff += day2;
+ 171:deathclock.c  ****     return diff;
+ 172:deathclock.c  ****   }
+ 173:deathclock.c  ****   diff = pgm_read_byte(&day_in_month[month1-1]) - day1;
+ 347               	.LM19:
+ 348 013a C32F      		mov r28,r19
+ 349 013c D0E0      		ldi r29,lo8(0)
+ 350 013e FE01      		movw r30,r28
+ 351 0140 E050      		subi r30,lo8(-(day_in_month-1))
+ 352 0142 F040      		sbci r31,hi8(-(day_in_month-1))
+ 353               	/* #APP */
+ 354               	 ;  174 "deathclock.c" 1
+ 355 0144 E491      		lpm r30, Z
+ 356               		
+ 357               	 ;  0 "" 2
+ 358               	/* #NOAPP */
+ 359               	.LBE4:
+ 360 0146 8E2F      		mov r24,r30
+ 361 0148 90E0      		ldi r25,lo8(0)
+ 362 014a 851B      		sub r24,r21
+ 363 014c 9109      		sbc r25,__zero_reg__
+ 364 014e 7C01      		movw r14,r24
+ 365 0150 0027      		clr r16
+ 366 0152 F7FC      		sbrc r15,7
+ 367 0154 0095      		com r16
+ 368 0156 102F      		mov r17,r16
+ 174:deathclock.c  ****   if(month1 == 2)
+ 370               	.LM20:
+ 371 0158 3230      		cpi r19,lo8(2)
+ 372 015a 01F4      		brne .L17
+ 175:deathclock.c  ****       diff+=is_leap_year(year1);
+ 374               	.LM21:
+ 375 015c 892D      		mov r24,r9
+ 376 015e 90E0      		ldi r25,lo8(0)
+ 377 0160 0E94 0000 		call is_leap_year
+ 378 0164 E80E      		add r14,r24
+ 379 0166 F11C      		adc r15,__zero_reg__
+ 380 0168 011D      		adc r16,__zero_reg__
+ 381 016a 111D      		adc r17,__zero_reg__
+ 382               	.L17:
+ 383 016c 80E0      		ldi r24,lo8(day_in_month)
+ 384 016e A82E      		mov r10,r24
+ 385 0170 80E0      		ldi r24,hi8(day_in_month)
+ 386 0172 B82E      		mov r11,r24
+ 387 0174 AC0E      		add r10,r28
+ 388 0176 BD1E      		adc r11,r29
+ 389 0178 CC24      		clr r12
+ 390 017a DD24      		clr r13
+ 176:deathclock.c  ****   for(i=month1+1;i<=12;i++)
+ 177:deathclock.c  ****   {
+ 178:deathclock.c  ****     diff+=pgm_read_byte(&day_in_month[i-1]);
+ 179:deathclock.c  ****     if(i==2)
+ 180:deathclock.c  ****       diff+=is_leap_year(year1);
+ 392               	.LM22:
+ 393 017c 2196      		adiw r28,1
+ 394 017e 00C0      		rjmp .L18
+ 395               	.L20:
+ 396               	.LBB5:
+ 179:deathclock.c  ****     diff+=pgm_read_byte(&day_in_month[i-1]);
+ 398               	.LM23:
+ 399 0180 F501      		movw r30,r10
+ 400               	/* #APP */
+ 401               	 ;  179 "deathclock.c" 1
+ 402 0182 8491      		lpm r24, Z
+ 403               		
+ 404               	 ;  0 "" 2
+ 405               	/* #NOAPP */
+ 406               	.LBE5:
+ 407 0184 E80E      		add r14,r24
+ 408 0186 F11C      		adc r15,__zero_reg__
+ 409 0188 011D      		adc r16,__zero_reg__
+ 410 018a 111D      		adc r17,__zero_reg__
+ 180:deathclock.c  ****     if(i==2)
+ 412               	.LM24:
+ 413 018c 2230      		cpi r18,2
+ 414 018e 3105      		cpc r19,__zero_reg__
+ 415 0190 01F4      		brne .L19
+ 417               	.LM25:
+ 418 0192 892D      		mov r24,r9
+ 419 0194 90E0      		ldi r25,lo8(0)
+ 420 0196 0E94 0000 		call is_leap_year
+ 421 019a E80E      		add r14,r24
+ 422 019c F11C      		adc r15,__zero_reg__
+ 423 019e 011D      		adc r16,__zero_reg__
+ 424 01a0 111D      		adc r17,__zero_reg__
+ 425               	.L19:
+ 426 01a2 0894      		sec
+ 427 01a4 C11C      		adc r12,__zero_reg__
+ 428 01a6 D11C      		adc r13,__zero_reg__
+ 429 01a8 0894      		sec
+ 430 01aa A11C      		adc r10,__zero_reg__
+ 431 01ac B11C      		adc r11,__zero_reg__
+ 432               	.L18:
+ 433 01ae 9E01      		movw r18,r28
+ 434 01b0 2C0D      		add r18,r12
+ 435 01b2 3D1D      		adc r19,r13
+ 177:deathclock.c  ****   for(i=month1+1;i<=12;i++)
+ 437               	.LM26:
+ 438 01b4 2D30      		cpi r18,13
+ 439 01b6 3105      		cpc r19,__zero_reg__
+ 440 01b8 04F0      		brlt .L20
+ 181:deathclock.c  ****   }
+ 182:deathclock.c  ****   for(i=year1+1;i<year2;i++)
+ 442               	.LM27:
+ 443 01ba 892D      		mov r24,r9
+ 444 01bc 90E0      		ldi r25,lo8(0)
+ 445 01be 6C01      		movw r12,r24
+ 446 01c0 0894      		sec
+ 447 01c2 C11C      		adc r12,__zero_reg__
+ 448 01c4 D11C      		adc r13,__zero_reg__
+ 449 01c6 C0E0      		ldi r28,lo8(0)
+ 450 01c8 D0E0      		ldi r29,hi8(0)
+ 451 01ca 3C01      		movw r6,r24
+ 452 01cc A82C      		mov r10,r8
+ 453 01ce BB24      		clr r11
+ 454 01d0 00C0      		rjmp .L21
+ 455               	.L22:
+ 183:deathclock.c  ****     diff+=365+is_leap_year(i);
+ 457               	.LM28:
+ 458 01d2 C601      		movw r24,r12
+ 459 01d4 0E94 0000 		call is_leap_year
+ 460 01d8 90E0      		ldi r25,lo8(0)
+ 461 01da 8359      		subi r24,lo8(-(365))
+ 462 01dc 9E4F      		sbci r25,hi8(-(365))
+ 463 01de AA27      		clr r26
+ 464 01e0 97FD      		sbrc r25,7
+ 465 01e2 A095      		com r26
+ 466 01e4 BA2F      		mov r27,r26
+ 467 01e6 E80E      		add r14,r24
+ 468 01e8 F91E      		adc r15,r25
+ 469 01ea 0A1F      		adc r16,r26
+ 470 01ec 1B1F      		adc r17,r27
+ 183:deathclock.c  ****     diff+=365+is_leap_year(i);
+ 472               	.LM29:
+ 473 01ee 0894      		sec
+ 474 01f0 C11C      		adc r12,__zero_reg__
+ 475 01f2 D11C      		adc r13,__zero_reg__
+ 476               	.L21:
+ 477 01f4 2196      		adiw r28,1
+ 478 01f6 CE01      		movw r24,r28
+ 479 01f8 860D      		add r24,r6
+ 480 01fa 971D      		adc r25,r7
+ 481 01fc 8A15      		cp r24,r10
+ 482 01fe 9B05      		cpc r25,r11
+ 483 0200 04F0      		brlt .L22
+ 484 0202 C1E0      		ldi r28,lo8(1)
+ 485 0204 D0E0      		ldi r29,hi8(1)
+ 184:deathclock.c  ****   for(i=1;i<month2;i++)
+ 487               	.LM30:
+ 488 0206 C52C      		mov r12,r5
+ 489 0208 DD24      		clr r13
+ 490 020a 00C0      		rjmp .L23
+ 491               	.L25:
+ 492               	.LBB6:
+ 185:deathclock.c  ****   {
+ 186:deathclock.c  ****     diff+=pgm_read_byte(&day_in_month[i-1]);
+ 494               	.LM31:
+ 495 020c FE01      		movw r30,r28
+ 496 020e E050      		subi r30,lo8(-(day_in_month-1))
+ 497 0210 F040      		sbci r31,hi8(-(day_in_month-1))
+ 498               	/* #APP */
+ 499               	 ;  187 "deathclock.c" 1
+ 500 0212 E491      		lpm r30, Z
+ 501               		
+ 502               	 ;  0 "" 2
+ 503               	/* #NOAPP */
+ 504               	.LBE6:
+ 505 0214 EE0E      		add r14,r30
+ 506 0216 F11C      		adc r15,__zero_reg__
+ 507 0218 011D      		adc r16,__zero_reg__
+ 508 021a 111D      		adc r17,__zero_reg__
+ 187:deathclock.c  ****     if(i==2)
+ 510               	.LM32:
+ 511 021c C230      		cpi r28,2
+ 512 021e D105      		cpc r29,__zero_reg__
+ 513 0220 01F4      		brne .L24
+ 188:deathclock.c  ****       diff+=is_leap_year(year2);
+ 515               	.LM33:
+ 516 0222 882D      		mov r24,r8
+ 517 0224 90E0      		ldi r25,lo8(0)
+ 518 0226 0E94 0000 		call is_leap_year
+ 519 022a E80E      		add r14,r24
+ 520 022c F11C      		adc r15,__zero_reg__
+ 521 022e 011D      		adc r16,__zero_reg__
+ 522 0230 111D      		adc r17,__zero_reg__
+ 523               	.L24:
+ 185:deathclock.c  ****   {
+ 525               	.LM34:
+ 526 0232 2196      		adiw r28,1
+ 527               	.L23:
+ 528 0234 CC15      		cp r28,r12
+ 529 0236 DD05      		cpc r29,r13
+ 530 0238 04F0      		brlt .L25
+ 531               	.L27:
+ 189:deathclock.c  ****   }
+ 190:deathclock.c  ****   diff += day2;
+ 533               	.LM35:
+ 534 023a A801      		movw r20,r16
+ 535 023c 9701      		movw r18,r14
+ 536 023e 240D      		add r18,r4
+ 537 0240 311D      		adc r19,__zero_reg__
+ 538 0242 411D      		adc r20,__zero_reg__
+ 539 0244 511D      		adc r21,__zero_reg__
+ 540               	.L10:
+ 191:deathclock.c  ****   return diff;
+ 192:deathclock.c  **** }
+ 542               	.LM36:
+ 543 0246 B901      		movw r22,r18
+ 544 0248 CA01      		movw r24,r20
+ 545               	/* epilogue start */
+ 546 024a DF91      		pop r29
+ 547 024c CF91      		pop r28
+ 548 024e 1F91      		pop r17
+ 549 0250 0F91      		pop r16
+ 550 0252 FF90      		pop r15
+ 551 0254 EF90      		pop r14
+ 552 0256 DF90      		pop r13
+ 553 0258 CF90      		pop r12
+ 554 025a BF90      		pop r11
+ 555 025c AF90      		pop r10
+ 556 025e 9F90      		pop r9
+ 557 0260 8F90      		pop r8
+ 558 0262 7F90      		pop r7
+ 559 0264 6F90      		pop r6
+ 560 0266 5F90      		pop r5
+ 561 0268 4F90      		pop r4
+ 562 026a 0895      		ret
+ 583               	.Lscope2:
+ 585               		.stabd	78,0,0
+ 590               	.global	BodyMassIndex
+ 592               	BodyMassIndex:
+ 593               		.stabd	46,0,0
+ 193:deathclock.c  **** 
+ 194:deathclock.c  **** uint8_t BodyMassIndex ( uint8_t unit, uint16_t height, uint16_t weight )
+ 195:deathclock.c  **** {
+ 595               	.LM37:
+ 596               	.LFBB3:
+ 597 026c EF92      		push r14
+ 598 026e FF92      		push r15
+ 599 0270 0F93      		push r16
+ 600 0272 1F93      		push r17
+ 601               	/* prologue: function */
+ 602               	/* frame size = 0 */
+ 603 0274 7B01      		movw r14,r22
+ 196:deathclock.c  ****   uint32_t bmi;
+ 197:deathclock.c  ****   if ( unit == BMI_Imperial )
+ 605               	.LM38:
+ 606 0276 8823      		tst r24
+ 607 0278 01F4      		brne .L29
+ 198:deathclock.c  ****   {
+ 199:deathclock.c  ****     //Imperial, Weight in pounds, Height in inches
+ 200:deathclock.c  ****     //bmi = (weight * 703) / (height * height);
+ 201:deathclock.c  ****     bmi = weight;
+ 609               	.LM39:
+ 610 027a BA01      		movw r22,r20
+ 611 027c 80E0      		ldi r24,lo8(0)
+ 612 027e 90E0      		ldi r25,hi8(0)
+ 202:deathclock.c  ****     bmi *= 703;
+ 614               	.LM40:
+ 615 0280 2FEB      		ldi r18,lo8(703)
+ 616 0282 32E0      		ldi r19,hi8(703)
+ 617 0284 40E0      		ldi r20,hlo8(703)
+ 618 0286 50E0      		ldi r21,hhi8(703)
+ 619 0288 00C0      		rjmp .L36
+ 620               	.L29:
+ 203:deathclock.c  ****     bmi /= height;
+ 204:deathclock.c  ****     bmi /= height;
+ 205:deathclock.c  ****     return (bmi > 255) ? 255 : bmi;
+ 206:deathclock.c  ****   }
+ 207:deathclock.c  ****   else if ( unit == BMI_Metric )
+ 622               	.LM41:
+ 623 028a 8130      		cpi r24,lo8(1)
+ 624 028c 01F4      		brne .L32
+ 208:deathclock.c  ****   {
+ 209:deathclock.c  ****     //Metric, Weight in Kilograms, Height in centimeters
+ 210:deathclock.c  ****     //bmi = (weight * 10000) / (height * height);
+ 211:deathclock.c  ****     bmi = weight;
+ 626               	.LM42:
+ 627 028e BA01      		movw r22,r20
+ 628 0290 80E0      		ldi r24,lo8(0)
+ 629 0292 90E0      		ldi r25,hi8(0)
+ 212:deathclock.c  ****     bmi *= 10000;
+ 631               	.LM43:
+ 632 0294 20E1      		ldi r18,lo8(10000)
+ 633 0296 37E2      		ldi r19,hi8(10000)
+ 634 0298 40E0      		ldi r20,hlo8(10000)
+ 635 029a 50E0      		ldi r21,hhi8(10000)
+ 636               	.L36:
+ 637 029c 0E94 0000 		call __mulsi3
+ 213:deathclock.c  ****     bmi /= height;
+ 639               	.LM44:
+ 640 02a0 00E0      		ldi r16,lo8(0)
+ 641 02a2 10E0      		ldi r17,hi8(0)
+ 642 02a4 A801      		movw r20,r16
+ 643 02a6 9701      		movw r18,r14
+ 644 02a8 0E94 0000 		call __udivmodsi4
+ 645 02ac CA01      		movw r24,r20
+ 214:deathclock.c  ****     bmi /= height;
+ 215:deathclock.c  ****     return (bmi > 255) ? 255 : bmi;
+ 647               	.LM45:
+ 648 02ae B901      		movw r22,r18
+ 649 02b0 A801      		movw r20,r16
+ 650 02b2 9701      		movw r18,r14
+ 651 02b4 0E94 0000 		call __udivmodsi4
+ 652 02b8 C901      		movw r24,r18
+ 653 02ba DA01      		movw r26,r20
+ 654 02bc 8F3F      		cpi r24,lo8(255)
+ 655 02be 9105      		cpc r25,__zero_reg__
+ 656 02c0 A105      		cpc r26,__zero_reg__
+ 657 02c2 B105      		cpc r27,__zero_reg__
+ 658 02c4 01F0      		breq .L31
+ 659 02c6 00F0      		brlo .L31
+ 660 02c8 8FEF      		ldi r24,lo8(255)
+ 661 02ca 90E0      		ldi r25,hi8(255)
+ 662 02cc A0E0      		ldi r26,hlo8(255)
+ 663 02ce B0E0      		ldi r27,hhi8(255)
+ 664 02d0 00C0      		rjmp .L31
+ 665               	.L32:
+ 216:deathclock.c  ****   }
+ 217:deathclock.c  ****   else
+ 218:deathclock.c  ****   {
+ 219:deathclock.c  ****     //User knows their BMI, so it is entered directly.
+ 220:deathclock.c  ****     return weight & 0xFF;
+ 667               	.LM46:
+ 668 02d2 842F      		mov r24,r20
+ 669               	.L31:
+ 670               	/* epilogue start */
+ 221:deathclock.c  ****   }
+ 222:deathclock.c  **** }
+ 672               	.LM47:
+ 673 02d4 1F91      		pop r17
+ 674 02d6 0F91      		pop r16
+ 675 02d8 FF90      		pop r15
+ 676 02da EF90      		pop r14
+ 677 02dc 0895      		ret
+ 682               	.Lscope3:
+ 684               		.stabd	78,0,0
+ 690               	.global	random_days
+ 692               	random_days:
+ 693               		.stabd	46,0,0
+ 223:deathclock.c  **** 
+ 224:deathclock.c  **** uint32_t random_days(uint8_t hour, uint8_t min, uint8_t sec, uint32_t base_days)
+ 225:deathclock.c  **** {
+ 695               	.LM48:
+ 696               	.LFBB4:
+ 697 02de EF92      		push r14
+ 698 02e0 FF92      		push r15
+ 699 02e2 0F93      		push r16
+ 700 02e4 1F93      		push r17
+ 701               	/* prologue: function */
+ 702               	/* frame size = 0 */
+ 703 02e6 7801      		movw r14,r16
+ 704 02e8 8901      		movw r16,r18
+ 226:deathclock.c  **** 	init_crand_consistent(hour,min,sec);
+ 706               	.LM49:
+ 707 02ea 0E94 0000 		call init_crand_consistent
+ 227:deathclock.c  **** 	uint32_t random = (crand(0) * 1000) / 0x7FFF;
+ 709               	.LM50:
+ 710 02ee 80E0      		ldi r24,lo8(0)
+ 711 02f0 0E94 0000 		call crand
+ 712 02f4 28EE      		ldi r18,lo8(1000)
+ 713 02f6 33E0      		ldi r19,hi8(1000)
+ 714 02f8 AC01      		movw r20,r24
+ 715 02fa 429F      		mul r20,r18
+ 716 02fc C001      		movw r24,r0
+ 717 02fe 439F      		mul r20,r19
+ 718 0300 900D      		add r25,r0
+ 719 0302 529F      		mul r21,r18
+ 720 0304 900D      		add r25,r0
+ 721 0306 1124      		clr r1
+ 722 0308 6FEF      		ldi r22,lo8(32767)
+ 723 030a 7FE7      		ldi r23,hi8(32767)
+ 724 030c 0E94 0000 		call __udivmodhi4
+ 725 0310 9B01      		movw r18,r22
+ 726 0312 40E0      		ldi r20,lo8(0)
+ 727 0314 50E0      		ldi r21,hi8(0)
+ 728 0316 C801      		movw r24,r16
+ 729 0318 B701      		movw r22,r14
+ 730 031a 0E94 0000 		call __mulsi3
+ 731 031e 28EE      		ldi r18,lo8(1000)
+ 732 0320 33E0      		ldi r19,hi8(1000)
+ 733 0322 40E0      		ldi r20,hlo8(1000)
+ 734 0324 50E0      		ldi r21,hhi8(1000)
+ 735 0326 0E94 0000 		call __udivmodsi4
+ 736 032a CA01      		movw r24,r20
+ 228:deathclock.c  **** 	return (uint32_t)((base_days * random) / 1000);
+ 229:deathclock.c  **** }
+ 738               	.LM51:
+ 739 032c B901      		movw r22,r18
+ 740               	/* epilogue start */
+ 741 032e 1F91      		pop r17
+ 742 0330 0F91      		pop r16
+ 743 0332 FF90      		pop r15
+ 744 0334 EF90      		pop r14
+ 745 0336 0895      		ret
+ 747               	.Lscope4:
+ 749               		.stabd	78,0,0
+ 764               	.global	ETD
+ 766               	ETD:
+ 767               		.stabd	46,0,0
+ 230:deathclock.c  **** 
+ 231:deathclock.c  **** uint32_t days_table[] = {
+ 232:deathclock.c  **** //  male,   female
+ 233:deathclock.c  **** 	269450, 289590,	//normal
+ 234:deathclock.c  **** 	214662, 234802, //pessimistic
+ 235:deathclock.c  **** 	305975, 326115, //optimistic
+ 236:deathclock.c  **** 	134307, 143490, //sadistic
+ 237:deathclock.c  **** };
+ 238:deathclock.c  **** 
+ 239:deathclock.c  **** uint32_t ETD ( uint8_t DOB_month, 
+ 240:deathclock.c  ****                uint8_t DOB_day, 
+ 241:deathclock.c  ****                uint8_t DOB_year, 
+ 242:deathclock.c  ****                uint8_t month, 
+ 243:deathclock.c  ****                uint8_t day, 
+ 244:deathclock.c  ****                uint8_t year, 
+ 245:deathclock.c  ****                uint8_t Gender, 
+ 246:deathclock.c  ****                uint8_t Mode, 
+ 247:deathclock.c  ****                uint8_t BMI, 
+ 248:deathclock.c  ****                uint8_t Smoker, 
+ 249:deathclock.c  ****                uint8_t hour,
+ 250:deathclock.c  ****                uint8_t min,
+ 251:deathclock.c  ****                uint8_t sec)
+ 252:deathclock.c  **** {
+ 769               	.LM52:
+ 770               	.LFBB5:
+ 771 0338 2F92      		push r2
+ 772 033a 3F92      		push r3
+ 773 033c 4F92      		push r4
+ 774 033e 5F92      		push r5
+ 775 0340 6F92      		push r6
+ 776 0342 7F92      		push r7
+ 777 0344 8F92      		push r8
+ 778 0346 9F92      		push r9
+ 779 0348 AF92      		push r10
+ 780 034a BF92      		push r11
+ 781 034c CF92      		push r12
+ 782 034e DF92      		push r13
+ 783 0350 EF92      		push r14
+ 784 0352 FF92      		push r15
+ 785 0354 0F93      		push r16
+ 786 0356 1F93      		push r17
+ 787 0358 DF93      		push r29
+ 788 035a CF93      		push r28
+ 789 035c CDB7      		in r28,__SP_L__
+ 790 035e DEB7      		in r29,__SP_H__
+ 791               	/* prologue: function */
+ 792               	/* frame size = 0 */
+ 793 0360 9A2C      		mov r9,r10
+ 794 0362 3E88      		ldd r3,Y+22
+ 795 0364 2F88      		ldd r2,Y+23
+ 253:deathclock.c  ****   int y,i,bmi;
+ 254:deathclock.c  ****   uint32_t diff;
+ 255:deathclock.c  ****   uint32_t random;
+ 256:deathclock.c  ****   int32_t days;
+ 257:deathclock.c  ****   
+ 258:deathclock.c  ****   diff = date_diff(DOB_month,DOB_day,DOB_year,month,day,year);
+ 797               	.LM53:
+ 798 0366 0E94 0000 		call date_diff
+ 259:deathclock.c  ****   y = (diff * 10) / 3653;
+ 800               	.LM54:
+ 801 036a 2AE0      		ldi r18,lo8(10)
+ 802 036c 30E0      		ldi r19,hi8(10)
+ 803 036e 40E0      		ldi r20,hlo8(10)
+ 804 0370 50E0      		ldi r21,hhi8(10)
+ 805 0372 0E94 0000 		call __mulsi3
+ 806 0376 7B01      		movw r14,r22
+ 807 0378 8C01      		movw r16,r24
+ 808 037a 25E4      		ldi r18,lo8(3653)
+ 809 037c 3EE0      		ldi r19,hi8(3653)
+ 810 037e 40E0      		ldi r20,hlo8(3653)
+ 811 0380 50E0      		ldi r21,hhi8(3653)
+ 812 0382 0E94 0000 		call __udivmodsi4
+ 813 0386 2901      		movw r4,r18
+ 260:deathclock.c  ****   
+ 261:deathclock.c  ****   days = days_table[(Mode * 2) + Gender];
+ 815               	.LM55:
+ 816 0388 6A2C      		mov r6,r10
+ 817 038a 7724      		clr r7
+ 818 038c 660C      		lsl r6
+ 819 038e 771C      		rol r7
+ 820 0390 6C0C      		add r6,r12
+ 821 0392 711C      		adc r7,__zero_reg__
+ 262:deathclock.c  ****   days -= diff*10;
+ 823               	.LM56:
+ 824 0394 F301      		movw r30,r6
+ 825 0396 EE0F      		lsl r30
+ 826 0398 FF1F      		rol r31
+ 827 039a EE0F      		lsl r30
+ 828 039c FF1F      		rol r31
+ 829 039e E050      		subi r30,lo8(-(days_table))
+ 830 03a0 F040      		sbci r31,hi8(-(days_table))
+ 831 03a2 A080      		ld r10,Z
+ 832 03a4 B180      		ldd r11,Z+1
+ 833 03a6 C280      		ldd r12,Z+2
+ 834 03a8 D380      		ldd r13,Z+3
+ 835 03aa AE18      		sub r10,r14
+ 836 03ac BF08      		sbc r11,r15
+ 837 03ae C00A      		sbc r12,r16
+ 838 03b0 D10A      		sbc r13,r17
+ 263:deathclock.c  ****   bmi = BMI;
+ 840               	.LM57:
+ 841 03b2 E82C      		mov r14,r8
+ 842 03b4 FF24      		clr r15
+ 264:deathclock.c  ****   if(bmi > 45)
+ 844               	.LM58:
+ 845 03b6 0EE2      		ldi r16,lo8(46)
+ 846 03b8 E016      		cp r14,r16
+ 847 03ba F104      		cpc r15,__zero_reg__
+ 848 03bc 04F0      		brlt .L40
+ 849 03be ADE2      		ldi r26,lo8(45)
+ 850 03c0 EA2E      		mov r14,r26
+ 851 03c2 F12C      		mov r15,__zero_reg__
+ 852 03c4 00C0      		rjmp .L41
+ 853               	.L40:
+ 265:deathclock.c  ****     bmi = 45;
+ 266:deathclock.c  ****   if(bmi < 26)
+ 855               	.LM59:
+ 856 03c6 1AE1      		ldi r17,lo8(26)
+ 857 03c8 E116      		cp r14,r17
+ 858 03ca F104      		cpc r15,__zero_reg__
+ 859 03cc 04F4      		brge .L41
+ 860 03ce FAE1      		ldi r31,lo8(26)
+ 861 03d0 EF2E      		mov r14,r31
+ 862 03d2 F12C      		mov r15,__zero_reg__
+ 863               	.L41:
+ 267:deathclock.c  ****     bmi = 26;
+ 268:deathclock.c  ****   bmi -= 26;
+ 269:deathclock.c  ****   if (Mode == DC_mode_optimistic) {
+ 865               	.LM60:
+ 866 03d4 22E0      		ldi r18,lo8(2)
+ 867 03d6 9216      		cp r9,r18
+ 868 03d8 01F4      		brne .L42
+ 270:deathclock.c  ****     days += random_days(hour,min,sec,54790);
+ 870               	.LM61:
+ 871 03da 832D      		mov r24,r3
+ 872 03dc 622D      		mov r22,r2
+ 873 03de 488D      		ldd r20,Y+24
+ 874 03e0 06E0      		ldi r16,lo8(54790)
+ 875 03e2 16ED      		ldi r17,hi8(54790)
+ 876 03e4 20E0      		ldi r18,hlo8(54790)
+ 877 03e6 30E0      		ldi r19,hhi8(54790)
+ 878 03e8 0E94 0000 		call random_days
+ 879 03ec AB01      		movw r20,r22
+ 880 03ee BC01      		movw r22,r24
+ 881 03f0 4A0D      		add r20,r10
+ 882 03f2 5B1D      		adc r21,r11
+ 883 03f4 6C1D      		adc r22,r12
+ 884 03f6 7D1D      		adc r23,r13
+ 885 03f8 00C0      		rjmp .L43
+ 886               	.L42:
+ 271:deathclock.c  ****   } else if (Mode == DC_mode_pessimistic) {
+ 888               	.LM62:
+ 889 03fa 31E0      		ldi r19,lo8(1)
+ 890 03fc 9316      		cp r9,r19
+ 891 03fe 01F0      		breq .L44
+ 263:deathclock.c  ****   days -= diff*10;
+ 893               	.LM63:
+ 894 0400 B601      		movw r22,r12
+ 895 0402 A501      		movw r20,r10
+ 896 0404 00C0      		rjmp .L43
+ 897               	.L44:
+ 272:deathclock.c  ****     days -= random_days(hour,min,sec,36530);
+ 899               	.LM64:
+ 900 0406 832D      		mov r24,r3
+ 901 0408 622D      		mov r22,r2
+ 902 040a 488D      		ldd r20,Y+24
+ 903 040c 02EB      		ldi r16,lo8(36530)
+ 904 040e 1EE8      		ldi r17,hi8(36530)
+ 905 0410 20E0      		ldi r18,hlo8(36530)
+ 906 0412 30E0      		ldi r19,hhi8(36530)
+ 907 0414 0E94 0000 		call random_days
+ 908 0418 9601      		movw r18,r12
+ 909 041a 8501      		movw r16,r10
+ 910 041c 061B      		sub r16,r22
+ 911 041e 170B      		sbc r17,r23
+ 912 0420 280B      		sbc r18,r24
+ 913 0422 390B      		sbc r19,r25
+ 914 0424 B901      		movw r22,r18
+ 915 0426 A801      		movw r20,r16
+ 916               	.L43:
+ 273:deathclock.c  ****   }
+ 274:deathclock.c  ****   
+ 275:deathclock.c  ****   if(y>=20)
+ 918               	.LM65:
+ 919 0428 14E1      		ldi r17,lo8(20)
+ 920 042a 4116      		cp r4,r17
+ 921 042c 5104      		cpc r5,__zero_reg__
+ 922 042e 04F4      		brge .+2
+ 923 0430 00C0      		rjmp .L45
+ 276:deathclock.c  ****   {
+ 277:deathclock.c  ****   	  for(i=0;i<bmi_table_count[(Mode * 2) + Gender];i++)
+ 925               	.LM66:
+ 926 0432 F301      		movw r30,r6
+ 927 0434 E050      		subi r30,lo8(-(bmi_table_count))
+ 928 0436 F040      		sbci r31,hi8(-(bmi_table_count))
+ 929 0438 8081      		ld r24,Z
+ 930 043a C82E      		mov r12,r24
+ 931 043c DD24      		clr r13
+ 932 043e 20E0      		ldi r18,lo8(0)
+ 933 0440 30E0      		ldi r19,hi8(0)
+ 934               	.LBB7:
+ 278:deathclock.c  ****   	  {
+ 279:deathclock.c  ****   	  	  if ( y < pgm_read_byte(&normal_bmi_male[bmi_table_offset[(Mode * 2) + Gender]+i][0]) )
+ 936               	.LM67:
+ 937 0442 8301      		movw r16,r6
+ 938 0444 0050      		subi r16,lo8(-(bmi_table_offset))
+ 939 0446 1040      		sbci r17,hi8(-(bmi_table_offset))
+ 940 0448 EBE0      		ldi r30,lo8(11)
+ 941 044a AE2E      		mov r10,r30
+ 942 044c B12C      		mov r11,__zero_reg__
+ 943 044e 00C0      		rjmp .L46
+ 944               	.L50:
+ 945 0450 F801      		movw r30,r16
+ 946 0452 8081      		ld r24,Z
+ 947 0454 F901      		movw r30,r18
+ 948 0456 E80F      		add r30,r24
+ 949 0458 F11D      		adc r31,__zero_reg__
+ 950 045a EA9D      		mul r30,r10
+ 951 045c D001      		movw r26,r0
+ 952 045e EB9D      		mul r30,r11
+ 953 0460 B00D      		add r27,r0
+ 954 0462 FA9D      		mul r31,r10
+ 955 0464 B00D      		add r27,r0
+ 956 0466 1124      		clr r1
+ 957 0468 FD01      		movw r30,r26
+ 958 046a E050      		subi r30,lo8(-(normal_bmi_male))
+ 959 046c F040      		sbci r31,hi8(-(normal_bmi_male))
+ 960               	/* #APP */
+ 961               	 ;  280 "deathclock.c" 1
+ 962 046e E491      		lpm r30, Z
+ 963               		
+ 964               	 ;  0 "" 2
+ 965               	/* #NOAPP */
+ 966               	.LBE7:
+ 967 0470 8E2F      		mov r24,r30
+ 968 0472 90E0      		ldi r25,lo8(0)
+ 969 0474 4816      		cp r4,r24
+ 970 0476 5906      		cpc r5,r25
+ 971 0478 04F4      		brge .L47
+ 269:deathclock.c  ****   bmi -= 26;
+ 973               	.LM68:
+ 974 047a C701      		movw r24,r14
+ 975 047c 4A97      		sbiw r24,26
+ 976               	.LBB8:
+ 977               	.LBB9:
+ 280:deathclock.c  ****           {
+ 281:deathclock.c  ****           	uint8_t temp = pgm_read_byte(&normal_bmi_male[bmi_table_offset[(Mode * 2) + Gender]+i][(
+ 979               	.LM69:
+ 980 047e FC01      		movw r30,r24
+ 981 0480 F595      		asr r31
+ 982 0482 E795      		ror r30
+ 983 0484 EA0F      		add r30,r26
+ 984 0486 FB1F      		adc r31,r27
+ 985 0488 E050      		subi r30,lo8(-(normal_bmi_male+1))
+ 986 048a F040      		sbci r31,hi8(-(normal_bmi_male+1))
+ 987               	/* #APP */
+ 988               	 ;  282 "deathclock.c" 1
+ 989 048c 2491      		lpm r18, Z
+ 990               		
+ 991               	 ;  0 "" 2
+ 992               	/* #NOAPP */
+ 993               	.LBE9:
+ 282:deathclock.c  ****           	if(bmi&1)
+ 995               	.LM70:
+ 996 048e 80FF      		sbrs r24,0
+ 997 0490 00C0      		rjmp .L48
+ 283:deathclock.c  ****           		temp &= 0x0F;
+ 999               	.LM71:
+ 1000 0492 2F70      		andi r18,lo8(15)
+ 1001 0494 00C0      		rjmp .L49
+ 1002               	.L48:
+ 284:deathclock.c  ****           	else
+ 285:deathclock.c  ****           		temp >>= 4;
+ 1004               	.LM72:
+ 1005 0496 2295      		swap r18
+ 1006 0498 2F70      		andi r18,0x0f
+ 1007               	.L49:
+ 286:deathclock.c  ****             days -= (uint16_t)(temp * 3653);
+ 1009               	.LM73:
+ 1010 049a 30E0      		ldi r19,lo8(0)
+ 1011 049c 85E4      		ldi r24,lo8(3653)
+ 1012 049e 9EE0      		ldi r25,hi8(3653)
+ 1013 04a0 8C01      		movw r16,r24
+ 1014 04a2 209F      		mul r18,r16
+ 1015 04a4 C001      		movw r24,r0
+ 1016 04a6 219F      		mul r18,r17
+ 1017 04a8 900D      		add r25,r0
+ 1018 04aa 309F      		mul r19,r16
+ 1019 04ac 900D      		add r25,r0
+ 1020 04ae 1124      		clr r1
+ 1021 04b0 A0E0      		ldi r26,lo8(0)
+ 1022 04b2 B0E0      		ldi r27,hi8(0)
+ 1023 04b4 481B      		sub r20,r24
+ 1024 04b6 590B      		sbc r21,r25
+ 1025 04b8 6A0B      		sbc r22,r26
+ 1026 04ba 7B0B      		sbc r23,r27
+ 1027 04bc 00C0      		rjmp .L45
+ 1028               	.L47:
+ 1029               	.LBE8:
+ 278:deathclock.c  ****   	  for(i=0;i<bmi_table_count[(Mode * 2) + Gender];i++)
+ 1031               	.LM74:
+ 1032 04be 2F5F      		subi r18,lo8(-(1))
+ 1033 04c0 3F4F      		sbci r19,hi8(-(1))
+ 1034               	.L46:
+ 1035 04c2 2C15      		cp r18,r12
+ 1036 04c4 3D05      		cpc r19,r13
+ 1037 04c6 04F4      		brge .+2
+ 1038 04c8 00C0      		rjmp .L50
+ 1039               	.L45:
+ 287:deathclock.c  ****             break;
+ 288:deathclock.c  ****           }
+ 289:deathclock.c  ****   	  }
+ 290:deathclock.c  ****   }
+ 291:deathclock.c  ****   if((y>=25)&&(Smoker == DC_smoker))
+ 1041               	.LM75:
+ 1042 04ca 19E1      		ldi r17,lo8(25)
+ 1043 04cc 4116      		cp r4,r17
+ 1044 04ce 5104      		cpc r5,__zero_reg__
+ 1045 04d0 04F4      		brge .+2
+ 1046 04d2 00C0      		rjmp .L51
+ 1047 04d4 8D89      		ldd r24,Y+21
+ 1048 04d6 8130      		cpi r24,lo8(1)
+ 1049 04d8 01F0      		breq .+2
+ 1050 04da 00C0      		rjmp .L51
+ 292:deathclock.c  ****   {
+ 293:deathclock.c  ****       for(i=0;i<smoking_table_count[(Mode * 2) + Gender];i++)
+ 1052               	.LM76:
+ 1053 04dc F301      		movw r30,r6
+ 1054 04de E050      		subi r30,lo8(-(smoking_table_count))
+ 1055 04e0 F040      		sbci r31,hi8(-(smoking_table_count))
+ 1056 04e2 8081      		ld r24,Z
+ 1057 04e4 E82E      		mov r14,r24
+ 1058 04e6 FF24      		clr r15
+ 1059 04e8 20E0      		ldi r18,lo8(0)
+ 1060 04ea 30E0      		ldi r19,hi8(0)
+ 1061               	.LBB10:
+ 294:deathclock.c  ****       {
+ 295:deathclock.c  ****         if( y < pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][0])
+ 1063               	.LM77:
+ 1064 04ec 8301      		movw r16,r6
+ 1065 04ee 0050      		subi r16,lo8(-(smoking_table_offset))
+ 1066 04f0 1040      		sbci r17,hi8(-(smoking_table_offset))
+ 1067 04f2 00C0      		rjmp .L52
+ 1068               	.L54:
+ 1069 04f4 F801      		movw r30,r16
+ 1070 04f6 8081      		ld r24,Z
+ 1071 04f8 D901      		movw r26,r18
+ 1072 04fa A80F      		add r26,r24
+ 1073 04fc B11D      		adc r27,__zero_reg__
+ 1074 04fe FD01      		movw r30,r26
+ 1075 0500 EE0F      		lsl r30
+ 1076 0502 FF1F      		rol r31
+ 1077 0504 EE0F      		lsl r30
+ 1078 0506 FF1F      		rol r31
+ 1079 0508 E050      		subi r30,lo8(-(normal_smoking_male))
+ 1080 050a F040      		sbci r31,hi8(-(normal_smoking_male))
+ 1081               	/* #APP */
+ 1082               	 ;  296 "deathclock.c" 1
+ 1083 050c 8591      		lpm r24, Z+
+ 1084 050e 9491      		lpm r25, Z
+ 1085               		
+ 1086               	 ;  0 "" 2
+ 1087               	/* #NOAPP */
+ 1088               	.LBE10:
+ 1089 0510 4816      		cp r4,r24
+ 1090 0512 5906      		cpc r5,r25
+ 1091 0514 00F4      		brsh .L53
+ 1092               	.LBB11:
+ 296:deathclock.c  ****         {
+ 297:deathclock.c  ****           days -= (uint16_t)(pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + G
+ 1094               	.LM78:
+ 1095 0516 FD01      		movw r30,r26
+ 1096 0518 EE0F      		lsl r30
+ 1097 051a FF1F      		rol r31
+ 1098 051c EE0F      		lsl r30
+ 1099 051e FF1F      		rol r31
+ 1100 0520 E050      		subi r30,lo8(-(normal_smoking_male+2))
+ 1101 0522 F040      		sbci r31,hi8(-(normal_smoking_male+2))
+ 1102               	/* #APP */
+ 1103               	 ;  298 "deathclock.c" 1
+ 1104 0524 2591      		lpm r18, Z+
+ 1105 0526 3491      		lpm r19, Z
+ 1106               		
+ 1107               	 ;  0 "" 2
+ 1108               	/* #NOAPP */
+ 1109               	.LBE11:
+ 1110 0528 C901      		movw r24,r18
+ 1111 052a F3E0      		ldi r31,3
+ 1112 052c 880F      	1:	lsl r24
+ 1113 052e 991F      		rol r25
+ 1114 0530 FA95      		dec r31
+ 1115 0532 01F4      		brne 1b
+ 1116 0534 220F      		lsl r18
+ 1117 0536 331F      		rol r19
+ 1118 0538 820F      		add r24,r18
+ 1119 053a 931F      		adc r25,r19
+ 1120 053c A0E0      		ldi r26,lo8(0)
+ 1121 053e B0E0      		ldi r27,hi8(0)
+ 1122 0540 481B      		sub r20,r24
+ 1123 0542 590B      		sbc r21,r25
+ 1124 0544 6A0B      		sbc r22,r26
+ 1125 0546 7B0B      		sbc r23,r27
+ 1126 0548 00C0      		rjmp .L51
+ 1127               	.L53:
+ 294:deathclock.c  ****       {
+ 1129               	.LM79:
+ 1130 054a 2F5F      		subi r18,lo8(-(1))
+ 1131 054c 3F4F      		sbci r19,hi8(-(1))
+ 1132               	.L52:
+ 1133 054e 2E15      		cp r18,r14
+ 1134 0550 3F05      		cpc r19,r15
+ 1135 0552 04F0      		brlt .L54
+ 1136               	.L51:
+ 298:deathclock.c  ****           break;
+ 299:deathclock.c  ****         }
+ 300:deathclock.c  ****       }
+ 301:deathclock.c  ****   }
+ 302:deathclock.c  ****   if (days < 0) return 0;
+ 1138               	.LM80:
+ 1139 0554 77FF      		sbrs r23,7
+ 1140 0556 00C0      		rjmp .L55
+ 1141 0558 20E0      		ldi r18,lo8(0)
+ 1142 055a 30E0      		ldi r19,hi8(0)
+ 1143 055c 40E0      		ldi r20,hlo8(0)
+ 1144 055e 50E0      		ldi r21,hhi8(0)
+ 1145 0560 00C0      		rjmp .L56
+ 1146               	.L55:
+ 303:deathclock.c  ****   days *= 144;	//Convert Days into Minutes left.
+ 304:deathclock.c  ****   return days;
+ 1148               	.LM81:
+ 1149 0562 CB01      		movw r24,r22
+ 1150 0564 BA01      		movw r22,r20
+ 1151 0566 20E9      		ldi r18,lo8(144)
+ 1152 0568 30E0      		ldi r19,hi8(144)
+ 1153 056a 40E0      		ldi r20,hlo8(144)
+ 1154 056c 50E0      		ldi r21,hhi8(144)
+ 1155 056e 0E94 0000 		call __mulsi3
+ 1156 0572 9B01      		movw r18,r22
+ 1157 0574 AC01      		movw r20,r24
+ 1158               	.L56:
+ 305:deathclock.c  **** }
+ 1160               	.LM82:
+ 1161 0576 B901      		movw r22,r18
+ 1162 0578 CA01      		movw r24,r20
+ 1163               	/* epilogue start */
+ 1164 057a CF91      		pop r28
+ 1165 057c DF91      		pop r29
+ 1166 057e 1F91      		pop r17
+ 1167 0580 0F91      		pop r16
+ 1168 0582 FF90      		pop r15
+ 1169 0584 EF90      		pop r14
+ 1170 0586 DF90      		pop r13
+ 1171 0588 CF90      		pop r12
+ 1172 058a BF90      		pop r11
+ 1173 058c AF90      		pop r10
+ 1174 058e 9F90      		pop r9
+ 1175 0590 8F90      		pop r8
+ 1176 0592 7F90      		pop r7
+ 1177 0594 6F90      		pop r6
+ 1178 0596 5F90      		pop r5
+ 1179 0598 4F90      		pop r4
+ 1180 059a 3F90      		pop r3
+ 1181 059c 2F90      		pop r2
+ 1182 059e 0895      		ret
+ 1211               	.Lscope5:
+ 1213               		.stabd	78,0,0
+ 1215               	.global	load_raw_etd
+ 1217               	load_raw_etd:
+ 1218               		.stabd	46,0,0
+ 306:deathclock.c  **** 
+ 307:deathclock.c  **** uint32_t load_raw_etd(void)
+ 308:deathclock.c  **** {
+ 1220               	.LM83:
+ 1221               	.LFBB6:
+ 1222 05a0 6F92      		push r6
+ 1223 05a2 7F92      		push r7
+ 1224 05a4 8F92      		push r8
+ 1225 05a6 9F92      		push r9
+ 1226 05a8 AF92      		push r10
+ 1227 05aa BF92      		push r11
+ 1228 05ac CF92      		push r12
+ 1229 05ae DF92      		push r13
+ 1230 05b0 EF92      		push r14
+ 1231 05b2 FF92      		push r15
+ 1232 05b4 0F93      		push r16
+ 1233 05b6 1F93      		push r17
+ 1234               	/* prologue: function */
+ 1235               	/* frame size = 0 */
+ 309:deathclock.c  ****   dc_mode = eeprom_read_byte(&EE_DC_MODE);
+ 1237               	.LM84:
+ 1238 05b8 80E0      		ldi r24,lo8(EE_DC_MODE)
+ 1239 05ba 90E0      		ldi r25,hi8(EE_DC_MODE)
+ 1240 05bc 0E94 0000 		call __eerd_byte_m328p
+ 1241 05c0 8093 0000 		sts dc_mode,r24
+ 310:deathclock.c  ****   return ETD(  eeprom_read_byte(&EE_DOB_MONTH),
+ 1243               	.LM85:
+ 1244 05c4 80E0      		ldi r24,lo8(EE_DOB_MONTH)
+ 1245 05c6 90E0      		ldi r25,hi8(EE_DOB_MONTH)
+ 1246 05c8 0E94 0000 		call __eerd_byte_m328p
+ 1247 05cc 682E      		mov r6,r24
+ 1248 05ce 80E0      		ldi r24,lo8(EE_DOB_DAY)
+ 1249 05d0 90E0      		ldi r25,hi8(EE_DOB_DAY)
+ 1250 05d2 0E94 0000 		call __eerd_byte_m328p
+ 1251 05d6 782E      		mov r7,r24
+ 1252 05d8 80E0      		ldi r24,lo8(EE_DOB_YEAR)
+ 1253 05da 90E0      		ldi r25,hi8(EE_DOB_YEAR)
+ 1254 05dc 0E94 0000 		call __eerd_byte_m328p
+ 1255 05e0 B82E      		mov r11,r24
+ 1256 05e2 80E0      		ldi r24,lo8(EE_SET_MONTH)
+ 1257 05e4 90E0      		ldi r25,hi8(EE_SET_MONTH)
+ 1258 05e6 0E94 0000 		call __eerd_byte_m328p
+ 1259 05ea 982E      		mov r9,r24
+ 1260 05ec 80E0      		ldi r24,lo8(EE_SET_DAY)
+ 1261 05ee 90E0      		ldi r25,hi8(EE_SET_DAY)
+ 1262 05f0 0E94 0000 		call __eerd_byte_m328p
+ 1263 05f4 082F      		mov r16,r24
+ 1264 05f6 80E0      		ldi r24,lo8(EE_SET_YEAR)
+ 1265 05f8 90E0      		ldi r25,hi8(EE_SET_YEAR)
+ 1266 05fa 0E94 0000 		call __eerd_byte_m328p
+ 1267 05fe D82E      		mov r13,r24
+ 1268 0600 80E0      		ldi r24,lo8(EE_GENDER)
+ 1269 0602 90E0      		ldi r25,hi8(EE_GENDER)
+ 1270 0604 0E94 0000 		call __eerd_byte_m328p
+ 1271 0608 C82E      		mov r12,r24
+ 1272 060a A090 0000 		lds r10,dc_mode
+ 1273 060e 80E0      		ldi r24,lo8(EE_BMI_UNIT)
+ 1274 0610 90E0      		ldi r25,hi8(EE_BMI_UNIT)
+ 1275 0612 0E94 0000 		call __eerd_byte_m328p
+ 1276 0616 182F      		mov r17,r24
+ 1277 0618 80E0      		ldi r24,lo8(EE_BMI_HEIGHT)
+ 1278 061a 90E0      		ldi r25,hi8(EE_BMI_HEIGHT)
+ 1279 061c 0E94 0000 		call __eerd_word_m328p
+ 1280 0620 7C01      		movw r14,r24
+ 1281 0622 80E0      		ldi r24,lo8(EE_BMI_WEIGHT)
+ 1282 0624 90E0      		ldi r25,hi8(EE_BMI_WEIGHT)
+ 1283 0626 0E94 0000 		call __eerd_word_m328p
+ 1284 062a AC01      		movw r20,r24
+ 1285 062c 812F      		mov r24,r17
+ 1286 062e B701      		movw r22,r14
+ 1287 0630 0E94 0000 		call BodyMassIndex
+ 1288 0634 882E      		mov r8,r24
+ 1289 0636 80E0      		ldi r24,lo8(EE_SMOKER)
+ 1290 0638 90E0      		ldi r25,hi8(EE_SMOKER)
+ 1291 063a 0E94 0000 		call __eerd_byte_m328p
+ 1292 063e E82E      		mov r14,r24
+ 1293 0640 80E0      		ldi r24,lo8(EE_SET_HOUR)
+ 1294 0642 90E0      		ldi r25,hi8(EE_SET_HOUR)
+ 1295 0644 0E94 0000 		call __eerd_byte_m328p
+ 1296 0648 F82E      		mov r15,r24
+ 1297 064a 80E0      		ldi r24,lo8(EE_SET_MIN)
+ 1298 064c 90E0      		ldi r25,hi8(EE_SET_MIN)
+ 1299 064e 0E94 0000 		call __eerd_byte_m328p
+ 1300 0652 182F      		mov r17,r24
+ 1301 0654 80E0      		ldi r24,lo8(EE_SET_SEC)
+ 1302 0656 90E0      		ldi r25,hi8(EE_SET_SEC)
+ 1303 0658 0E94 0000 		call __eerd_byte_m328p
+ 1304 065c 00D0      		rcall .
+ 1305 065e 00D0      		rcall .
+ 1306 0660 EDB7      		in r30,__SP_L__
+ 1307 0662 FEB7      		in r31,__SP_H__
+ 1308 0664 3196      		adiw r30,1
+ 1309 0666 9CE6      		ldi r25,lo8(108)
+ 1310 0668 B90E      		add r11,r25
+ 1311 066a D90E      		add r13,r25
+ 1312 066c ADB7      		in r26,__SP_L__
+ 1313 066e BEB7      		in r27,__SP_H__
+ 1314 0670 1196      		adiw r26,1
+ 1315 0672 EC92      		st X,r14
+ 1316 0674 F182      		std Z+1,r15
+ 1317 0676 1283      		std Z+2,r17
+ 1318 0678 8383      		std Z+3,r24
+ 1319 067a 862D      		mov r24,r6
+ 1320 067c 672D      		mov r22,r7
+ 1321 067e 4B2D      		mov r20,r11
+ 1322 0680 292D      		mov r18,r9
+ 1323 0682 ED2C      		mov r14,r13
+ 1324 0684 0E94 0000 		call ETD
+ 1325 0688 0F90      		pop __tmp_reg__
+ 1326 068a 0F90      		pop __tmp_reg__
+ 1327 068c 0F90      		pop __tmp_reg__
+ 1328 068e 0F90      		pop __tmp_reg__
+ 1329               	/* epilogue start */
+ 311:deathclock.c  ****                               eeprom_read_byte(&EE_DOB_DAY),
+ 312:deathclock.c  ****                               eeprom_read_byte(&EE_DOB_YEAR)+1900,
+ 313:deathclock.c  ****                               eeprom_read_byte(&EE_SET_MONTH),
+ 314:deathclock.c  ****                               eeprom_read_byte(&EE_SET_DAY),
+ 315:deathclock.c  ****                               eeprom_read_byte(&EE_SET_YEAR)+1900,
+ 316:deathclock.c  ****                               eeprom_read_byte(&EE_GENDER),
+ 317:deathclock.c  ****                               dc_mode,
+ 318:deathclock.c  ****                               BodyMassIndex( eeprom_read_byte(&EE_BMI_UNIT), eeprom_read_word(&EE_B
+ 319:deathclock.c  ****                               eeprom_read_byte(&EE_SMOKER),
+ 320:deathclock.c  ****                               eeprom_read_byte(&EE_SET_HOUR),
+ 321:deathclock.c  ****                               eeprom_read_byte(&EE_SET_MIN),
+ 322:deathclock.c  ****                               eeprom_read_byte(&EE_SET_SEC));
+ 323:deathclock.c  **** }
+ 1331               	.LM86:
+ 1332 0690 1F91      		pop r17
+ 1333 0692 0F91      		pop r16
+ 1334 0694 FF90      		pop r15
+ 1335 0696 EF90      		pop r14
+ 1336 0698 DF90      		pop r13
+ 1337 069a CF90      		pop r12
+ 1338 069c BF90      		pop r11
+ 1339 069e AF90      		pop r10
+ 1340 06a0 9F90      		pop r9
+ 1341 06a2 8F90      		pop r8
+ 1342 06a4 7F90      		pop r7
+ 1343 06a6 6F90      		pop r6
+ 1344 06a8 0895      		ret
+ 1346               	.Lscope6:
+ 1348               		.stabd	78,0,0
+ 1350               	.global	calc_death_date
+ 1352               	calc_death_date:
+ 1353               		.stabd	46,0,0
+ 324:deathclock.c  **** 
+ 325:deathclock.c  **** void load_etd(void)
+ 326:deathclock.c  **** {
+ 327:deathclock.c  ****   uint32_t result = load_raw_etd();
+ 328:deathclock.c  ****       result -= date_diff( eeprom_read_byte(&EE_SET_MONTH),
+ 329:deathclock.c  ****                            eeprom_read_byte(&EE_SET_DAY),
+ 330:deathclock.c  ****                            eeprom_read_byte(&EE_SET_YEAR)+1900,
+ 331:deathclock.c  ****                            date_m,date_d,date_y+2000) * 1440l * ((dc_mode == DC_mode_sadistic)?4:1)
+ 332:deathclock.c  ****   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
+ 333:deathclock.c  ****   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
+ 334:deathclock.c  ****   minutes_left = (int32_t)result;
+ 335:deathclock.c  ****   calc_death_date();
+ 336:deathclock.c  ****   if(death_y < (date_y + 100))	//Bug fix for the rare cases where Minutes left is inadvertantly pos
+ 337:deathclock.c  ****   	  minutes_left = 0;
+ 338:deathclock.c  ****   else if((death_y == (date_y + 100)) && (death_m < date_m))
+ 339:deathclock.c  ****   	  minutes_left = 0;
+ 340:deathclock.c  ****   else if ((death_y == (date_y + 100)) && (death_m == date_m) && (death_d < date_d))
+ 341:deathclock.c  ****   	  minutes_left = 0;
+ 342:deathclock.c  ****   if(minutes_left <= 0)
+ 343:deathclock.c  ****   	  reaper_tow_rip=1;
+ 344:deathclock.c  ****   else
+ 345:deathclock.c  ****   	  reaper_tow_rip=0;
+ 346:deathclock.c  **** }
+ 347:deathclock.c  **** 
+ 348:deathclock.c  **** void calc_death_date(void)
+ 349:deathclock.c  **** {
+ 1355               	.LM87:
+ 1356               	.LFBB7:
+ 1357 06aa DF92      		push r13
+ 1358 06ac EF92      		push r14
+ 1359 06ae FF92      		push r15
+ 1360 06b0 0F93      		push r16
+ 1361 06b2 1F93      		push r17
+ 1362               	/* prologue: function */
+ 1363               	/* frame size = 0 */
+ 350:deathclock.c  **** 	uint32_t timeleft;
+ 351:deathclock.c  **** 	death_m = eeprom_read_byte(&EE_SET_MONTH);
+ 1365               	.LM88:
+ 1366 06b4 80E0      		ldi r24,lo8(EE_SET_MONTH)
+ 1367 06b6 90E0      		ldi r25,hi8(EE_SET_MONTH)
+ 1368 06b8 0E94 0000 		call __eerd_byte_m328p
+ 1369 06bc 8093 0000 		sts death_m,r24
+ 352:deathclock.c  **** 	death_d = eeprom_read_byte(&EE_SET_DAY);
+ 1371               	.LM89:
+ 1372 06c0 80E0      		ldi r24,lo8(EE_SET_DAY)
+ 1373 06c2 90E0      		ldi r25,hi8(EE_SET_DAY)
+ 1374 06c4 0E94 0000 		call __eerd_byte_m328p
+ 1375 06c8 8093 0000 		sts death_d,r24
+ 353:deathclock.c  **** 	death_y = eeprom_read_byte(&EE_SET_YEAR);
+ 1377               	.LM90:
+ 1378 06cc 80E0      		ldi r24,lo8(EE_SET_YEAR)
+ 1379 06ce 90E0      		ldi r25,hi8(EE_SET_YEAR)
+ 1380 06d0 0E94 0000 		call __eerd_byte_m328p
+ 1381 06d4 8093 0000 		sts death_y,r24
+ 354:deathclock.c  **** 	timeleft = load_raw_etd();
+ 1383               	.LM91:
+ 1384 06d8 0E94 0000 		call load_raw_etd
+ 1385 06dc 7B01      		movw r14,r22
+ 1386 06de 8C01      		movw r16,r24
+ 355:deathclock.c  **** 	
+ 356:deathclock.c  **** 	while (timeleft >= 1440)
+ 357:deathclock.c  ****       {
+ 358:deathclock.c  ****         timeleft -= 1440;
+ 359:deathclock.c  ****         death_d++;  
+ 360:deathclock.c  ****         if ((death_d > 31) ||
+ 361:deathclock.c  ****                ((death_d == 31) && ((death_m == 4)||(death_m == 6)||(death_m == 9)||(death_m == 11)
+ 362:deathclock.c  ****                ((death_d == 30) && (death_m == 2)) ||
+ 363:deathclock.c  ****                ((death_d == 29) && (death_m == 2) && !leapyear(1900+death_y))) {
+ 364:deathclock.c  ****                  death_d = 1;
+ 1388               	.LM92:
+ 1389 06e0 DD24      		clr r13
+ 1390 06e2 D394      		inc r13
+ 1391 06e4 00C0      		rjmp .L61
+ 1392               	.L67:
+ 360:deathclock.c  ****         death_d++;  
+ 1394               	.LM93:
+ 1395 06e6 8091 0000 		lds r24,death_d
+ 1396 06ea 8F5F      		subi r24,lo8(-(1))
+ 1397 06ec 8093 0000 		sts death_d,r24
+ 361:deathclock.c  ****         if ((death_d > 31) ||
+ 1399               	.LM94:
+ 1400 06f0 8091 0000 		lds r24,death_d
+ 1401 06f4 8032      		cpi r24,lo8(32)
+ 1402 06f6 00F4      		brsh .L62
+ 1403 06f8 8091 0000 		lds r24,death_d
+ 1404 06fc 8F31      		cpi r24,lo8(31)
+ 1405 06fe 01F4      		brne .L63
+ 1406 0700 8091 0000 		lds r24,death_m
+ 1407 0704 8430      		cpi r24,lo8(4)
+ 1408 0706 01F0      		breq .L62
+ 1409 0708 8091 0000 		lds r24,death_m
+ 1410 070c 8630      		cpi r24,lo8(6)
+ 1411 070e 01F0      		breq .L62
+ 1412 0710 8091 0000 		lds r24,death_m
+ 1413 0714 8930      		cpi r24,lo8(9)
+ 1414 0716 01F0      		breq .L62
+ 1415 0718 8091 0000 		lds r24,death_m
+ 1416 071c 8B30      		cpi r24,lo8(11)
+ 1417 071e 01F0      		breq .L62
+ 1418               	.L63:
+ 1419 0720 8091 0000 		lds r24,death_d
+ 1420 0724 8E31      		cpi r24,lo8(30)
+ 1421 0726 01F4      		brne .L64
+ 1422 0728 8091 0000 		lds r24,death_m
+ 1423 072c 8230      		cpi r24,lo8(2)
+ 1424 072e 01F0      		breq .L62
+ 1425               	.L64:
+ 1426 0730 8091 0000 		lds r24,death_d
+ 1427 0734 8D31      		cpi r24,lo8(29)
+ 1428 0736 01F4      		brne .L65
+ 1429 0738 8091 0000 		lds r24,death_m
+ 1430 073c 8230      		cpi r24,lo8(2)
+ 1431 073e 01F4      		brne .L65
+ 1432 0740 8091 0000 		lds r24,death_y
+ 1433 0744 90E0      		ldi r25,lo8(0)
+ 1434 0746 8459      		subi r24,lo8(-(1900))
+ 1435 0748 984F      		sbci r25,hi8(-(1900))
+ 1436 074a 0E94 0000 		call leapyear
+ 1437 074e 8823      		tst r24
+ 1438 0750 01F4      		brne .L65
+ 1439               	.L62:
+ 1441               	.LM95:
+ 1442 0752 D092 0000 		sts death_d,r13
+ 365:deathclock.c  ****                  death_m++;
+ 1444               	.LM96:
+ 1445 0756 8091 0000 		lds r24,death_m
+ 1446 075a 8F5F      		subi r24,lo8(-(1))
+ 1447 075c 8093 0000 		sts death_m,r24
+ 1448               	.L65:
+ 366:deathclock.c  ****             }
+ 367:deathclock.c  ****             if(death_m > 12)
+ 1450               	.LM97:
+ 1451 0760 8091 0000 		lds r24,death_m
+ 1452 0764 8D30      		cpi r24,lo8(13)
+ 1453 0766 00F0      		brlo .L66
+ 368:deathclock.c  ****             {
+ 369:deathclock.c  ****               death_m=1;
+ 1455               	.LM98:
+ 1456 0768 D092 0000 		sts death_m,r13
+ 370:deathclock.c  ****               death_y++;
+ 1458               	.LM99:
+ 1459 076c 8091 0000 		lds r24,death_y
+ 1460 0770 8F5F      		subi r24,lo8(-(1))
+ 1461 0772 8093 0000 		sts death_y,r24
+ 1462               	.L66:
+ 359:deathclock.c  ****         timeleft -= 1440;
+ 1464               	.LM100:
+ 1465 0776 80E6      		ldi r24,lo8(-1440)
+ 1466 0778 9AEF      		ldi r25,hi8(-1440)
+ 1467 077a AFEF      		ldi r26,hlo8(-1440)
+ 1468 077c BFEF      		ldi r27,hhi8(-1440)
+ 1469 077e E80E      		add r14,r24
+ 1470 0780 F91E      		adc r15,r25
+ 1471 0782 0A1F      		adc r16,r26
+ 1472 0784 1B1F      		adc r17,r27
+ 1473               	.L61:
+ 357:deathclock.c  **** 	while (timeleft >= 1440)
+ 1475               	.LM101:
+ 1476 0786 90EA      		ldi r25,lo8(1440)
+ 1477 0788 E916      		cp r14,r25
+ 1478 078a 95E0      		ldi r25,hi8(1440)
+ 1479 078c F906      		cpc r15,r25
+ 1480 078e 90E0      		ldi r25,hlo8(1440)
+ 1481 0790 0907      		cpc r16,r25
+ 1482 0792 90E0      		ldi r25,hhi8(1440)
+ 1483 0794 1907      		cpc r17,r25
+ 1484 0796 00F0      		brlo .+2
+ 1485 0798 00C0      		rjmp .L67
+ 1486               	/* epilogue start */
+ 371:deathclock.c  ****             } 
+ 372:deathclock.c  ****       }
+ 373:deathclock.c  **** }
+ 1488               	.LM102:
+ 1489 079a 1F91      		pop r17
+ 1490 079c 0F91      		pop r16
+ 1491 079e FF90      		pop r15
+ 1492 07a0 EF90      		pop r14
+ 1493 07a2 DF90      		pop r13
+ 1494 07a4 0895      		ret
+ 1499               	.Lscope7:
+ 1501               		.stabd	78,0,0
+ 1503               	.global	load_etd
+ 1505               	load_etd:
+ 1506               		.stabd	46,0,0
+ 327:deathclock.c  **** {
+ 1508               	.LM103:
+ 1509               	.LFBB8:
+ 1510 07a6 6F92      		push r6
+ 1511 07a8 7F92      		push r7
+ 1512 07aa 8F92      		push r8
+ 1513 07ac 9F92      		push r9
+ 1514 07ae AF92      		push r10
+ 1515 07b0 BF92      		push r11
+ 1516 07b2 CF92      		push r12
+ 1517 07b4 DF92      		push r13
+ 1518 07b6 EF92      		push r14
+ 1519 07b8 FF92      		push r15
+ 1520 07ba 0F93      		push r16
+ 1521 07bc 1F93      		push r17
+ 1522 07be CF93      		push r28
+ 1523 07c0 DF93      		push r29
+ 1524               	/* prologue: function */
+ 1525               	/* frame size = 0 */
+ 328:deathclock.c  ****   uint32_t result = load_raw_etd();
+ 1527               	.LM104:
+ 1528 07c2 0E94 0000 		call load_raw_etd
+ 1529 07c6 5B01      		movw r10,r22
+ 1530 07c8 6C01      		movw r12,r24
+ 329:deathclock.c  ****       result -= date_diff( eeprom_read_byte(&EE_SET_MONTH),
+ 1532               	.LM105:
+ 1533 07ca 80E0      		ldi r24,lo8(EE_SET_MONTH)
+ 1534 07cc 90E0      		ldi r25,hi8(EE_SET_MONTH)
+ 1535 07ce 0E94 0000 		call __eerd_byte_m328p
+ 1536 07d2 F82E      		mov r15,r24
+ 1537 07d4 80E0      		ldi r24,lo8(EE_SET_DAY)
+ 1538 07d6 90E0      		ldi r25,hi8(EE_SET_DAY)
+ 1539 07d8 0E94 0000 		call __eerd_byte_m328p
+ 1540 07dc 182F      		mov r17,r24
+ 1541 07de 80E0      		ldi r24,lo8(EE_SET_YEAR)
+ 1542 07e0 90E0      		ldi r25,hi8(EE_SET_YEAR)
+ 1543 07e2 0E94 0000 		call __eerd_byte_m328p
+ 1544 07e6 2091 0000 		lds r18,date_m
+ 1545 07ea 0091 0000 		lds r16,date_d
+ 1546 07ee 9091 0000 		lds r25,date_y
+ 1547 07f2 482F      		mov r20,r24
+ 1548 07f4 4459      		subi r20,lo8(-(108))
+ 1549 07f6 9053      		subi r25,lo8(-(-48))
+ 1550 07f8 8F2D      		mov r24,r15
+ 1551 07fa 612F      		mov r22,r17
+ 1552 07fc E92E      		mov r14,r25
+ 1553 07fe 0E94 0000 		call date_diff
+ 1554 0802 9B01      		movw r18,r22
+ 1555 0804 AC01      		movw r20,r24
+ 1556 0806 8091 0000 		lds r24,dc_mode
+ 1557 080a 8330      		cpi r24,lo8(3)
+ 1558 080c 01F0      		breq .L70
+ 1559 080e E1E0      		ldi r30,lo8(1)
+ 1560 0810 EE2E      		mov r14,r30
+ 1561 0812 F12C      		mov r15,__zero_reg__
+ 1562 0814 012D      		mov r16,__zero_reg__
+ 1563 0816 112D      		mov r17,__zero_reg__
+ 1564 0818 00C0      		rjmp .L71
+ 1565               	.L70:
+ 1566 081a 74E0      		ldi r23,lo8(4)
+ 1567 081c E72E      		mov r14,r23
+ 1568 081e F12C      		mov r15,__zero_reg__
+ 1569 0820 012D      		mov r16,__zero_reg__
+ 1570 0822 112D      		mov r17,__zero_reg__
+ 1571               	.L71:
+ 333:deathclock.c  ****   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
+ 1573               	.LM106:
+ 1574 0824 6090 0000 		lds r6,time_h
+ 1575 0828 8091 0000 		lds r24,dc_mode
+ 1576 082c 8330      		cpi r24,lo8(3)
+ 1577 082e 01F0      		breq .L72
+ 1578 0830 61E0      		ldi r22,lo8(1)
+ 1579 0832 862E      		mov r8,r22
+ 1580 0834 912C      		mov r9,__zero_reg__
+ 1581 0836 00C0      		rjmp .L73
+ 1582               	.L72:
+ 1583 0838 94E0      		ldi r25,lo8(4)
+ 1584 083a 892E      		mov r8,r25
+ 1585 083c 912C      		mov r9,__zero_reg__
+ 1586               	.L73:
+ 334:deathclock.c  ****   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
+ 1588               	.LM107:
+ 1589 083e 7090 0000 		lds r7,time_m
+ 1590 0842 8091 0000 		lds r24,dc_mode
+ 1591 0846 8330      		cpi r24,lo8(3)
+ 1592 0848 01F0      		breq .L74
+ 1593 084a C1E0      		ldi r28,lo8(1)
+ 1594 084c D0E0      		ldi r29,hi8(1)
+ 1595 084e 00C0      		rjmp .L75
+ 1596               	.L74:
+ 1597 0850 C4E0      		ldi r28,lo8(4)
+ 1598 0852 D0E0      		ldi r29,hi8(4)
+ 1599               	.L75:
+ 329:deathclock.c  ****       result -= date_diff( eeprom_read_byte(&EE_SET_MONTH),
+ 1601               	.LM108:
+ 1602 0854 CA01      		movw r24,r20
+ 1603 0856 B901      		movw r22,r18
+ 1604 0858 20EA      		ldi r18,lo8(1440)
+ 1605 085a 35E0      		ldi r19,hi8(1440)
+ 1606 085c 40E0      		ldi r20,hlo8(1440)
+ 1607 085e 50E0      		ldi r21,hhi8(1440)
+ 1608 0860 0E94 0000 		call __mulsi3
+ 1609 0864 A801      		movw r20,r16
+ 1610 0866 9701      		movw r18,r14
+ 1611 0868 0E94 0000 		call __mulsi3
+ 1612 086c A61A      		sub r10,r22
+ 1613 086e B70A      		sbc r11,r23
+ 1614 0870 C80A      		sbc r12,r24
+ 1615 0872 D90A      		sbc r13,r25
+ 333:deathclock.c  ****   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
+ 1617               	.LM109:
+ 1618 0874 8CE3      		ldi r24,lo8(60)
+ 1619 0876 689E      		mul r6,r24
+ 1620 0878 C001      		movw r24,r0
+ 1621 087a 1124      		clr r1
+ 1622 087c 9C01      		movw r18,r24
+ 1623 087e 289D      		mul r18,r8
+ 1624 0880 C001      		movw r24,r0
+ 1625 0882 299D      		mul r18,r9
+ 1626 0884 900D      		add r25,r0
+ 1627 0886 389D      		mul r19,r8
+ 1628 0888 900D      		add r25,r0
+ 1629 088a 1124      		clr r1
+ 1630 088c AA27      		clr r26
+ 1631 088e 97FD      		sbrc r25,7
+ 1632 0890 A095      		com r26
+ 1633 0892 BA2F      		mov r27,r26
+ 1634 0894 A81A      		sub r10,r24
+ 1635 0896 B90A      		sbc r11,r25
+ 1636 0898 CA0A      		sbc r12,r26
+ 1637 089a DB0A      		sbc r13,r27
+ 335:deathclock.c  ****   minutes_left = (int32_t)result;
+ 1639               	.LM110:
+ 1640 089c 872D      		mov r24,r7
+ 1641 089e 90E0      		ldi r25,lo8(0)
+ 1642 08a0 9C01      		movw r18,r24
+ 1643 08a2 C29F      		mul r28,r18
+ 1644 08a4 C001      		movw r24,r0
+ 1645 08a6 C39F      		mul r28,r19
+ 1646 08a8 900D      		add r25,r0
+ 1647 08aa D29F      		mul r29,r18
+ 1648 08ac 900D      		add r25,r0
+ 1649 08ae 1124      		clr r1
+ 1650 08b0 AA27      		clr r26
+ 1651 08b2 97FD      		sbrc r25,7
+ 1652 08b4 A095      		com r26
+ 1653 08b6 BA2F      		mov r27,r26
+ 1654 08b8 A81A      		sub r10,r24
+ 1655 08ba B90A      		sbc r11,r25
+ 1656 08bc CA0A      		sbc r12,r26
+ 1657 08be DB0A      		sbc r13,r27
+ 1658 08c0 A092 0000 		sts minutes_left,r10
+ 1659 08c4 B092 0000 		sts (minutes_left)+1,r11
+ 1660 08c8 C092 0000 		sts (minutes_left)+2,r12
+ 1661 08cc D092 0000 		sts (minutes_left)+3,r13
+ 336:deathclock.c  ****   calc_death_date();
+ 1663               	.LM111:
+ 1664 08d0 0E94 0000 		call calc_death_date
+ 337:deathclock.c  ****   if(death_y < (date_y + 100))	//Bug fix for the rare cases where Minutes left is inadvertantly pos
+ 1666               	.LM112:
+ 1667 08d4 8091 0000 		lds r24,date_y
+ 1668 08d8 2091 0000 		lds r18,death_y
+ 1669 08dc 90E0      		ldi r25,lo8(0)
+ 1670 08de 8D59      		subi r24,lo8(-(99))
+ 1671 08e0 9F4F      		sbci r25,hi8(-(99))
+ 1672 08e2 30E0      		ldi r19,lo8(0)
+ 1673 08e4 8217      		cp r24,r18
+ 1674 08e6 9307      		cpc r25,r19
+ 1675 08e8 04F4      		brge .L82
+ 1676               	.L76:
+ 339:deathclock.c  ****   else if((death_y == (date_y + 100)) && (death_m < date_m))
+ 1678               	.LM113:
+ 1679 08ea 2091 0000 		lds r18,death_y
+ 1680 08ee 8091 0000 		lds r24,date_y
+ 1681 08f2 30E0      		ldi r19,lo8(0)
+ 1682 08f4 90E0      		ldi r25,lo8(0)
+ 1683 08f6 8C59      		subi r24,lo8(-(100))
+ 1684 08f8 9F4F      		sbci r25,hi8(-(100))
+ 1685 08fa 2817      		cp r18,r24
+ 1686 08fc 3907      		cpc r19,r25
+ 1687 08fe 01F4      		brne .L78
+ 1688 0900 9091 0000 		lds r25,death_m
+ 1689 0904 8091 0000 		lds r24,date_m
+ 1690 0908 9817      		cp r25,r24
+ 1691 090a 00F0      		brlo .L82
+ 1692               	.L78:
+ 341:deathclock.c  ****   else if ((death_y == (date_y + 100)) && (death_m == date_m) && (death_d < date_d))
+ 1694               	.LM114:
+ 1695 090c 2091 0000 		lds r18,death_y
+ 1696 0910 8091 0000 		lds r24,date_y
+ 1697 0914 30E0      		ldi r19,lo8(0)
+ 1698 0916 90E0      		ldi r25,lo8(0)
+ 1699 0918 8C59      		subi r24,lo8(-(100))
+ 1700 091a 9F4F      		sbci r25,hi8(-(100))
+ 1701 091c 2817      		cp r18,r24
+ 1702 091e 3907      		cpc r19,r25
+ 1703 0920 01F4      		brne .L77
+ 1704 0922 9091 0000 		lds r25,death_m
+ 1705 0926 8091 0000 		lds r24,date_m
+ 1706 092a 9817      		cp r25,r24
+ 1707 092c 01F4      		brne .L77
+ 1708 092e 9091 0000 		lds r25,death_d
+ 1709 0932 8091 0000 		lds r24,date_d
+ 1710 0936 9817      		cp r25,r24
+ 1711 0938 00F4      		brsh .L77
+ 1712               	.L82:
+ 342:deathclock.c  ****   	  minutes_left = 0;
+ 1714               	.LM115:
+ 1715 093a 1092 0000 		sts minutes_left,__zero_reg__
+ 1716 093e 1092 0000 		sts (minutes_left)+1,__zero_reg__
+ 1717 0942 1092 0000 		sts (minutes_left)+2,__zero_reg__
+ 1718 0946 1092 0000 		sts (minutes_left)+3,__zero_reg__
+ 1719               	.L77:
+ 343:deathclock.c  ****   if(minutes_left <= 0)
+ 1721               	.LM116:
+ 1722 094a 8091 0000 		lds r24,minutes_left
+ 1723 094e 9091 0000 		lds r25,(minutes_left)+1
+ 1724 0952 A091 0000 		lds r26,(minutes_left)+2
+ 1725 0956 B091 0000 		lds r27,(minutes_left)+3
+ 1726 095a 1816      		cp __zero_reg__,r24
+ 1727 095c 1906      		cpc __zero_reg__,r25
+ 1728 095e 1A06      		cpc __zero_reg__,r26
+ 1729 0960 1B06      		cpc __zero_reg__,r27
+ 1730 0962 04F0      		brlt .L79
+ 344:deathclock.c  ****   	  reaper_tow_rip=1;
+ 1732               	.LM117:
+ 1733 0964 81E0      		ldi r24,lo8(1)
+ 1734 0966 8093 0000 		sts reaper_tow_rip,r24
+ 1735 096a 00C0      		rjmp .L81
+ 1736               	.L79:
+ 346:deathclock.c  ****   	  reaper_tow_rip=0;
+ 1738               	.LM118:
+ 1739 096c 1092 0000 		sts reaper_tow_rip,__zero_reg__
+ 1740               	.L81:
+ 1741               	/* epilogue start */
+ 347:deathclock.c  **** }
+ 1743               	.LM119:
+ 1744 0970 DF91      		pop r29
+ 1745 0972 CF91      		pop r28
+ 1746 0974 1F91      		pop r17
+ 1747 0976 0F91      		pop r16
+ 1748 0978 FF90      		pop r15
+ 1749 097a EF90      		pop r14
+ 1750 097c DF90      		pop r13
+ 1751 097e CF90      		pop r12
+ 1752 0980 BF90      		pop r11
+ 1753 0982 AF90      		pop r10
+ 1754 0984 9F90      		pop r9
+ 1755 0986 8F90      		pop r8
+ 1756 0988 7F90      		pop r7
+ 1757 098a 6F90      		pop r6
+ 1758 098c 0895      		ret
+ 1763               	.Lscope8:
+ 1765               		.stabd	78,0,0
+ 1766               	.global	minutes_left
+ 1767               	.global	minutes_left
+ 1768               		.section .bss
+ 1771               	minutes_left:
+ 1772 0000 0000 0000 		.skip 4,0
+ 1773               	.global	bmi_table_offset
+ 1774               		.data
+ 1777               	bmi_table_offset:
+ 1778 0000 00        		.byte	0
+ 1779 0001 05        		.byte	5
+ 1780 0002 00        		.byte	0
+ 1781 0003 05        		.byte	5
+ 1782 0004 00        		.byte	0
+ 1783 0005 05        		.byte	5
+ 1784 0006 0B        		.byte	11
+ 1785 0007 0C        		.byte	12
+ 1786               	.global	bmi_table_count
+ 1789               	bmi_table_count:
+ 1790 0008 05        		.byte	5
+ 1791 0009 06        		.byte	6
+ 1792 000a 05        		.byte	5
+ 1793 000b 06        		.byte	6
+ 1794 000c 05        		.byte	5
+ 1795 000d 06        		.byte	6
+ 1796 000e 01        		.byte	1
+ 1797 000f 02        		.byte	2
+ 1798               	.global	normal_bmi_male
+ 1799               		.section	.progmem.data,"a",@progbits
+ 1802               	normal_bmi_male:
+ 1803 0000 28        		.byte	40
+ 1804 0001 00        		.byte	0
+ 1805 0002 11        		.byte	17
+ 1806 0003 11        		.byte	17
+ 1807 0004 22        		.byte	34
+ 1808 0005 23        		.byte	35
+ 1809 0006 33        		.byte	51
+ 1810 0007 44        		.byte	68
+ 1811 0008 45        		.byte	69
+ 1812 0009 56        		.byte	86
+ 1813 000a 68        		.byte	104
+ 1814 000b 32        		.byte	50
+ 1815 000c 00        		.byte	0
+ 1816 000d 01        		.byte	1
+ 1817 000e 11        		.byte	17
+ 1818 000f 12        		.byte	18
+ 1819 0010 22        		.byte	34
+ 1820 0011 23        		.byte	35
+ 1821 0012 34        		.byte	52
+ 1822 0013 44        		.byte	68
+ 1823 0014 55        		.byte	85
+ 1824 0015 57        		.byte	87
+ 1825 0016 3C        		.byte	60
+ 1826 0017 00        		.byte	0
+ 1827 0018 00        		.byte	0
+ 1828 0019 11        		.byte	17
+ 1829 001a 11        		.byte	17
+ 1830 001b 22        		.byte	34
+ 1831 001c 23        		.byte	35
+ 1832 001d 33        		.byte	51
+ 1833 001e 44        		.byte	68
+ 1834 001f 45        		.byte	69
+ 1835 0020 56        		.byte	86
+ 1836 0021 46        		.byte	70
+ 1837 0022 00        		.byte	0
+ 1838 0023 11        		.byte	17
+ 1839 0024 11        		.byte	17
+ 1840 0025 12        		.byte	18
+ 1841 0026 22        		.byte	34
+ 1842 0027 23        		.byte	35
+ 1843 0028 33        		.byte	51
+ 1844 0029 44        		.byte	68
+ 1845 002a 44        		.byte	68
+ 1846 002b 00        		.byte	0
+ 1847 002c C8        		.byte	-56
+ 1848 002d 00        		.byte	0
+ 1849 002e 00        		.byte	0
+ 1850 002f 00        		.byte	0
+ 1851 0030 00        		.byte	0
+ 1852 0031 00        		.byte	0
+ 1853 0032 00        		.byte	0
+ 1854 0033 00        		.byte	0
+ 1855 0034 00        		.byte	0
+ 1856 0035 00        		.byte	0
+ 1857 0036 05        		.byte	5
+ 1858               	.global	normal_bmi_female
+ 1861               	normal_bmi_female:
+ 1862 0037 1E        		.byte	30
+ 1863 0038 01        		.byte	1
+ 1864 0039 11        		.byte	17
+ 1865 003a 12        		.byte	18
+ 1866 003b 23        		.byte	35
+ 1867 003c 33        		.byte	51
+ 1868 003d 44        		.byte	68
+ 1869 003e 55        		.byte	85
+ 1870 003f 66        		.byte	102
+ 1871 0040 77        		.byte	119
+ 1872 0041 8D        		.byte	-115
+ 1873 0042 28        		.byte	40
+ 1874 0043 01        		.byte	1
+ 1875 0044 11        		.byte	17
+ 1876 0045 12        		.byte	18
+ 1877 0046 22        		.byte	34
+ 1878 0047 33        		.byte	51
+ 1879 0048 34        		.byte	52
+ 1880 0049 45        		.byte	69
+ 1881 004a 56        		.byte	86
+ 1882 004b 66        		.byte	102
+ 1883 004c 7B        		.byte	123
+ 1884 004d 32        		.byte	50
+ 1885 004e 00        		.byte	0
+ 1886 004f 01        		.byte	1
+ 1887 0050 11        		.byte	17
+ 1888 0051 22        		.byte	34
+ 1889 0052 23        		.byte	35
+ 1890 0053 33        		.byte	51
+ 1891 0054 44        		.byte	68
+ 1892 0055 45        		.byte	69
+ 1893 0056 56        		.byte	86
+ 1894 0057 6A        		.byte	106
+ 1895 0058 3C        		.byte	60
+ 1896 0059 00        		.byte	0
+ 1897 005a 00        		.byte	0
+ 1898 005b 01        		.byte	1
+ 1899 005c 11        		.byte	17
+ 1900 005d 12        		.byte	18
+ 1901 005e 22        		.byte	34
+ 1902 005f 33        		.byte	51
+ 1903 0060 34        		.byte	52
+ 1904 0061 44        		.byte	68
+ 1905 0062 57        		.byte	87
+ 1906 0063 46        		.byte	70
+ 1907 0064 00        		.byte	0
+ 1908 0065 00        		.byte	0
+ 1909 0066 00        		.byte	0
+ 1910 0067 11        		.byte	17
+ 1911 0068 11        		.byte	17
+ 1912 0069 22        		.byte	34
+ 1913 006a 22        		.byte	34
+ 1914 006b 23        		.byte	35
+ 1915 006c 33        		.byte	51
+ 1916 006d 35        		.byte	53
+ 1917 006e C8        		.byte	-56
+ 1918 006f 00        		.byte	0
+ 1919 0070 00        		.byte	0
+ 1920 0071 00        		.byte	0
+ 1921 0072 00        		.byte	0
+ 1922 0073 00        		.byte	0
+ 1923 0074 11        		.byte	17
+ 1924 0075 11        		.byte	17
+ 1925 0076 11        		.byte	17
+ 1926 0077 11        		.byte	17
+ 1927 0078 22        		.byte	34
+ 1928               	.global	sadistic_bmi_male
+ 1931               	sadistic_bmi_male:
+ 1932 0079 C8        		.byte	-56
+ 1933 007a 00        		.byte	0
+ 1934 007b 00        		.byte	0
+ 1935 007c 00        		.byte	0
+ 1936 007d 11        		.byte	17
+ 1937 007e 11        		.byte	17
+ 1938 007f 11        		.byte	17
+ 1939 0080 22        		.byte	34
+ 1940 0081 22        		.byte	34
+ 1941 0082 23        		.byte	35
+ 1942 0083 34        		.byte	52
+ 1943               	.global	sadistic_bmi_female
+ 1946               	sadistic_bmi_female:
+ 1947 0084 1E        		.byte	30
+ 1948 0085 00        		.byte	0
+ 1949 0086 00        		.byte	0
+ 1950 0087 01        		.byte	1
+ 1951 0088 11        		.byte	17
+ 1952 0089 11        		.byte	17
+ 1953 008a 22        		.byte	34
+ 1954 008b 22        		.byte	34
+ 1955 008c 33        		.byte	51
+ 1956 008d 33        		.byte	51
+ 1957 008e 46        		.byte	70
+ 1958 008f C8        		.byte	-56
+ 1959 0090 00        		.byte	0
+ 1960 0091 00        		.byte	0
+ 1961 0092 01        		.byte	1
+ 1962 0093 11        		.byte	17
+ 1963 0094 11        		.byte	17
+ 1964 0095 12        		.byte	18
+ 1965 0096 22        		.byte	34
+ 1966 0097 23        		.byte	35
+ 1967 0098 33        		.byte	51
+ 1968 0099 35        		.byte	53
+ 1969               	.global	smoking_table_offset
+ 1970               		.data
+ 1973               	smoking_table_offset:
+ 1974 0010 00        		.byte	0
+ 1975 0011 0A        		.byte	10
+ 1976 0012 00        		.byte	0
+ 1977 0013 0A        		.byte	10
+ 1978 0014 00        		.byte	0
+ 1979 0015 0A        		.byte	10
+ 1980 0016 13        		.byte	19
+ 1981 0017 15        		.byte	21
+ 1982               	.global	smoking_table_count
+ 1985               	smoking_table_count:
+ 1986 0018 0A        		.byte	10
+ 1987 0019 09        		.byte	9
+ 1988 001a 0A        		.byte	10
+ 1989 001b 09        		.byte	9
+ 1990 001c 0A        		.byte	10
+ 1991 001d 09        		.byte	9
+ 1992 001e 02        		.byte	2
+ 1993 001f 02        		.byte	2
+ 1994               	.global	normal_smoking_male
+ 1995               		.section	.progmem.data
+ 1998               	normal_smoking_male:
+ 1999 009a 1E00      		.word	30
+ 2000 009c B30A      		.word	2739
+ 2001 009e 2300      		.word	35
+ 2002 00a0 8F0A      		.word	2703
+ 2003 00a2 2800      		.word	40
+ 2004 00a4 FD09      		.word	2557
+ 2005 00a6 2D00      		.word	45
+ 2006 00a8 D809      		.word	2520
+ 2007 00aa 3200      		.word	50
+ 2008 00ac 6A09      		.word	2410
+ 2009 00ae 3700      		.word	55
+ 2010 00b0 D908      		.word	2265
+ 2011 00b2 3C00      		.word	60
+ 2012 00b4 FE07      		.word	2046
+ 2013 00b6 4100      		.word	65
+ 2014 00b8 FE06      		.word	1790
+ 2015 00ba 4600      		.word	70
+ 2016 00bc 4706      		.word	1607
+ 2017 00be C800      		.word	200
+ 2018 00c0 B504      		.word	1205
+ 2019               	.global	normal_smoking_female
+ 2022               	normal_smoking_female:
+ 2023 00c2 1E00      		.word	30
+ 2024 00c4 3F09      		.word	2367
+ 2025 00c6 2D00      		.word	45
+ 2026 00c8 1B09      		.word	2331
+ 2027 00ca 3200      		.word	50
+ 2028 00cc F608      		.word	2294
+ 2029 00ce 3700      		.word	55
+ 2030 00d0 D108      		.word	2257
+ 2031 00d2 3C00      		.word	60
+ 2032 00d4 9008      		.word	2192
+ 2033 00d6 4100      		.word	65
+ 2034 00d8 F606      		.word	1782
+ 2035 00da 4600      		.word	70
+ 2036 00dc 2207      		.word	1826
+ 2037 00de 4B00      		.word	75
+ 2038 00e0 6505      		.word	1381
+ 2039 00e2 C800      		.word	200
+ 2040 00e4 4804      		.word	1096
+ 2041               	.global	sadistic_smoking_male
+ 2044               	sadistic_smoking_male:
+ 2045 00e6 1E00      		.word	30
+ 2046 00e8 FE04      		.word	1278
+ 2047 00ea C800      		.word	200
+ 2048 00ec DA04      		.word	1242
+ 2049               	.global	sadistic_smoking_female
+ 2052               	sadistic_smoking_female:
+ 2053 00ee 1E00      		.word	30
+ 2054 00f0 9005      		.word	1424
+ 2055 00f2 C800      		.word	200
+ 2056 00f4 6C05      		.word	1388
+ 2057               	.global	day_in_month
+ 2060               	day_in_month:
+ 2061 00f6 1F        		.byte	31
+ 2062 00f7 1C        		.byte	28
+ 2063 00f8 1F        		.byte	31
+ 2064 00f9 1E        		.byte	30
+ 2065 00fa 1F        		.byte	31
+ 2066 00fb 1E        		.byte	30
+ 2067 00fc 1F        		.byte	31
+ 2068 00fd 1F        		.byte	31
+ 2069 00fe 1E        		.byte	30
+ 2070 00ff 1F        		.byte	31
+ 2071 0100 1E        		.byte	30
+ 2072 0101 1F        		.byte	31
+ 2073               	.global	days_table
+ 2074               		.data
+ 2077               	days_table:
+ 2078 0020 8A        		.byte	-118
+ 2079 0021 1C        		.byte	28
+ 2080 0022 04        		.byte	4
+ 2081 0023 00        		.byte	0
+ 2082 0024 36        		.byte	54
+ 2083 0025 6B        		.byte	107
+ 2084 0026 04        		.byte	4
+ 2085 0027 00        		.byte	0
+ 2086 0028 86        		.byte	-122
+ 2087 0029 46        		.byte	70
+ 2088 002a 03        		.byte	3
+ 2089 002b 00        		.byte	0
+ 2090 002c 32        		.byte	50
+ 2091 002d 95        		.byte	-107
+ 2092 002e 03        		.byte	3
+ 2093 002f 00        		.byte	0
+ 2094 0030 37        		.byte	55
+ 2095 0031 AB        		.byte	-85
+ 2096 0032 04        		.byte	4
+ 2097 0033 00        		.byte	0
+ 2098 0034 E3        		.byte	-29
+ 2099 0035 F9        		.byte	-7
+ 2100 0036 04        		.byte	4
+ 2101 0037 00        		.byte	0
+ 2102 0038 A3        		.byte	-93
+ 2103 0039 0C        		.byte	12
+ 2104 003a 02        		.byte	2
+ 2105 003b 00        		.byte	0
+ 2106 003c 82        		.byte	-126
+ 2107 003d 30        		.byte	48
+ 2108 003e 02        		.byte	2
+ 2109 003f 00        		.byte	0
+ 2110               		.comm death_m,1,1
+ 2111               		.comm death_d,1,1
+ 2112               		.comm death_y,1,1
+ 2113               		.comm old_minutes_left,4,1
+ 2114               		.comm dc_mode,1,1
+ 2115               		.comm reaper_tow_rip,1,1
+ 2137               		.text
+ 2139               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 deathclock.c
+     /tmp/cc493AYO.s:2      *ABS*:0000003f __SREG__
+     /tmp/cc493AYO.s:3      *ABS*:0000003e __SP_H__
+     /tmp/cc493AYO.s:4      *ABS*:0000003d __SP_L__
+     /tmp/cc493AYO.s:5      *ABS*:00000034 __CCP__
+     /tmp/cc493AYO.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/cc493AYO.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/cc493AYO.s:107    .text:00000000 is_leap_year
+     /tmp/cc493AYO.s:159    .text:00000032 date_diff
+     /tmp/cc493AYO.s:2060   .progmem.data:000000f6 day_in_month
+     /tmp/cc493AYO.s:592    .text:0000026c BodyMassIndex
+     /tmp/cc493AYO.s:692    .text:000002de random_days
+     /tmp/cc493AYO.s:766    .text:00000338 ETD
+     /tmp/cc493AYO.s:2077   .data:00000020 days_table
+     /tmp/cc493AYO.s:1789   .data:00000008 bmi_table_count
+     /tmp/cc493AYO.s:1777   .data:00000000 bmi_table_offset
+     /tmp/cc493AYO.s:1802   .progmem.data:00000000 normal_bmi_male
+     /tmp/cc493AYO.s:1985   .data:00000018 smoking_table_count
+     /tmp/cc493AYO.s:1973   .data:00000010 smoking_table_offset
+     /tmp/cc493AYO.s:1998   .progmem.data:0000009a normal_smoking_male
+     /tmp/cc493AYO.s:1217   .text:000005a0 load_raw_etd
+                            *COM*:00000001 dc_mode
+     /tmp/cc493AYO.s:1352   .text:000006aa calc_death_date
+                            *COM*:00000001 death_m
+                            *COM*:00000001 death_d
+                            *COM*:00000001 death_y
+     /tmp/cc493AYO.s:1505   .text:000007a6 load_etd
+     /tmp/cc493AYO.s:1771   .bss:00000000 minutes_left
+                            *COM*:00000001 reaper_tow_rip
+     /tmp/cc493AYO.s:1861   .progmem.data:00000037 normal_bmi_female
+     /tmp/cc493AYO.s:1931   .progmem.data:00000079 sadistic_bmi_male
+     /tmp/cc493AYO.s:1946   .progmem.data:00000084 sadistic_bmi_female
+     /tmp/cc493AYO.s:2022   .progmem.data:000000c2 normal_smoking_female
+     /tmp/cc493AYO.s:2044   .progmem.data:000000e6 sadistic_smoking_male
+     /tmp/cc493AYO.s:2052   .progmem.data:000000ee sadistic_smoking_female
+                            *COM*:00000004 old_minutes_left
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+__udivmodhi4
+__mulsi3
+__udivmodsi4
+init_crand_consistent
+crand
+EE_DC_MODE
+__eerd_byte_m328p
+EE_DOB_MONTH
+EE_DOB_DAY
+EE_DOB_YEAR
+EE_SET_MONTH
+EE_SET_DAY
+EE_SET_YEAR
+EE_GENDER
+EE_BMI_UNIT
+EE_BMI_HEIGHT
+__eerd_word_m328p
+EE_BMI_WEIGHT
+EE_SMOKER
+EE_SET_HOUR
+EE_SET_MIN
+EE_SET_SEC
+leapyear
+date_m
+date_d
+date_y
+time_h
+time_m

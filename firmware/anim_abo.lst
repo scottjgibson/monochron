@@ -1,0 +1,264 @@
+   1               		.file	"anim_abo.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 136               	.global	initanim_abo
+ 138               	initanim_abo:
+ 139               		.stabd	46,0,0
+   0:anim_abo.c    **** #include <avr/io.h>      // this contains all the IO port definitions
+   1:anim_abo.c    **** #include <avr/interrupt.h>
+   2:anim_abo.c    **** #include <util/delay.h>
+   3:anim_abo.c    **** #include <avr/pgmspace.h>
+   4:anim_abo.c    **** #include <avr/eeprom.h>
+   5:anim_abo.c    **** #include <avr/wdt.h>
+   6:anim_abo.c    **** #include <string.h>
+   7:anim_abo.c    **** #include <stdlib.h>
+   8:anim_abo.c    **** #include <math.h>
+   9:anim_abo.c    **** 
+  10:anim_abo.c    **** #include "util.h"
+  11:anim_abo.c    **** #include "ratt.h"
+  12:anim_abo.c    **** #include "ks0108.h"
+  13:anim_abo.c    **** #include "glcd.h"
+  14:anim_abo.c    **** 
+  15:anim_abo.c    **** extern volatile uint8_t displaystyle;
+  16:anim_abo.c    **** extern volatile uint8_t time_s;
+  17:anim_abo.c    **** 
+  18:anim_abo.c    **** #ifdef DEATHCHRON
+  19:anim_abo.c    **** extern const uint8_t adafruit[];
+  20:anim_abo.c    **** PGM_P logo_p PROGMEM = (prog_char *) adafruit;
+  21:anim_abo.c    **** void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t 
+  22:anim_abo.c    **** #endif
+  23:anim_abo.c    ****                                   
+  24:anim_abo.c    **** extern uint8_t about[];
+  25:anim_abo.c    **** //Definition of about[] is in eeprom.c.  Change it there.
+  26:anim_abo.c    **** 
+  27:anim_abo.c    **** void initanim_abo(void){
+ 141               	.LM0:
+ 142               	.LFBB1:
+ 143 0000 AF92      		push r10
+ 144 0002 BF92      		push r11
+ 145 0004 CF92      		push r12
+ 146 0006 DF92      		push r13
+ 147 0008 EF92      		push r14
+ 148 000a FF92      		push r15
+ 149 000c 0F93      		push r16
+ 150 000e 1F93      		push r17
+ 151 0010 CF93      		push r28
+ 152 0012 DF93      		push r29
+ 153               	/* prologue: function */
+ 154               	/* frame size = 0 */
+  28:anim_abo.c    ****  uint8_t k, b, line, eof;
+  29:anim_abo.c    ****  uint16_t ix, lineix;
+  30:anim_abo.c    ****  ix=0;
+  31:anim_abo.c    **** #ifdef DEATHCHRON
+  32:anim_abo.c    ****  glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, 1);
+ 156               	.LM1:
+ 157 0014 80E0      		ldi r24,lo8(0)
+ 158 0016 60E0      		ldi r22,lo8(0)
+ 159 0018 40E8      		ldi r20,lo8(-128)
+ 160 001a 20E4      		ldi r18,lo8(64)
+ 161 001c 01E0      		ldi r16,lo8(1)
+ 162 001e 0E94 0000 		call glcdFillRectangle
+  33:anim_abo.c    ****  death_blitsegs_rom(36,0,logo_p, 57, 64, 1);
+ 164               	.LM2:
+ 165 0022 84E2      		ldi r24,lo8(36)
+ 166 0024 90E0      		ldi r25,hi8(36)
+ 167 0026 60E0      		ldi r22,lo8(0)
+ 168 0028 40E0      		ldi r20,lo8(adafruit)
+ 169 002a 50E0      		ldi r21,hi8(adafruit)
+ 170 002c 29E3      		ldi r18,lo8(57)
+ 171 002e 00E4      		ldi r16,lo8(64)
+ 172 0030 EE24      		clr r14
+ 173 0032 E394      		inc r14
+ 174 0034 0E94 0000 		call death_blitsegs_rom
+  34:anim_abo.c    ****  uint8_t i = (time_s + 5) % 60;
+ 176               	.LM3:
+ 177 0038 8091 0000 		lds r24,time_s
+ 178 003c 90E0      		ldi r25,lo8(0)
+ 179 003e 0596      		adiw r24,5
+ 180 0040 6CE3      		ldi r22,lo8(60)
+ 181 0042 70E0      		ldi r23,hi8(60)
+ 182 0044 0E94 0000 		call __divmodhi4
+ 183 0048 982F      		mov r25,r24
+ 184               	.L2:
+  35:anim_abo.c    ****  while(i != time_s);
+ 186               	.LM4:
+ 187 004a 8091 0000 		lds r24,time_s
+ 188 004e 9817      		cp r25,r24
+ 189 0050 01F4      		brne .L2
+ 190 0052 00E0      		ldi r16,lo8(0)
+ 191 0054 10E0      		ldi r17,hi8(0)
+ 192               	.L10:
+  36:anim_abo.c    **** #endif
+  37:anim_abo.c    ****  while (1) {
+  38:anim_abo.c    ****   glcdClearScreen();
+ 194               	.LM5:
+ 195 0056 0E94 0000 		call glcdClearScreen
+ 196 005a DD24      		clr r13
+ 197 005c CC24      		clr r12
+ 198 005e AA24      		clr r10
+ 199 0060 BB24      		clr r11
+ 200               	.L9:
+  39:anim_abo.c    ****   for (eof=0, lineix=0, line=0; line<8; line++) {
+  40:anim_abo.c    ****    if (!eof) {
+ 202               	.LM6:
+ 203 0062 CC20      		tst r12
+ 204 0064 01F0      		breq .+2
+ 205 0066 00C0      		rjmp .L3
+  41:anim_abo.c    ****     b = eeprom_read_byte(&about[ix++]);
+ 207               	.LM7:
+ 208 0068 E801      		movw r28,r16
+ 209 006a C050      		subi r28,lo8(-(about))
+ 210 006c D040      		sbci r29,hi8(-(about))
+ 211 006e 0F5F      		subi r16,lo8(-(1))
+ 212 0070 1F4F      		sbci r17,hi8(-(1))
+ 213 0072 CE01      		movw r24,r28
+ 214 0074 0E94 0000 		call __eerd_byte_m328p
+ 215 0078 F82E      		mov r15,r24
+  42:anim_abo.c    ****     if (b==255) {
+ 217               	.LM8:
+ 218 007a 8FEF      		ldi r24,lo8(-1)
+ 219 007c F816      		cp r15,r24
+ 220 007e 01F4      		brne .L4
+  43:anim_abo.c    ****      eof = 1;
+  44:anim_abo.c    ****      if (!line) {displaystyle = eeprom_read_byte(&EE_STYLE); initanim(); return;}
+ 222               	.LM9:
+ 223 0080 DD20      		tst r13
+ 224 0082 01F0      		breq .L5
+ 225 0084 CC24      		clr r12
+ 226 0086 C394      		inc r12
+ 227 0088 00C0      		rjmp .L3
+ 228               	.L5:
+ 229 008a 80E0      		ldi r24,lo8(EE_STYLE)
+ 230 008c 90E0      		ldi r25,hi8(EE_STYLE)
+ 231 008e 0E94 0000 		call __eerd_byte_m328p
+ 232 0092 8093 0000 		sts displaystyle,r24
+ 233 0096 0E94 0000 		call initanim
+ 234               	/* epilogue start */
+  45:anim_abo.c    ****      continue;
+  46:anim_abo.c    ****     } 
+  47:anim_abo.c    ****     if (!line) {lineix = ix + b;}
+  48:anim_abo.c    ****     k = ((128 - (b * 6))/2)-1;
+  49:anim_abo.c    ****     if (k<0) {k=0;}
+  50:anim_abo.c    ****     glcdSetAddress(k,line);
+  51:anim_abo.c    ****     for(;b>0;b--) {
+  52:anim_abo.c    ****      glcdWriteChar(eeprom_read_byte(&about[ix++]),0);
+  53:anim_abo.c    ****     }
+  54:anim_abo.c    ****    }
+  55:anim_abo.c    ****   }
+  56:anim_abo.c    ****   ix = lineix;
+  57:anim_abo.c    ****   delay_ms(500);
+  58:anim_abo.c    ****  }
+  59:anim_abo.c    **** }
+ 236               	.LM10:
+ 237 009a DF91      		pop r29
+ 238 009c CF91      		pop r28
+ 239 009e 1F91      		pop r17
+ 240 00a0 0F91      		pop r16
+ 241 00a2 FF90      		pop r15
+ 242 00a4 EF90      		pop r14
+ 243 00a6 DF90      		pop r13
+ 244 00a8 CF90      		pop r12
+ 245 00aa BF90      		pop r11
+ 246 00ac AF90      		pop r10
+ 247 00ae 0895      		ret
+ 248               	.L4:
+  48:anim_abo.c    ****     if (!line) {lineix = ix + b;}
+ 250               	.LM11:
+ 251 00b0 DD20      		tst r13
+ 252 00b2 01F4      		brne .L6
+ 253 00b4 5801      		movw r10,r16
+ 254 00b6 AF0C      		add r10,r15
+ 255 00b8 B11C      		adc r11,__zero_reg__
+ 256               	.L6:
+  51:anim_abo.c    ****     glcdSetAddress(k,line);
+ 258               	.LM12:
+ 259 00ba 2F2D      		mov r18,r15
+ 260 00bc 30E0      		ldi r19,lo8(0)
+ 261 00be C901      		movw r24,r18
+ 262 00c0 880F      		lsl r24
+ 263 00c2 991F      		rol r25
+ 264 00c4 820F      		add r24,r18
+ 265 00c6 931F      		adc r25,r19
+ 266 00c8 9095      		com r25
+ 267 00ca 8195      		neg r24
+ 268 00cc 9F4F      		sbci r25,lo8(-1)
+ 269 00ce 815C      		subi r24,lo8(-(63))
+ 270 00d0 6D2D      		mov r22,r13
+ 271 00d2 0E94 0000 		call glcdSetAddress
+ 272 00d6 EF2C      		mov r14,r15
+ 273 00d8 00C0      		rjmp .L7
+ 274               	.L8:
+  53:anim_abo.c    ****      glcdWriteChar(eeprom_read_byte(&about[ix++]),0);
+ 276               	.LM13:
+ 277 00da CE01      		movw r24,r28
+ 278 00dc 0E94 0000 		call __eerd_byte_m328p
+ 279 00e0 60E0      		ldi r22,lo8(0)
+ 280 00e2 0E94 0000 		call glcdWriteChar
+  52:anim_abo.c    ****     for(;b>0;b--) {
+ 282               	.LM14:
+ 283 00e6 EA94      		dec r14
+ 284               	.L7:
+ 285 00e8 2196      		adiw r28,1
+ 286 00ea EE20      		tst r14
+ 287 00ec 01F4      		brne .L8
+ 288 00ee 0F0D      		add r16,r15
+ 289 00f0 111D      		adc r17,__zero_reg__
+ 290               	.L3:
+  40:anim_abo.c    ****   for (eof=0, lineix=0, line=0; line<8; line++) {
+ 292               	.LM15:
+ 293 00f2 D394      		inc r13
+ 294 00f4 88E0      		ldi r24,lo8(8)
+ 295 00f6 D816      		cp r13,r24
+ 296 00f8 01F0      		breq .+2
+ 297 00fa 00C0      		rjmp .L9
+  58:anim_abo.c    ****   delay_ms(500);
+ 299               	.LM16:
+ 300 00fc 84EF      		ldi r24,lo8(500)
+ 301 00fe 91E0      		ldi r25,hi8(500)
+ 302 0100 0E94 0000 		call delay_ms
+ 303 0104 8501      		movw r16,r10
+ 304 0106 00C0      		rjmp .L10
+ 314               	.Lscope1:
+ 316               		.stabd	78,0,0
+ 317               	.global	logo_p
+ 318               		.section	.progmem.data,"a",@progbits
+ 321               	logo_p:
+ 322 0000 0000      		.word	adafruit
+ 324               		.text
+ 326               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 anim_abo.c
+     /tmp/ccL20uZI.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccL20uZI.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccL20uZI.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccL20uZI.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccL20uZI.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccL20uZI.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccL20uZI.s:138    .text:00000000 initanim_abo
+     /tmp/ccL20uZI.s:321    .progmem.data:00000000 logo_p
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+glcdFillRectangle
+adafruit
+death_blitsegs_rom
+time_s
+__divmodhi4
+glcdClearScreen
+about
+__eerd_byte_m328p
+EE_STYLE
+displaystyle
+initanim
+glcdSetAddress
+glcdWriteChar
+delay_ms

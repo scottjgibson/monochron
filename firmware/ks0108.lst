@@ -1,0 +1,1365 @@
+   1               		.file	"ks0108.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 119               	.global	glcdInitHW
+ 121               	glcdInitHW:
+ 122               		.stabd	46,0,0
+   0:ks0108.c      **** /*! \file ks0108.c \brief Graphic LCD driver for HD61202/KS0108 displays. */
+   1:ks0108.c      **** //*****************************************************************************
+   2:ks0108.c      **** //
+   3:ks0108.c      **** // File Name	: 'ks0108.c'
+   4:ks0108.c      **** // Title		: Graphic LCD driver for HD61202/KS0108 displays
+   5:ks0108.c      **** // Author		: Pascal Stang - Copyright (C) 2001-2003
+   6:ks0108.c      **** // Date			: 10/19/2002
+   7:ks0108.c      **** // Revised		: 5/5/2003
+   8:ks0108.c      **** // Version		: 0.5
+   9:ks0108.c      **** // Target MCU	: Atmel AVR
+  10:ks0108.c      **** // Editor Tabs	: 4
+  11:ks0108.c      **** //
+  12:ks0108.c      **** // NOTE: This code is currently below version 1.0, and therefore is considered
+  13:ks0108.c      **** // to be lacking in some functionality or documentation, or may not be fully
+  14:ks0108.c      **** // tested.  Nonetheless, you can expect most functions to work.
+  15:ks0108.c      **** //
+  16:ks0108.c      **** // This code is distributed under the GNU Public License
+  17:ks0108.c      **** //		which can be found at http://www.gnu.org/licenses/gpl.txt
+  18:ks0108.c      **** //
+  19:ks0108.c      **** //*****************************************************************************
+  20:ks0108.c      **** 
+  21:ks0108.c      **** #ifndef WIN32
+  22:ks0108.c      **** // AVR specific includes
+  23:ks0108.c      **** 	#include <avr/io.h>
+  24:ks0108.c      **** 	#include <avr/interrupt.h>
+  25:ks0108.c      **** #endif
+  26:ks0108.c      **** 
+  27:ks0108.c      **** #include "global.h"
+  28:ks0108.c      **** #include "ks0108.h"
+  29:ks0108.c      **** 
+  30:ks0108.c      **** #include "util.h"
+  31:ks0108.c      **** // global variables
+  32:ks0108.c      **** GrLcdStateType GrLcdState;
+  33:ks0108.c      **** 
+  34:ks0108.c      **** /*************************************************************/
+  35:ks0108.c      **** /********************** LOCAL FUNCTIONS **********************/
+  36:ks0108.c      **** /*************************************************************/
+  37:ks0108.c      **** 
+  38:ks0108.c      **** void glcdInitHW(void)
+  39:ks0108.c      **** {
+ 124               	.LM0:
+ 125               	.LFBB1:
+ 126               	/* prologue: function */
+ 127               	/* frame size = 0 */
+  40:ks0108.c      **** 	// initialize I/O ports
+  41:ks0108.c      **** 	// if I/O interface is in use
+  42:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+  43:ks0108.c      **** 
+  44:ks0108.c      **** 	//TODO: make setup of chip select lines contingent on how
+  45:ks0108.c      **** 	// many controllers are actually in the display
+  46:ks0108.c      **** 	
+  47:ks0108.c      **** 	// initialize LCD control lines levels
+  48:ks0108.c      **** 	cbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 129               	.LM1:
+ 130 0000 2F98      		cbi 37-32,7
+  49:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 132               	.LM2:
+ 133 0002 2D98      		cbi 37-32,5
+  50:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 135               	.LM3:
+ 136 0004 2C98      		cbi 37-32,4
+  51:ks0108.c      **** 	cbi(GLCD_CTRL_CS0_PORT, GLCD_CTRL_CS0);
+ 138               	.LM4:
+ 139 0006 4098      		cbi 40-32,0
+  52:ks0108.c      **** #ifdef GLCD_CTRL_CS1
+  53:ks0108.c      **** 	cbi(GLCD_CTRL_CS1_PORT, GLCD_CTRL_CS1);
+ 141               	.LM5:
+ 142 0008 5A98      		cbi 43-32,2
+  54:ks0108.c      **** #endif
+  55:ks0108.c      **** #ifdef GLCD_CTRL_CS2
+  56:ks0108.c      **** 	cbi(GLCD_CTRL_CS2_PORT, GLCD_CTRL_CS2);
+  57:ks0108.c      **** #endif
+  58:ks0108.c      **** #ifdef GLCD_CTRL_CS3
+  59:ks0108.c      **** 	cbi(GLCD_CTRL_CS3_PORT, GLCD_CTRL_CS3);
+  60:ks0108.c      **** #endif
+  61:ks0108.c      **** #ifdef GLCD_CTRL_RESET
+  62:ks0108.c      **** 	cbi(GLCD_CTRL_RESET_PORT, GLCD_CTRL_RESET);
+  63:ks0108.c      **** #endif
+  64:ks0108.c      **** 	// initialize LCD control port to output
+  65:ks0108.c      **** 	sbi(GLCD_CTRL_RS_DDR, GLCD_CTRL_RS);
+ 144               	.LM6:
+ 145 000a 279A      		sbi 36-32,7
+  66:ks0108.c      **** 	sbi(GLCD_CTRL_RW_DDR, GLCD_CTRL_RW);
+ 147               	.LM7:
+ 148 000c 259A      		sbi 36-32,5
+  67:ks0108.c      **** 	sbi(GLCD_CTRL_E_DDR, GLCD_CTRL_E);
+ 150               	.LM8:
+ 151 000e 249A      		sbi 36-32,4
+  68:ks0108.c      **** 	sbi(GLCD_CTRL_CS0_DDR, GLCD_CTRL_CS0);
+ 153               	.LM9:
+ 154 0010 389A      		sbi 39-32,0
+  69:ks0108.c      **** #ifdef GLCD_CTRL_CS1
+  70:ks0108.c      **** 	sbi(GLCD_CTRL_CS1_DDR, GLCD_CTRL_CS1);
+ 156               	.LM10:
+ 157 0012 529A      		sbi 42-32,2
+  71:ks0108.c      **** #endif
+  72:ks0108.c      **** #ifdef GLCD_CTRL_CS2
+  73:ks0108.c      **** 	sbi(GLCD_CTRL_CS2_DDR, GLCD_CTRL_CS2);
+  74:ks0108.c      **** #endif
+  75:ks0108.c      **** #ifdef GLCD_CTRL_CS3
+  76:ks0108.c      **** 	sbi(GLCD_CTRL_CS3_DDR, GLCD_CTRL_CS3);
+  77:ks0108.c      **** #endif
+  78:ks0108.c      **** #ifdef GLCD_CTRL_RESET
+  79:ks0108.c      **** 	sbi(GLCD_CTRL_RESET_DDR, GLCD_CTRL_RESET);
+  80:ks0108.c      **** #endif
+  81:ks0108.c      **** 	// initialize LCD data
+  82:ks0108.c      **** 	GLCD_DATAH_PORT &= ~(0xF0);
+ 159               	.LM11:
+ 160 0014 8BB1      		in r24,43-32
+ 161 0016 8F70      		andi r24,lo8(15)
+ 162 0018 8BB9      		out 43-32,r24
+  83:ks0108.c      **** 	GLCD_DATAL_PORT &= ~(0x0F);
+ 164               	.LM12:
+ 165 001a 85B1      		in r24,37-32
+ 166 001c 807F      		andi r24,lo8(-16)
+ 167 001e 85B9      		out 37-32,r24
+  84:ks0108.c      **** 	//outb(GLCD_DATA_PORT, 0x00);
+  85:ks0108.c      **** 	// initialize LCD data port to output
+  86:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 169               	.LM13:
+ 170 0020 8AB1      		in r24,42-32
+ 171 0022 806F      		ori r24,lo8(-16)
+ 172 0024 8AB9      		out 42-32,r24
+  87:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 174               	.LM14:
+ 175 0026 84B1      		in r24,36-32
+ 176 0028 8F60      		ori r24,lo8(15)
+ 177 002a 84B9      		out 36-32,r24
+ 178               	/* epilogue start */
+  88:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0xFF);
+  89:ks0108.c      **** #endif
+  90:ks0108.c      **** }
+ 180               	.LM15:
+ 181 002c 0895      		ret
+ 183               	.Lscope1:
+ 185               		.stabd	78,0,0
+ 188               	.global	glcdControllerSelect
+ 190               	glcdControllerSelect:
+ 191               		.stabd	46,0,0
+  91:ks0108.c      **** 
+  92:ks0108.c      **** void glcdControllerSelect(u08 controller)
+  93:ks0108.c      **** {
+ 193               	.LM16:
+ 194               	.LFBB2:
+ 195               	/* prologue: function */
+ 196               	/* frame size = 0 */
+  94:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+  95:ks0108.c      **** 	//TODO: make control of chip select lines contingent on how
+  96:ks0108.c      **** 	// many controllers are actually in the display
+  97:ks0108.c      **** 
+  98:ks0108.c      **** 	// unselect all controllers
+  99:ks0108.c      **** 	cbi(GLCD_CTRL_CS0_PORT, GLCD_CTRL_CS0);	
+ 198               	.LM17:
+ 199 002e 4098      		cbi 40-32,0
+ 100:ks0108.c      **** #ifdef GLCD_CTRL_CS1
+ 101:ks0108.c      **** 	cbi(GLCD_CTRL_CS1_PORT, GLCD_CTRL_CS1);
+ 201               	.LM18:
+ 202 0030 5A98      		cbi 43-32,2
+ 102:ks0108.c      **** #endif
+ 103:ks0108.c      **** #ifdef GLCD_CTRL_CS2
+ 104:ks0108.c      **** 	cbi(GLCD_CTRL_CS2_PORT, GLCD_CTRL_CS2);
+ 105:ks0108.c      **** #endif
+ 106:ks0108.c      **** #ifdef GLCD_CTRL_CS3
+ 107:ks0108.c      **** 	cbi(GLCD_CTRL_CS3_PORT, GLCD_CTRL_CS3);
+ 108:ks0108.c      **** #endif
+ 109:ks0108.c      **** 
+ 110:ks0108.c      **** 	// select requested controller
+ 111:ks0108.c      **** 	switch(controller)
+ 204               	.LM19:
+ 205 0032 8823      		tst r24
+ 206 0034 01F0      		breq .L5
+ 207 0036 8130      		cpi r24,lo8(1)
+ 208 0038 01F4      		brne .L7
+ 209 003a 00C0      		rjmp .L8
+ 210               	.L5:
+ 112:ks0108.c      **** 	{
+ 113:ks0108.c      **** 	case 0:	sbi(GLCD_CTRL_CS0_PORT, GLCD_CTRL_CS0); break;
+ 212               	.LM20:
+ 213 003c 409A      		sbi 40-32,0
+ 214 003e 0895      		ret
+ 215               	.L8:
+ 114:ks0108.c      **** #ifdef GLCD_CTRL_CS1
+ 115:ks0108.c      **** 	case 1:	sbi(GLCD_CTRL_CS1_PORT, GLCD_CTRL_CS1); break;
+ 217               	.LM21:
+ 218 0040 5A9A      		sbi 43-32,2
+ 219               	.L7:
+ 220 0042 0895      		ret
+ 222               	.Lscope2:
+ 224               		.stabd	78,0,0
+ 227               	.global	glcdBusyWait
+ 229               	glcdBusyWait:
+ 230               		.stabd	46,0,0
+ 116:ks0108.c      **** #endif
+ 117:ks0108.c      **** #ifdef GLCD_CTRL_CS2
+ 118:ks0108.c      **** 	case 2:	sbi(GLCD_CTRL_CS2_PORT, GLCD_CTRL_CS2); break;
+ 119:ks0108.c      **** #endif
+ 120:ks0108.c      **** #ifdef GLCD_CTRL_CS3
+ 121:ks0108.c      **** 	case 3:	sbi(GLCD_CTRL_CS3_PORT, GLCD_CTRL_CS3); break;
+ 122:ks0108.c      **** #endif
+ 123:ks0108.c      **** 	default: break;
+ 124:ks0108.c      **** 	}
+ 125:ks0108.c      **** #endif
+ 126:ks0108.c      **** 
+ 127:ks0108.c      **** }
+ 128:ks0108.c      **** 
+ 129:ks0108.c      **** void glcdBusyWait(u08 controller)
+ 130:ks0108.c      **** {
+ 232               	.LM22:
+ 233               	.LFBB3:
+ 234               	/* prologue: function */
+ 235               	/* frame size = 0 */
+ 131:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 132:ks0108.c      **** 	cli();
+ 237               	.LM23:
+ 238               	/* #APP */
+ 239               	 ;  133 "ks0108.c" 1
+ 240 0044 F894      		cli
+ 241               	 ;  0 "" 2
+ 133:ks0108.c      **** 	// wait until LCD busy bit goes to zero
+ 134:ks0108.c      **** 	// select the controller chip
+ 135:ks0108.c      **** 	glcdControllerSelect(controller);
+ 243               	.LM24:
+ 244               	/* #NOAPP */
+ 245 0046 0E94 0000 		call glcdControllerSelect
+ 136:ks0108.c      **** 	// do a read from control register
+ 137:ks0108.c      **** 	//outb(GLCD_DATA_PORT, 0xFF);
+ 138:ks0108.c      **** 	GLCD_DATAH_PORT |= 0xF0;
+ 247               	.LM25:
+ 248 004a 8BB1      		in r24,43-32
+ 249 004c 806F      		ori r24,lo8(-16)
+ 250 004e 8BB9      		out 43-32,r24
+ 139:ks0108.c      **** 	GLCD_DATAL_PORT |= 0x0F;
+ 252               	.LM26:
+ 253 0050 85B1      		in r24,37-32
+ 254 0052 8F60      		ori r24,lo8(15)
+ 255 0054 85B9      		out 37-32,r24
+ 140:ks0108.c      **** 
+ 141:ks0108.c      **** 	cbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 257               	.LM27:
+ 258 0056 2F98      		cbi 37-32,7
+ 142:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0x00);
+ 143:ks0108.c      **** 	GLCD_DATAH_DDR &= ~(0xF0);
+ 260               	.LM28:
+ 261 0058 8AB1      		in r24,42-32
+ 262 005a 8F70      		andi r24,lo8(15)
+ 263 005c 8AB9      		out 42-32,r24
+ 144:ks0108.c      **** 	GLCD_DATAL_DDR &= ~(0x0F);
+ 265               	.LM29:
+ 266 005e 84B1      		in r24,36-32
+ 267 0060 807F      		andi r24,lo8(-16)
+ 268 0062 84B9      		out 36-32,r24
+ 145:ks0108.c      **** 	sbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 270               	.LM30:
+ 271 0064 2D9A      		sbi 37-32,5
+ 146:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 273               	.LM31:
+ 274 0066 2C9A      		sbi 37-32,4
+ 147:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 276               	.LM32:
+ 277               	/* #APP */
+ 278               	 ;  148 "ks0108.c" 1
+ 279 0068 0000      		nop
+ 280               	 ;  0 "" 2
+ 281               	 ;  148 "ks0108.c" 1
+ 282 006a 0000      		nop
+ 283               	 ;  0 "" 2
+ 284               	/* #NOAPP */
+ 285 006c 00C0      		rjmp .L10
+ 286               	.L11:
+ 148:ks0108.c      **** 	//while(inb(GLCD_DATA_PIN) & GLCD_STATUS_BUSY)
+ 149:ks0108.c      **** 	while(((GLCD_DATAH_PIN & 0xF0) | (GLCD_DATAL_PIN & 0x0F)) & GLCD_STATUS_BUSY)
+ 150:ks0108.c      **** 	{
+ 151:ks0108.c      **** 		cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 288               	.LM33:
+ 289 006e 2C98      		cbi 37-32,4
+ 152:ks0108.c      **** 		asm volatile ("nop"); asm volatile ("nop");
+ 291               	.LM34:
+ 292               	/* #APP */
+ 293               	 ;  153 "ks0108.c" 1
+ 294 0070 0000      		nop
+ 295               	 ;  0 "" 2
+ 296               	 ;  153 "ks0108.c" 1
+ 297 0072 0000      		nop
+ 298               	 ;  0 "" 2
+ 153:ks0108.c      **** 		asm volatile ("nop"); asm volatile ("nop");
+ 300               	.LM35:
+ 301               	 ;  154 "ks0108.c" 1
+ 302 0074 0000      		nop
+ 303               	 ;  0 "" 2
+ 304               	 ;  154 "ks0108.c" 1
+ 305 0076 0000      		nop
+ 306               	 ;  0 "" 2
+ 154:ks0108.c      **** 		sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 308               	.LM36:
+ 309               	/* #NOAPP */
+ 310 0078 2C9A      		sbi 37-32,4
+ 155:ks0108.c      **** 		asm volatile ("nop"); asm volatile ("nop");
+ 312               	.LM37:
+ 313               	/* #APP */
+ 314               	 ;  156 "ks0108.c" 1
+ 315 007a 0000      		nop
+ 316               	 ;  0 "" 2
+ 317               	 ;  156 "ks0108.c" 1
+ 318 007c 0000      		nop
+ 319               	 ;  0 "" 2
+ 156:ks0108.c      **** 		asm volatile ("nop"); asm volatile ("nop");
+ 321               	.LM38:
+ 322               	 ;  157 "ks0108.c" 1
+ 323 007e 0000      		nop
+ 324               	 ;  0 "" 2
+ 325               	 ;  157 "ks0108.c" 1
+ 326 0080 0000      		nop
+ 327               	 ;  0 "" 2
+ 328               	/* #NOAPP */
+ 329               	.L10:
+ 150:ks0108.c      **** 	while(((GLCD_DATAH_PIN & 0xF0) | (GLCD_DATAL_PIN & 0x0F)) & GLCD_STATUS_BUSY)
+ 331               	.LM39:
+ 332 0082 89B1      		in r24,41-32
+ 333 0084 93B1      		in r25,35-32
+ 334 0086 87FD      		sbrc r24,7
+ 335 0088 00C0      		rjmp .L11
+ 157:ks0108.c      **** 	}
+ 158:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 337               	.LM40:
+ 338 008a 2C98      		cbi 37-32,4
+ 159:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 340               	.LM41:
+ 341 008c 2D98      		cbi 37-32,5
+ 160:ks0108.c      **** 	//	outb(GLCD_DATA_DDR, 0xFF);
+ 161:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 343               	.LM42:
+ 344 008e 8AB1      		in r24,42-32
+ 345 0090 806F      		ori r24,lo8(-16)
+ 346 0092 8AB9      		out 42-32,r24
+ 162:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 348               	.LM43:
+ 349 0094 84B1      		in r24,36-32
+ 350 0096 8F60      		ori r24,lo8(15)
+ 351 0098 84B9      		out 36-32,r24
+ 163:ks0108.c      **** 	sei();
+ 353               	.LM44:
+ 354               	/* #APP */
+ 355               	 ;  164 "ks0108.c" 1
+ 356 009a 7894      		sei
+ 357               	 ;  0 "" 2
+ 358               	/* epilogue start */
+ 164:ks0108.c      **** #else
+ 165:ks0108.c      **** 	// sbi(MCUCR, SRW);			// enable RAM waitstate
+ 166:ks0108.c      **** 	// wait until LCD busy bit goes to zero
+ 167:ks0108.c      **** 	while(*(volatile unsigned char *)
+ 168:ks0108.c      **** 		(GLCD_CONTROLLER0_CTRL_ADDR + GLCD_CONTROLLER_ADDR_OFFSET*controller) & GLCD_STATUS_BUSY);
+ 169:ks0108.c      **** 	// cbi(MCUCR, SRW);			// disable RAM waitstate
+ 170:ks0108.c      **** #endif
+ 171:ks0108.c      **** }
+ 360               	.LM45:
+ 361               	/* #NOAPP */
+ 362 009c 0895      		ret
+ 364               	.Lscope3:
+ 366               		.stabd	78,0,0
+ 370               	.global	glcdControlWrite
+ 372               	glcdControlWrite:
+ 373               		.stabd	46,0,0
+ 172:ks0108.c      **** 
+ 173:ks0108.c      **** void glcdControlWrite(u08 controller, u08 data)
+ 174:ks0108.c      **** {
+ 375               	.LM46:
+ 376               	.LFBB4:
+ 377 009e 1F93      		push r17
+ 378               	/* prologue: function */
+ 379               	/* frame size = 0 */
+ 380 00a0 162F      		mov r17,r22
+ 175:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 176:ks0108.c      **** 	cli();
+ 382               	.LM47:
+ 383               	/* #APP */
+ 384               	 ;  177 "ks0108.c" 1
+ 385 00a2 F894      		cli
+ 386               	 ;  0 "" 2
+ 177:ks0108.c      **** 	glcdBusyWait(controller);	// wait until LCD not busy
+ 388               	.LM48:
+ 389               	/* #NOAPP */
+ 390 00a4 0E94 0000 		call glcdBusyWait
+ 178:ks0108.c      **** 	cbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 392               	.LM49:
+ 393 00a8 2F98      		cbi 37-32,7
+ 179:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 395               	.LM50:
+ 396 00aa 2D98      		cbi 37-32,5
+ 180:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 398               	.LM51:
+ 399 00ac 2C9A      		sbi 37-32,4
+ 181:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0xFF);
+ 182:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 401               	.LM52:
+ 402 00ae 8AB1      		in r24,42-32
+ 403 00b0 806F      		ori r24,lo8(-16)
+ 404 00b2 8AB9      		out 42-32,r24
+ 183:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 406               	.LM53:
+ 407 00b4 84B1      		in r24,36-32
+ 408 00b6 8F60      		ori r24,lo8(15)
+ 409 00b8 84B9      		out 36-32,r24
+ 184:ks0108.c      **** 	//outb(GLCD_DATA_PORT, data);
+ 185:ks0108.c      **** 	GLCD_DATAH_PORT &= ~0xF0; // clear top nibble
+ 411               	.LM54:
+ 412 00ba 8BB1      		in r24,43-32
+ 413 00bc 8F70      		andi r24,lo8(15)
+ 414 00be 8BB9      		out 43-32,r24
+ 186:ks0108.c      **** 	GLCD_DATAH_PORT |= data & 0xF0; // set top nibble
+ 416               	.LM55:
+ 417 00c0 9BB1      		in r25,43-32
+ 418 00c2 812F      		mov r24,r17
+ 419 00c4 807F      		andi r24,lo8(-16)
+ 420 00c6 892B      		or r24,r25
+ 421 00c8 8BB9      		out 43-32,r24
+ 187:ks0108.c      **** 	GLCD_DATAL_PORT &= ~0x0F; // clear bottom nibble
+ 423               	.LM56:
+ 424 00ca 85B1      		in r24,37-32
+ 425 00cc 807F      		andi r24,lo8(-16)
+ 426 00ce 85B9      		out 37-32,r24
+ 188:ks0108.c      **** 	GLCD_DATAL_PORT |= data & 0x0F; // set bottom nibble
+ 428               	.LM57:
+ 429 00d0 85B1      		in r24,37-32
+ 430 00d2 1F70      		andi r17,lo8(15)
+ 431 00d4 812B      		or r24,r17
+ 432 00d6 85B9      		out 37-32,r24
+ 189:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 434               	.LM58:
+ 435               	/* #APP */
+ 436               	 ;  190 "ks0108.c" 1
+ 437 00d8 0000      		nop
+ 438               	 ;  0 "" 2
+ 439               	 ;  190 "ks0108.c" 1
+ 440 00da 0000      		nop
+ 441               	 ;  0 "" 2
+ 190:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 443               	.LM59:
+ 444               	 ;  191 "ks0108.c" 1
+ 445 00dc 0000      		nop
+ 446               	 ;  0 "" 2
+ 447               	 ;  191 "ks0108.c" 1
+ 448 00de 0000      		nop
+ 449               	 ;  0 "" 2
+ 191:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 451               	.LM60:
+ 452               	 ;  192 "ks0108.c" 1
+ 453 00e0 0000      		nop
+ 454               	 ;  0 "" 2
+ 455               	 ;  192 "ks0108.c" 1
+ 456 00e2 0000      		nop
+ 457               	 ;  0 "" 2
+ 192:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 459               	.LM61:
+ 460               	 ;  193 "ks0108.c" 1
+ 461 00e4 0000      		nop
+ 462               	 ;  0 "" 2
+ 463               	 ;  193 "ks0108.c" 1
+ 464 00e6 0000      		nop
+ 465               	 ;  0 "" 2
+ 193:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 467               	.LM62:
+ 468               	/* #NOAPP */
+ 469 00e8 2C98      		cbi 37-32,4
+ 194:ks0108.c      **** 	sei();
+ 471               	.LM63:
+ 472               	/* #APP */
+ 473               	 ;  195 "ks0108.c" 1
+ 474 00ea 7894      		sei
+ 475               	 ;  0 "" 2
+ 476               	/* epilogue start */
+ 195:ks0108.c      **** #else
+ 196:ks0108.c      **** 	//sbi(MCUCR, SRW);				// enable RAM waitstate
+ 197:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 198:ks0108.c      **** 	*(volatile unsigned char *) (GLCD_CONTROLLER0_CTRL_ADDR + GLCD_CONTROLLER_ADDR_OFFSET*controller) 
+ 199:ks0108.c      **** 	//cbi(MCUCR, SRW);				// disable RAM waitstate
+ 200:ks0108.c      **** #endif
+ 201:ks0108.c      **** }
+ 478               	.LM64:
+ 479               	/* #NOAPP */
+ 480 00ec 1F91      		pop r17
+ 481 00ee 0895      		ret
+ 483               	.Lscope4:
+ 485               		.stabd	78,0,0
+ 488               	.global	glcdControlRead
+ 490               	glcdControlRead:
+ 491               		.stabd	46,0,0
+ 202:ks0108.c      **** 
+ 203:ks0108.c      **** u08 glcdControlRead(u08 controller)
+ 204:ks0108.c      **** {
+ 493               	.LM65:
+ 494               	.LFBB5:
+ 495               	/* prologue: function */
+ 496               	/* frame size = 0 */
+ 205:ks0108.c      **** 	register u08 data;
+ 206:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 207:ks0108.c      **** 	cli();
+ 498               	.LM66:
+ 499               	/* #APP */
+ 500               	 ;  208 "ks0108.c" 1
+ 501 00f0 F894      		cli
+ 502               	 ;  0 "" 2
+ 208:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 504               	.LM67:
+ 505               	/* #NOAPP */
+ 506 00f2 0E94 0000 		call glcdBusyWait
+ 209:ks0108.c      **** 	cbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 508               	.LM68:
+ 509 00f6 2F98      		cbi 37-32,7
+ 210:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0x00);
+ 211:ks0108.c      **** 	GLCD_DATAH_DDR &= ~(0xF0);
+ 511               	.LM69:
+ 512 00f8 8AB1      		in r24,42-32
+ 513 00fa 8F70      		andi r24,lo8(15)
+ 514 00fc 8AB9      		out 42-32,r24
+ 212:ks0108.c      **** 	GLCD_DATAL_DDR &= ~(0x0F);
+ 516               	.LM70:
+ 517 00fe 84B1      		in r24,36-32
+ 518 0100 807F      		andi r24,lo8(-16)
+ 519 0102 84B9      		out 36-32,r24
+ 213:ks0108.c      **** 	sbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 521               	.LM71:
+ 522 0104 2D9A      		sbi 37-32,5
+ 214:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 524               	.LM72:
+ 525 0106 2C9A      		sbi 37-32,4
+ 215:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 527               	.LM73:
+ 528               	/* #APP */
+ 529               	 ;  216 "ks0108.c" 1
+ 530 0108 0000      		nop
+ 531               	 ;  0 "" 2
+ 532               	 ;  216 "ks0108.c" 1
+ 533 010a 0000      		nop
+ 534               	 ;  0 "" 2
+ 216:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 536               	.LM74:
+ 537               	 ;  217 "ks0108.c" 1
+ 538 010c 0000      		nop
+ 539               	 ;  0 "" 2
+ 540               	 ;  217 "ks0108.c" 1
+ 541 010e 0000      		nop
+ 542               	 ;  0 "" 2
+ 217:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 544               	.LM75:
+ 545               	 ;  218 "ks0108.c" 1
+ 546 0110 0000      		nop
+ 547               	 ;  0 "" 2
+ 548               	 ;  218 "ks0108.c" 1
+ 549 0112 0000      		nop
+ 550               	 ;  0 "" 2
+ 218:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 552               	.LM76:
+ 553               	 ;  219 "ks0108.c" 1
+ 554 0114 0000      		nop
+ 555               	 ;  0 "" 2
+ 556               	 ;  219 "ks0108.c" 1
+ 557 0116 0000      		nop
+ 558               	 ;  0 "" 2
+ 219:ks0108.c      **** 	//data = inb(GLCD_DATA_PIN);
+ 220:ks0108.c      **** 	data = (GLCD_DATAH_PIN & 0xF0) | (GLCD_DATAL_PIN & 0x0F);
+ 560               	.LM77:
+ 561               	/* #NOAPP */
+ 562 0118 29B1      		in r18,41-32
+ 563 011a 83B1      		in r24,35-32
+ 221:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 565               	.LM78:
+ 566 011c 2C98      		cbi 37-32,4
+ 222:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 568               	.LM79:
+ 569 011e 2D98      		cbi 37-32,5
+ 223:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0xFF);
+ 224:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 571               	.LM80:
+ 572 0120 9AB1      		in r25,42-32
+ 573 0122 906F      		ori r25,lo8(-16)
+ 574 0124 9AB9      		out 42-32,r25
+ 225:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 576               	.LM81:
+ 577 0126 94B1      		in r25,36-32
+ 578 0128 9F60      		ori r25,lo8(15)
+ 579 012a 94B9      		out 36-32,r25
+ 226:ks0108.c      **** 	sei();
+ 581               	.LM82:
+ 582               	/* #APP */
+ 583               	 ;  227 "ks0108.c" 1
+ 584 012c 7894      		sei
+ 585               	 ;  0 "" 2
+ 586               	/* #NOAPP */
+ 587 012e 8F70      		andi r24,lo8(15)
+ 588 0130 207F      		andi r18,lo8(-16)
+ 227:ks0108.c      **** #else
+ 228:ks0108.c      **** 	//sbi(MCUCR, SRW);				// enable RAM waitstate
+ 229:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 230:ks0108.c      **** 	data = *(volatile unsigned char *) (GLCD_CONTROLLER0_CTRL_ADDR + GLCD_CONTROLLER_ADDR_OFFSET*contr
+ 231:ks0108.c      **** 	//cbi(MCUCR, SRW);				// disable RAM waitstate
+ 232:ks0108.c      **** #endif
+ 233:ks0108.c      **** 	return data;
+ 234:ks0108.c      **** }
+ 590               	.LM83:
+ 591 0132 822B      		or r24,r18
+ 592               	/* epilogue start */
+ 593 0134 0895      		ret
+ 595               	.Lscope5:
+ 597               		.stabd	78,0,0
+ 599               	.global	glcdDataRead
+ 601               	glcdDataRead:
+ 602               		.stabd	46,0,0
+ 235:ks0108.c      **** 
+ 236:ks0108.c      **** void glcdDataWrite(u08 data)
+ 237:ks0108.c      **** {
+ 238:ks0108.c      **** 	register u08 controller = (GrLcdState.lcdXAddr/GLCD_CONTROLLER_XPIXELS);
+ 239:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 240:ks0108.c      **** 	cli();
+ 241:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 242:ks0108.c      **** 	sbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 243:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 244:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 245:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0xFF);
+ 246:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 247:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 248:ks0108.c      **** 
+ 249:ks0108.c      **** 	//outb(GLCD_DATA_PORT, data);
+ 250:ks0108.c      **** 	GLCD_DATAH_PORT &= ~0xF0; // clear top nibble
+ 251:ks0108.c      **** 	GLCD_DATAH_PORT |= data & 0xF0; // set top nibble
+ 252:ks0108.c      **** 	GLCD_DATAL_PORT &= ~0x0F; // clear bottom nibble
+ 253:ks0108.c      **** 	GLCD_DATAL_PORT |= data & 0x0F; // set bottom nibble
+ 254:ks0108.c      **** 
+ 255:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 256:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 257:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 258:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 259:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 260:ks0108.c      **** 	sei();
+ 261:ks0108.c      **** #else
+ 262:ks0108.c      **** 	//sbi(MCUCR, SRW);				// enable RAM waitstate
+ 263:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 264:ks0108.c      **** 	*(volatile unsigned char *) (GLCD_CONTROLLER0_CTRL_ADDR + GLCD_CONTROLLER_ADDR_OFFSET*controller) 
+ 265:ks0108.c      **** 	//cbi(MCUCR, SRW);				// disable RAM waitstate
+ 266:ks0108.c      **** #endif
+ 267:ks0108.c      **** 	
+ 268:ks0108.c      **** 	// increment our local address counter
+ 269:ks0108.c      **** 	GrLcdState.ctrlr[controller].xAddr++;
+ 270:ks0108.c      **** 	GrLcdState.lcdXAddr++;
+ 271:ks0108.c      **** 	if(GrLcdState.lcdXAddr >= GLCD_XPIXELS)
+ 272:ks0108.c      **** 	{
+ 273:ks0108.c      **** 	  GrLcdState.lcdYAddr++;
+ 274:ks0108.c      **** 	  glcdSetYAddress(GrLcdState.lcdYAddr);
+ 275:ks0108.c      **** 	  glcdSetXAddress(0);
+ 276:ks0108.c      **** 	}
+ 277:ks0108.c      **** }
+ 278:ks0108.c      **** 
+ 279:ks0108.c      **** u08 glcdDataRead(void)
+ 280:ks0108.c      **** {
+ 604               	.LM84:
+ 605               	.LFBB6:
+ 606               	/* prologue: function */
+ 607               	/* frame size = 0 */
+ 281:ks0108.c      **** 	register u08 data;
+ 282:ks0108.c      **** 	register u08 controller = (GrLcdState.lcdXAddr/GLCD_CONTROLLER_XPIXELS);
+ 283:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 284:ks0108.c      **** 	cli();
+ 609               	.LM85:
+ 610               	/* #APP */
+ 611               	 ;  285 "ks0108.c" 1
+ 612 0136 F894      		cli
+ 613               	 ;  0 "" 2
+ 285:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 615               	.LM86:
+ 616               	/* #NOAPP */
+ 617 0138 8091 0000 		lds r24,GrLcdState
+ 618 013c 8295      		swap r24
+ 619 013e 8695      		lsr r24
+ 620 0140 8695      		lsr r24
+ 621 0142 8370      		andi r24,0x3
+ 622 0144 0E94 0000 		call glcdBusyWait
+ 286:ks0108.c      **** 	sbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 624               	.LM87:
+ 625 0148 2F9A      		sbi 37-32,7
+ 287:ks0108.c      **** 	//outb(GLCD_DATA_DDR, 0x00);
+ 288:ks0108.c      **** 	GLCD_DATAH_DDR &= ~(0xF0);
+ 627               	.LM88:
+ 628 014a 8AB1      		in r24,42-32
+ 629 014c 8F70      		andi r24,lo8(15)
+ 630 014e 8AB9      		out 42-32,r24
+ 289:ks0108.c      **** 	GLCD_DATAL_DDR &= ~(0x0F);
+ 632               	.LM89:
+ 633 0150 84B1      		in r24,36-32
+ 634 0152 807F      		andi r24,lo8(-16)
+ 635 0154 84B9      		out 36-32,r24
+ 290:ks0108.c      **** 
+ 291:ks0108.c      **** 	sbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 637               	.LM90:
+ 638 0156 2D9A      		sbi 37-32,5
+ 292:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 640               	.LM91:
+ 641 0158 2C9A      		sbi 37-32,4
+ 293:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 643               	.LM92:
+ 644               	/* #APP */
+ 645               	 ;  294 "ks0108.c" 1
+ 646 015a 0000      		nop
+ 647               	 ;  0 "" 2
+ 648               	 ;  294 "ks0108.c" 1
+ 649 015c 0000      		nop
+ 650               	 ;  0 "" 2
+ 294:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 652               	.LM93:
+ 653               	 ;  295 "ks0108.c" 1
+ 654 015e 0000      		nop
+ 655               	 ;  0 "" 2
+ 656               	 ;  295 "ks0108.c" 1
+ 657 0160 0000      		nop
+ 658               	 ;  0 "" 2
+ 295:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 660               	.LM94:
+ 661               	 ;  296 "ks0108.c" 1
+ 662 0162 0000      		nop
+ 663               	 ;  0 "" 2
+ 664               	 ;  296 "ks0108.c" 1
+ 665 0164 0000      		nop
+ 666               	 ;  0 "" 2
+ 296:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 668               	.LM95:
+ 669               	 ;  297 "ks0108.c" 1
+ 670 0166 0000      		nop
+ 671               	 ;  0 "" 2
+ 672               	 ;  297 "ks0108.c" 1
+ 673 0168 0000      		nop
+ 674               	 ;  0 "" 2
+ 297:ks0108.c      **** 	//data = inb(GLCD_DATA_PIN);
+ 298:ks0108.c      **** 	data = (GLCD_DATAH_PIN & 0xF0) | (GLCD_DATAL_PIN & 0x0F);
+ 676               	.LM96:
+ 677               	/* #NOAPP */
+ 678 016a 99B1      		in r25,41-32
+ 679 016c 83B1      		in r24,35-32
+ 299:ks0108.c      **** 
+ 300:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 681               	.LM97:
+ 682 016e 2C98      		cbi 37-32,4
+ 301:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 684               	.LM98:
+ 685 0170 2D98      		cbi 37-32,5
+ 302:ks0108.c      **** 	sei();
+ 687               	.LM99:
+ 688               	/* #APP */
+ 689               	 ;  303 "ks0108.c" 1
+ 690 0172 7894      		sei
+ 691               	 ;  0 "" 2
+ 692               	/* #NOAPP */
+ 693 0174 8F70      		andi r24,lo8(15)
+ 694 0176 907F      		andi r25,lo8(-16)
+ 303:ks0108.c      **** #else
+ 304:ks0108.c      **** 	//sbi(MCUCR, SRW);				// enable RAM waitstate
+ 305:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 306:ks0108.c      **** 	data = *(volatile unsigned char *) (GLCD_CONTROLLER0_CTRL_ADDR + GLCD_CONTROLLER_ADDR_OFFSET*contr
+ 307:ks0108.c      **** 	//cbi(MCUCR, SRW);				// disable RAM waitstate
+ 308:ks0108.c      **** #endif
+ 309:ks0108.c      **** 	// increment our local address counter
+ 310:ks0108.c      **** 
+ 311:ks0108.c      **** 	/*
+ 312:ks0108.c      **** 	GrLcdState.ctrlr[controller].xAddr++;
+ 313:ks0108.c      **** 	GrLcdState.lcdXAddr++;
+ 314:ks0108.c      **** 	if(GrLcdState.lcdXAddr >= GLCD_XPIXELS)
+ 315:ks0108.c      **** 	{
+ 316:ks0108.c      **** 		GrLcdState.lcdYAddr++;
+ 317:ks0108.c      **** 		glcdSetYAddress(GrLcdState.lcdYAddr);
+ 318:ks0108.c      **** 		glcdSetXAddress(0);
+ 319:ks0108.c      **** 		}*/
+ 320:ks0108.c      **** 	return data;
+ 321:ks0108.c      **** }
+ 696               	.LM100:
+ 697 0178 892B      		or r24,r25
+ 698               	/* epilogue start */
+ 699 017a 0895      		ret
+ 701               	.Lscope6:
+ 703               		.stabd	78,0,0
+ 706               	.global	glcdReset
+ 708               	glcdReset:
+ 709               		.stabd	46,0,0
+ 322:ks0108.c      **** 
+ 323:ks0108.c      **** void glcdReset(u08 resetState)
+ 324:ks0108.c      **** {
+ 711               	.LM101:
+ 712               	.LFBB7:
+ 713               	/* prologue: function */
+ 714               	/* frame size = 0 */
+ 715               	/* epilogue start */
+ 325:ks0108.c      **** 	// reset lcd if argument is true
+ 326:ks0108.c      **** 	// run lcd if argument is false
+ 327:ks0108.c      **** #ifdef GLCD_PORT_INTERFACE
+ 328:ks0108.c      **** #ifdef GLCD_CTRL_RESET
+ 329:ks0108.c      **** 	if(resetState)
+ 330:ks0108.c      **** 		cbi(GLCD_CTRL_RESET_PORT, GLCD_CTRL_RESET);
+ 331:ks0108.c      **** 	else
+ 332:ks0108.c      **** 		sbi(GLCD_CTRL_RESET_PORT, GLCD_CTRL_RESET);
+ 333:ks0108.c      **** #endif
+ 334:ks0108.c      **** #endif
+ 335:ks0108.c      **** }
+ 717               	.LM102:
+ 718 017c 0895      		ret
+ 720               	.Lscope7:
+ 722               		.stabd	78,0,0
+ 725               	.global	glcdSetXAddress
+ 727               	glcdSetXAddress:
+ 728               		.stabd	46,0,0
+ 336:ks0108.c      **** 
+ 337:ks0108.c      **** void glcdSetXAddress(u08 xAddr)
+ 338:ks0108.c      **** {
+ 730               	.LM103:
+ 731               	.LFBB8:
+ 732               	/* prologue: function */
+ 733               	/* frame size = 0 */
+ 339:ks0108.c      **** 	u08 i;
+ 340:ks0108.c      **** 	// record address change locally
+ 341:ks0108.c      **** 	GrLcdState.lcdXAddr = xAddr;
+ 735               	.LM104:
+ 736 017e 8093 0000 		sts GrLcdState,r24
+ 342:ks0108.c      **** 	
+ 343:ks0108.c      **** 	// clear y (col) address on all controllers
+ 344:ks0108.c      **** 	for(i=0; i<GLCD_NUM_CONTROLLERS; i++)
+ 345:ks0108.c      **** 	{
+ 346:ks0108.c      **** 		glcdControlWrite(i, GLCD_SET_Y_ADDR | 0x00);
+ 738               	.LM105:
+ 739 0182 80E0      		ldi r24,lo8(0)
+ 740 0184 60E4      		ldi r22,lo8(64)
+ 741 0186 0E94 0000 		call glcdControlWrite
+ 347:ks0108.c      **** 		GrLcdState.ctrlr[i].xAddr = 0;
+ 743               	.LM106:
+ 744 018a 1092 0000 		sts GrLcdState+2,__zero_reg__
+ 347:ks0108.c      **** 		GrLcdState.ctrlr[i].xAddr = 0;
+ 746               	.LM107:
+ 747 018e 81E0      		ldi r24,lo8(1)
+ 748 0190 60E4      		ldi r22,lo8(64)
+ 749 0192 0E94 0000 		call glcdControlWrite
+ 751               	.LM108:
+ 752 0196 1092 0000 		sts GrLcdState+4,__zero_reg__
+ 348:ks0108.c      **** 	}
+ 349:ks0108.c      **** 
+ 350:ks0108.c      **** 	// set y (col) address on destination controller
+ 351:ks0108.c      **** 	glcdControlWrite((GrLcdState.lcdXAddr/GLCD_CONTROLLER_XPIXELS),
+ 754               	.LM109:
+ 755 019a 8091 0000 		lds r24,GrLcdState
+ 756 019e 682F      		mov r22,r24
+ 757 01a0 6F73      		andi r22,lo8(63)
+ 758 01a2 6064      		ori r22,lo8(64)
+ 759 01a4 8295      		swap r24
+ 760 01a6 8695      		lsr r24
+ 761 01a8 8695      		lsr r24
+ 762 01aa 8370      		andi r24,0x3
+ 763 01ac 0E94 0000 		call glcdControlWrite
+ 764               	/* epilogue start */
+ 352:ks0108.c      **** 		GLCD_SET_Y_ADDR | (GrLcdState.lcdXAddr & 0x3F));
+ 353:ks0108.c      **** }
+ 766               	.LM110:
+ 767 01b0 0895      		ret
+ 769               	.Lscope8:
+ 771               		.stabd	78,0,0
+ 774               	.global	glcdSetYAddress
+ 776               	glcdSetYAddress:
+ 777               		.stabd	46,0,0
+ 354:ks0108.c      **** 
+ 355:ks0108.c      **** void glcdSetYAddress(u08 yAddr)
+ 356:ks0108.c      **** {
+ 779               	.LM111:
+ 780               	.LFBB9:
+ 781 01b2 1F93      		push r17
+ 782               	/* prologue: function */
+ 783               	/* frame size = 0 */
+ 784 01b4 182F      		mov r17,r24
+ 357:ks0108.c      **** 	u08 i;
+ 358:ks0108.c      **** 	// record address change locally
+ 359:ks0108.c      **** 	GrLcdState.lcdYAddr = yAddr;
+ 786               	.LM112:
+ 787 01b6 8093 0000 		sts GrLcdState+1,r24
+ 360:ks0108.c      **** 	// set page address for all controllers
+ 361:ks0108.c      **** 	for(i=0; i<GLCD_NUM_CONTROLLERS; i++)
+ 362:ks0108.c      **** 	{
+ 363:ks0108.c      **** 		glcdControlWrite(i, GLCD_SET_PAGE | yAddr);
+ 789               	.LM113:
+ 790 01ba 186B      		ori r17,lo8(-72)
+ 791 01bc 80E0      		ldi r24,lo8(0)
+ 792 01be 612F      		mov r22,r17
+ 793 01c0 0E94 0000 		call glcdControlWrite
+ 794 01c4 81E0      		ldi r24,lo8(1)
+ 795 01c6 612F      		mov r22,r17
+ 796 01c8 0E94 0000 		call glcdControlWrite
+ 797               	/* epilogue start */
+ 364:ks0108.c      **** 	}
+ 365:ks0108.c      **** }
+ 799               	.LM114:
+ 800 01cc 1F91      		pop r17
+ 801 01ce 0895      		ret
+ 803               	.Lscope9:
+ 805               		.stabd	78,0,0
+ 808               	.global	glcdDataWrite
+ 810               	glcdDataWrite:
+ 811               		.stabd	46,0,0
+ 238:ks0108.c      **** {
+ 813               	.LM115:
+ 814               	.LFBB10:
+ 815 01d0 0F93      		push r16
+ 816 01d2 1F93      		push r17
+ 817               	/* prologue: function */
+ 818               	/* frame size = 0 */
+ 819 01d4 182F      		mov r17,r24
+ 239:ks0108.c      **** 	register u08 controller = (GrLcdState.lcdXAddr/GLCD_CONTROLLER_XPIXELS);
+ 821               	.LM116:
+ 822 01d6 0091 0000 		lds r16,GrLcdState
+ 823 01da 0295      		swap r16
+ 824 01dc 0695      		lsr r16
+ 825 01de 0695      		lsr r16
+ 826 01e0 0370      		andi r16,0x3
+ 241:ks0108.c      **** 	cli();
+ 828               	.LM117:
+ 829               	/* #APP */
+ 830               	 ;  241 "ks0108.c" 1
+ 831 01e2 F894      		cli
+ 832               	 ;  0 "" 2
+ 242:ks0108.c      **** 	glcdBusyWait(controller);		// wait until LCD not busy
+ 834               	.LM118:
+ 835               	/* #NOAPP */
+ 836 01e4 802F      		mov r24,r16
+ 837 01e6 0E94 0000 		call glcdBusyWait
+ 243:ks0108.c      **** 	sbi(GLCD_CTRL_RS_PORT, GLCD_CTRL_RS);
+ 839               	.LM119:
+ 840 01ea 2F9A      		sbi 37-32,7
+ 244:ks0108.c      **** 	cbi(GLCD_CTRL_RW_PORT, GLCD_CTRL_RW);
+ 842               	.LM120:
+ 843 01ec 2D98      		cbi 37-32,5
+ 245:ks0108.c      **** 	sbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 845               	.LM121:
+ 846 01ee 2C9A      		sbi 37-32,4
+ 247:ks0108.c      **** 	GLCD_DATAH_DDR |= 0xF0;
+ 848               	.LM122:
+ 849 01f0 8AB1      		in r24,42-32
+ 850 01f2 806F      		ori r24,lo8(-16)
+ 851 01f4 8AB9      		out 42-32,r24
+ 248:ks0108.c      **** 	GLCD_DATAL_DDR |= 0x0F;
+ 853               	.LM123:
+ 854 01f6 84B1      		in r24,36-32
+ 855 01f8 8F60      		ori r24,lo8(15)
+ 856 01fa 84B9      		out 36-32,r24
+ 251:ks0108.c      **** 	GLCD_DATAH_PORT &= ~0xF0; // clear top nibble
+ 858               	.LM124:
+ 859 01fc 8BB1      		in r24,43-32
+ 860 01fe 8F70      		andi r24,lo8(15)
+ 861 0200 8BB9      		out 43-32,r24
+ 252:ks0108.c      **** 	GLCD_DATAH_PORT |= data & 0xF0; // set top nibble
+ 863               	.LM125:
+ 864 0202 9BB1      		in r25,43-32
+ 865 0204 812F      		mov r24,r17
+ 866 0206 807F      		andi r24,lo8(-16)
+ 867 0208 892B      		or r24,r25
+ 868 020a 8BB9      		out 43-32,r24
+ 253:ks0108.c      **** 	GLCD_DATAL_PORT &= ~0x0F; // clear bottom nibble
+ 870               	.LM126:
+ 871 020c 85B1      		in r24,37-32
+ 872 020e 807F      		andi r24,lo8(-16)
+ 873 0210 85B9      		out 37-32,r24
+ 254:ks0108.c      **** 	GLCD_DATAL_PORT |= data & 0x0F; // set bottom nibble
+ 875               	.LM127:
+ 876 0212 85B1      		in r24,37-32
+ 877 0214 1F70      		andi r17,lo8(15)
+ 878 0216 812B      		or r24,r17
+ 879 0218 85B9      		out 37-32,r24
+ 256:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 881               	.LM128:
+ 882               	/* #APP */
+ 883               	 ;  256 "ks0108.c" 1
+ 884 021a 0000      		nop
+ 885               	 ;  0 "" 2
+ 886               	 ;  256 "ks0108.c" 1
+ 887 021c 0000      		nop
+ 888               	 ;  0 "" 2
+ 257:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 890               	.LM129:
+ 891               	 ;  257 "ks0108.c" 1
+ 892 021e 0000      		nop
+ 893               	 ;  0 "" 2
+ 894               	 ;  257 "ks0108.c" 1
+ 895 0220 0000      		nop
+ 896               	 ;  0 "" 2
+ 258:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 898               	.LM130:
+ 899               	 ;  258 "ks0108.c" 1
+ 900 0222 0000      		nop
+ 901               	 ;  0 "" 2
+ 902               	 ;  258 "ks0108.c" 1
+ 903 0224 0000      		nop
+ 904               	 ;  0 "" 2
+ 259:ks0108.c      **** 	asm volatile ("nop"); asm volatile ("nop");
+ 906               	.LM131:
+ 907               	 ;  259 "ks0108.c" 1
+ 908 0226 0000      		nop
+ 909               	 ;  0 "" 2
+ 910               	 ;  259 "ks0108.c" 1
+ 911 0228 0000      		nop
+ 912               	 ;  0 "" 2
+ 260:ks0108.c      **** 	cbi(GLCD_CTRL_E_PORT, GLCD_CTRL_E);
+ 914               	.LM132:
+ 915               	/* #NOAPP */
+ 916 022a 2C98      		cbi 37-32,4
+ 261:ks0108.c      **** 	sei();
+ 918               	.LM133:
+ 919               	/* #APP */
+ 920               	 ;  261 "ks0108.c" 1
+ 921 022c 7894      		sei
+ 922               	 ;  0 "" 2
+ 270:ks0108.c      **** 	GrLcdState.ctrlr[controller].xAddr++;
+ 924               	.LM134:
+ 925               	/* #NOAPP */
+ 926 022e E02F      		mov r30,r16
+ 927 0230 F0E0      		ldi r31,lo8(0)
+ 928 0232 EE0F      		lsl r30
+ 929 0234 FF1F      		rol r31
+ 930 0236 E050      		subi r30,lo8(-(GrLcdState+2))
+ 931 0238 F040      		sbci r31,hi8(-(GrLcdState+2))
+ 932 023a 8081      		ld r24,Z
+ 933 023c 8F5F      		subi r24,lo8(-(1))
+ 934 023e 8083      		st Z,r24
+ 271:ks0108.c      **** 	GrLcdState.lcdXAddr++;
+ 936               	.LM135:
+ 937 0240 8091 0000 		lds r24,GrLcdState
+ 938 0244 8F5F      		subi r24,lo8(-(1))
+ 939 0246 8093 0000 		sts GrLcdState,r24
+ 272:ks0108.c      **** 	if(GrLcdState.lcdXAddr >= GLCD_XPIXELS)
+ 941               	.LM136:
+ 942 024a 87FF      		sbrs r24,7
+ 943 024c 00C0      		rjmp .L27
+ 274:ks0108.c      **** 	  GrLcdState.lcdYAddr++;
+ 945               	.LM137:
+ 946 024e 8091 0000 		lds r24,GrLcdState+1
+ 947 0252 8F5F      		subi r24,lo8(-(1))
+ 948 0254 8093 0000 		sts GrLcdState+1,r24
+ 275:ks0108.c      **** 	  glcdSetYAddress(GrLcdState.lcdYAddr);
+ 950               	.LM138:
+ 951 0258 0E94 0000 		call glcdSetYAddress
+ 276:ks0108.c      **** 	  glcdSetXAddress(0);
+ 953               	.LM139:
+ 954 025c 80E0      		ldi r24,lo8(0)
+ 955 025e 0E94 0000 		call glcdSetXAddress
+ 956               	.L27:
+ 957               	/* epilogue start */
+ 278:ks0108.c      **** }
+ 959               	.LM140:
+ 960 0262 1F91      		pop r17
+ 961 0264 0F91      		pop r16
+ 962 0266 0895      		ret
+ 967               	.Lscope10:
+ 969               		.stabd	78,0,0
+ 972               	.global	glcdStartLine
+ 974               	glcdStartLine:
+ 975               		.stabd	46,0,0
+ 366:ks0108.c      **** 
+ 367:ks0108.c      **** /*************************************************************/
+ 368:ks0108.c      **** /********************* PUBLIC FUNCTIONS **********************/
+ 369:ks0108.c      **** /*************************************************************/
+ 370:ks0108.c      **** 
+ 371:ks0108.c      **** void glcdInit()
+ 372:ks0108.c      **** {
+ 373:ks0108.c      **** 	u08 i;
+ 374:ks0108.c      **** 	// initialize hardware
+ 375:ks0108.c      **** 	glcdInitHW();
+ 376:ks0108.c      **** 	// bring lcd out of reset
+ 377:ks0108.c      **** 	glcdReset(FALSE);
+ 378:ks0108.c      **** 	// Turn on LCD
+ 379:ks0108.c      **** 	for(i=0; i<GLCD_NUM_CONTROLLERS; i++)
+ 380:ks0108.c      **** 	{
+ 381:ks0108.c      **** 		glcdControlWrite(i, GLCD_ON_CTRL | GLCD_ON_DISPLAY);
+ 382:ks0108.c      **** 	}
+ 383:ks0108.c      **** 	// clear lcd
+ 384:ks0108.c      **** 	glcdClearScreen();
+ 385:ks0108.c      **** 	// initialize positions
+ 386:ks0108.c      **** 	glcdHome();
+ 387:ks0108.c      **** }
+ 388:ks0108.c      **** 
+ 389:ks0108.c      **** void glcdHome(void)
+ 390:ks0108.c      **** {
+ 391:ks0108.c      **** 	u08 i;
+ 392:ks0108.c      **** 	// initialize addresses/positions
+ 393:ks0108.c      **** 	glcdStartLine(0);
+ 394:ks0108.c      **** 	glcdSetAddress(0,0);
+ 395:ks0108.c      **** 	// initialize local data structures
+ 396:ks0108.c      **** 	for(i=0; i<GLCD_NUM_CONTROLLERS; i++)
+ 397:ks0108.c      **** 	{
+ 398:ks0108.c      **** 		GrLcdState.ctrlr[i].xAddr = 0;
+ 399:ks0108.c      **** 		GrLcdState.ctrlr[i].yAddr = 0;
+ 400:ks0108.c      **** 	}
+ 401:ks0108.c      **** }
+ 402:ks0108.c      **** 
+ 403:ks0108.c      **** void glcdClearScreen(void)
+ 404:ks0108.c      **** {
+ 405:ks0108.c      **** 	u08 pageAddr;
+ 406:ks0108.c      **** 	u08 xAddr;
+ 407:ks0108.c      **** 
+ 408:ks0108.c      **** 	// clear LCD
+ 409:ks0108.c      **** 	// loop through all pages
+ 410:ks0108.c      **** 	for(pageAddr=0; pageAddr<(GLCD_YPIXELS>>3); pageAddr++)
+ 411:ks0108.c      **** 	{
+ 412:ks0108.c      **** 		// set page address
+ 413:ks0108.c      **** 		glcdSetAddress(0, pageAddr);
+ 414:ks0108.c      **** 		// clear all lines of this page of display memory
+ 415:ks0108.c      **** 		for(xAddr=0; xAddr<GLCD_XPIXELS; xAddr++)
+ 416:ks0108.c      **** 		{
+ 417:ks0108.c      **** 			glcdDataWrite(0x00);
+ 418:ks0108.c      **** 		}
+ 419:ks0108.c      **** 	}
+ 420:ks0108.c      **** }
+ 421:ks0108.c      **** 
+ 422:ks0108.c      **** void glcdStartLine(u08 start)
+ 423:ks0108.c      **** {
+ 977               	.LM141:
+ 978               	.LFBB11:
+ 979 0268 1F93      		push r17
+ 980               	/* prologue: function */
+ 981               	/* frame size = 0 */
+ 424:ks0108.c      **** 	glcdControlWrite(0, GLCD_START_LINE | start);
+ 983               	.LM142:
+ 984 026a 182F      		mov r17,r24
+ 985 026c 106C      		ori r17,lo8(-64)
+ 986 026e 80E0      		ldi r24,lo8(0)
+ 987 0270 612F      		mov r22,r17
+ 988 0272 0E94 0000 		call glcdControlWrite
+ 425:ks0108.c      **** 	glcdControlWrite(1, GLCD_START_LINE | start);
+ 990               	.LM143:
+ 991 0276 81E0      		ldi r24,lo8(1)
+ 992 0278 612F      		mov r22,r17
+ 993 027a 0E94 0000 		call glcdControlWrite
+ 994               	/* epilogue start */
+ 426:ks0108.c      **** }
+ 996               	.LM144:
+ 997 027e 1F91      		pop r17
+ 998 0280 0895      		ret
+ 1000               	.Lscope11:
+ 1002               		.stabd	78,0,0
+ 1006               	.global	glcdSetAddress
+ 1008               	glcdSetAddress:
+ 1009               		.stabd	46,0,0
+ 427:ks0108.c      **** 
+ 428:ks0108.c      **** void glcdSetAddress(u08 x, u08 yLine)
+ 429:ks0108.c      **** {
+ 1011               	.LM145:
+ 1012               	.LFBB12:
+ 1013 0282 1F93      		push r17
+ 1014               	/* prologue: function */
+ 1015               	/* frame size = 0 */
+ 1016 0284 182F      		mov r17,r24
+ 1017 0286 862F      		mov r24,r22
+ 430:ks0108.c      **** 	// set addresses
+ 431:ks0108.c      **** 	glcdSetYAddress(yLine);
+ 1019               	.LM146:
+ 1020 0288 0E94 0000 		call glcdSetYAddress
+ 432:ks0108.c      **** 	glcdSetXAddress(x);
+ 1022               	.LM147:
+ 1023 028c 812F      		mov r24,r17
+ 1024 028e 0E94 0000 		call glcdSetXAddress
+ 1025               	/* epilogue start */
+ 433:ks0108.c      **** }
+ 1027               	.LM148:
+ 1028 0292 1F91      		pop r17
+ 1029 0294 0895      		ret
+ 1031               	.Lscope12:
+ 1033               		.stabd	78,0,0
+ 1035               	.global	glcdClearScreen
+ 1037               	glcdClearScreen:
+ 1038               		.stabd	46,0,0
+ 405:ks0108.c      **** {
+ 1040               	.LM149:
+ 1041               	.LFBB13:
+ 1042 0296 0F93      		push r16
+ 1043 0298 1F93      		push r17
+ 1044               	/* prologue: function */
+ 1045               	/* frame size = 0 */
+ 405:ks0108.c      **** {
+ 1047               	.LM150:
+ 1048 029a 00E0      		ldi r16,lo8(0)
+ 1049               	.L34:
+ 414:ks0108.c      **** 		glcdSetAddress(0, pageAddr);
+ 1051               	.LM151:
+ 1052 029c 80E0      		ldi r24,lo8(0)
+ 1053 029e 602F      		mov r22,r16
+ 1054 02a0 0E94 0000 		call glcdSetAddress
+ 1055 02a4 10E0      		ldi r17,lo8(0)
+ 1056               	.L33:
+ 418:ks0108.c      **** 			glcdDataWrite(0x00);
+ 1058               	.LM152:
+ 1059 02a6 80E0      		ldi r24,lo8(0)
+ 1060 02a8 0E94 0000 		call glcdDataWrite
+ 416:ks0108.c      **** 		for(xAddr=0; xAddr<GLCD_XPIXELS; xAddr++)
+ 1062               	.LM153:
+ 1063 02ac 1F5F      		subi r17,lo8(-(1))
+ 1064 02ae 1038      		cpi r17,lo8(-128)
+ 1065 02b0 01F4      		brne .L33
+ 411:ks0108.c      **** 	for(pageAddr=0; pageAddr<(GLCD_YPIXELS>>3); pageAddr++)
+ 1067               	.LM154:
+ 1068 02b2 0F5F      		subi r16,lo8(-(1))
+ 1069 02b4 0830      		cpi r16,lo8(8)
+ 1070 02b6 01F4      		brne .L34
+ 1071               	/* epilogue start */
+ 421:ks0108.c      **** }
+ 1073               	.LM155:
+ 1074 02b8 1F91      		pop r17
+ 1075 02ba 0F91      		pop r16
+ 1076 02bc 0895      		ret
+ 1082               	.Lscope13:
+ 1084               		.stabd	78,0,0
+ 1086               	.global	glcdHome
+ 1088               	glcdHome:
+ 1089               		.stabd	46,0,0
+ 391:ks0108.c      **** {
+ 1091               	.LM156:
+ 1092               	.LFBB14:
+ 1093               	/* prologue: function */
+ 1094               	/* frame size = 0 */
+ 394:ks0108.c      **** 	glcdStartLine(0);
+ 1096               	.LM157:
+ 1097 02be 80E0      		ldi r24,lo8(0)
+ 1098 02c0 0E94 0000 		call glcdStartLine
+ 395:ks0108.c      **** 	glcdSetAddress(0,0);
+ 1100               	.LM158:
+ 1101 02c4 80E0      		ldi r24,lo8(0)
+ 1102 02c6 60E0      		ldi r22,lo8(0)
+ 1103 02c8 0E94 0000 		call glcdSetAddress
+ 399:ks0108.c      **** 		GrLcdState.ctrlr[i].xAddr = 0;
+ 1105               	.LM159:
+ 1106 02cc 1092 0000 		sts GrLcdState+2,__zero_reg__
+ 400:ks0108.c      **** 		GrLcdState.ctrlr[i].yAddr = 0;
+ 1108               	.LM160:
+ 1109 02d0 1092 0000 		sts GrLcdState+3,__zero_reg__
+ 399:ks0108.c      **** 		GrLcdState.ctrlr[i].xAddr = 0;
+ 1111               	.LM161:
+ 1112 02d4 1092 0000 		sts GrLcdState+4,__zero_reg__
+ 400:ks0108.c      **** 		GrLcdState.ctrlr[i].yAddr = 0;
+ 1114               	.LM162:
+ 1115 02d8 1092 0000 		sts GrLcdState+5,__zero_reg__
+ 1116               	/* epilogue start */
+ 402:ks0108.c      **** }
+ 1118               	.LM163:
+ 1119 02dc 0895      		ret
+ 1121               	.Lscope14:
+ 1123               		.stabd	78,0,0
+ 1125               	.global	glcdInit
+ 1127               	glcdInit:
+ 1128               		.stabd	46,0,0
+ 373:ks0108.c      **** {
+ 1130               	.LM164:
+ 1131               	.LFBB15:
+ 1132               	/* prologue: function */
+ 1133               	/* frame size = 0 */
+ 376:ks0108.c      **** 	glcdInitHW();
+ 1135               	.LM165:
+ 1136 02de 0E94 0000 		call glcdInitHW
+ 382:ks0108.c      **** 		glcdControlWrite(i, GLCD_ON_CTRL | GLCD_ON_DISPLAY);
+ 1138               	.LM166:
+ 1139 02e2 80E0      		ldi r24,lo8(0)
+ 1140 02e4 6FE3      		ldi r22,lo8(63)
+ 1141 02e6 0E94 0000 		call glcdControlWrite
+ 1142 02ea 81E0      		ldi r24,lo8(1)
+ 1143 02ec 6FE3      		ldi r22,lo8(63)
+ 1144 02ee 0E94 0000 		call glcdControlWrite
+ 385:ks0108.c      **** 	glcdClearScreen();
+ 1146               	.LM167:
+ 1147 02f2 0E94 0000 		call glcdClearScreen
+ 387:ks0108.c      **** 	glcdHome();
+ 1149               	.LM168:
+ 1150 02f6 0E94 0000 		call glcdHome
+ 1151               	/* epilogue start */
+ 388:ks0108.c      **** }
+ 1153               	.LM169:
+ 1154 02fa 0895      		ret
+ 1156               	.Lscope15:
+ 1158               		.stabd	78,0,0
+ 1162               	.global	glcdGotoChar
+ 1164               	glcdGotoChar:
+ 1165               		.stabd	46,0,0
+ 434:ks0108.c      **** 
+ 435:ks0108.c      **** void glcdGotoChar(u08 line, u08 col)
+ 436:ks0108.c      **** {
+ 1167               	.LM170:
+ 1168               	.LFBB16:
+ 1169               	/* prologue: function */
+ 1170               	/* frame size = 0 */
+ 1171 02fc 982F      		mov r25,r24
+ 437:ks0108.c      **** 	glcdSetAddress(col*6, line);
+ 1173               	.LM171:
+ 1174 02fe 86E0      		ldi r24,lo8(6)
+ 1175 0300 689F      		mul r22,r24
+ 1176 0302 802D      		mov r24,r0
+ 1177 0304 1124      		clr r1
+ 1178 0306 692F      		mov r22,r25
+ 1179 0308 0E94 0000 		call glcdSetAddress
+ 1180               	/* epilogue start */
+ 438:ks0108.c      **** }
+ 1182               	.LM172:
+ 1183 030c 0895      		ret
+ 1185               	.Lscope16:
+ 1187               		.stabd	78,0,0
+ 1190               	.global	glcdDelay
+ 1192               	glcdDelay:
+ 1193               		.stabd	46,0,0
+ 439:ks0108.c      **** 
+ 440:ks0108.c      **** void glcdDelay(u16 p)			// 1-8us      ...2-13us     ...5-31us
+ 441:ks0108.c      **** {								// 10-60us    ...50-290us
+ 1195               	.LM173:
+ 1196               	.LFBB17:
+ 1197               	/* prologue: function */
+ 1198               	/* frame size = 0 */
+ 1199               	/* epilogue start */
+ 442:ks0108.c      **** 	unsigned int i;				// 100-580us  ...500-2,9ms
+ 443:ks0108.c      **** 	unsigned char j; 			// 1000-5,8ms ...5000-29ms
+ 444:ks0108.c      **** 								// 10000-56ms ...30000-170ms
+ 445:ks0108.c      **** 								// 50000-295ms...60000-345ms
+ 446:ks0108.c      **** //	for (i = 0; i < p; i++) for (j = 0; j < 10; j++) asm volatile ("nop");
+ 447:ks0108.c      **** 	for (i = 0; i < p; i++) for (j = 0; j < 10; j++);
+ 448:ks0108.c      **** }
+ 1201               	.LM174:
+ 1202 030e 0895      		ret
+ 1204               	.Lscope17:
+ 1206               		.stabd	78,0,0
+ 1207               		.comm GrLcdState,6,1
+ 1210               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 ks0108.c
+     /tmp/ccPMJ7zA.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccPMJ7zA.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccPMJ7zA.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccPMJ7zA.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccPMJ7zA.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccPMJ7zA.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccPMJ7zA.s:121    .text:00000000 glcdInitHW
+     /tmp/ccPMJ7zA.s:190    .text:0000002e glcdControllerSelect
+     /tmp/ccPMJ7zA.s:229    .text:00000044 glcdBusyWait
+     /tmp/ccPMJ7zA.s:372    .text:0000009e glcdControlWrite
+     /tmp/ccPMJ7zA.s:490    .text:000000f0 glcdControlRead
+     /tmp/ccPMJ7zA.s:601    .text:00000136 glcdDataRead
+                            *COM*:00000006 GrLcdState
+     /tmp/ccPMJ7zA.s:708    .text:0000017c glcdReset
+     /tmp/ccPMJ7zA.s:727    .text:0000017e glcdSetXAddress
+     /tmp/ccPMJ7zA.s:776    .text:000001b2 glcdSetYAddress
+     /tmp/ccPMJ7zA.s:810    .text:000001d0 glcdDataWrite
+     /tmp/ccPMJ7zA.s:974    .text:00000268 glcdStartLine
+     /tmp/ccPMJ7zA.s:1008   .text:00000282 glcdSetAddress
+     /tmp/ccPMJ7zA.s:1037   .text:00000296 glcdClearScreen
+     /tmp/ccPMJ7zA.s:1088   .text:000002be glcdHome
+     /tmp/ccPMJ7zA.s:1127   .text:000002de glcdInit
+     /tmp/ccPMJ7zA.s:1164   .text:000002fc glcdGotoChar
+     /tmp/ccPMJ7zA.s:1192   .text:0000030e glcdDelay
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss

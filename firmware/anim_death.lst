@@ -1,0 +1,3170 @@
+   1               		.file	"anim_death.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__  = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.global __do_copy_data
+   9               		.global __do_clear_bss
+  12               		.text
+  13               	.Ltext0:
+ 136               	.global	death_setscore
+ 138               	death_setscore:
+ 139               		.stabd	46,0,0
+   0:anim_death.c  **** /* ***************************************************************************
+   1:anim_death.c  **** // anim.c - the main animation and drawing code for MONOCHRON
+   2:anim_death.c  **** // This code is distributed under the GNU Public License
+   3:anim_death.c  **** //		which can be found at http://www.gnu.org/licenses/gpl.txt
+   4:anim_death.c  **** //
+   5:anim_death.c  **** **************************************************************************** */
+   6:anim_death.c  **** 
+   7:anim_death.c  **** #include <avr/io.h>      // this contains all the IO port definitions
+   8:anim_death.c  **** #include <avr/interrupt.h>
+   9:anim_death.c  **** #include <util/delay.h>
+  10:anim_death.c  **** #include <avr/pgmspace.h>
+  11:anim_death.c  **** #include <avr/eeprom.h>
+  12:anim_death.c  **** #include <string.h>
+  13:anim_death.c  **** #include <stdlib.h>
+  14:anim_death.c  **** #include <math.h>
+  15:anim_death.c  **** 
+  16:anim_death.c  **** #include "util.h"
+  17:anim_death.c  **** #include "ratt.h"
+  18:anim_death.c  **** #include "ks0108.h"
+  19:anim_death.c  **** #include "glcd.h"
+  20:anim_death.c  **** #include "deathclock.h"
+  21:anim_death.c  **** 
+  22:anim_death.c  **** #ifdef DEATHCHRON
+  23:anim_death.c  **** 
+  24:anim_death.c  **** extern volatile uint8_t time_s, time_m, time_h;
+  25:anim_death.c  **** extern volatile uint8_t old_m, old_h;
+  26:anim_death.c  **** extern volatile uint8_t date_m, date_d, date_y;
+  27:anim_death.c  **** extern volatile uint8_t death_m, death_d, death_y;
+  28:anim_death.c  **** extern volatile uint8_t alarming, alarm_h, alarm_m;
+  29:anim_death.c  **** extern volatile uint8_t time_format;
+  30:anim_death.c  **** extern volatile uint8_t region;
+  31:anim_death.c  **** extern volatile uint8_t score_mode;
+  32:anim_death.c  **** 
+  33:anim_death.c  **** volatile uint8_t border_tick=0;
+  34:anim_death.c  **** 
+  35:anim_death.c  **** extern volatile int32_t minutes_left, old_minutes_left;
+  36:anim_death.c  **** extern volatile uint8_t dc_mode;
+  37:anim_death.c  **** 
+  38:anim_death.c  **** extern volatile uint8_t reaper_tow_rip;
+  39:anim_death.c  **** 
+  40:anim_death.c  **** extern volatile uint8_t last_buttonstate, just_pressed, pressed;
+  41:anim_death.c  **** 
+  42:anim_death.c  **** uint32_t left_score, right_score;
+  43:anim_death.c  **** int32_t results;
+  44:anim_death.c  **** 
+  45:anim_death.c  **** extern volatile uint8_t minute_changed, hour_changed;
+  46:anim_death.c  **** 
+  47:anim_death.c  **** volatile uint8_t redraw_time = 0;
+  48:anim_death.c  **** volatile uint8_t last_score_mode = 0;
+  49:anim_death.c  **** 
+  50:anim_death.c  **** extern const uint8_t skull_on_white[];
+  51:anim_death.c  **** extern const uint8_t reaper_on_white[];
+  52:anim_death.c  **** extern const uint8_t rip_on_white[];
+  53:anim_death.c  **** 
+  54:anim_death.c  **** 
+  55:anim_death.c  **** // special pointer for reading from ROM memory
+  56:anim_death.c  **** PGM_P skull0_p PROGMEM = (prog_char *) skull_on_white;
+  57:anim_death.c  **** PGM_P reaper0_p PROGMEM = (prog_char *) reaper_on_white;
+  58:anim_death.c  **** PGM_P rip0_p PROGMEM = (prog_char *) rip_on_white;
+  59:anim_death.c  **** 
+  60:anim_death.c  **** void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t 
+  61:anim_death.c  **** void drawdisplay_death(uint8_t inverted);
+  62:anim_death.c  **** 
+  63:anim_death.c  **** 
+  64:anim_death.c  **** void render_image (uint8_t image, int16_t x, uint8_t inverted)
+  65:anim_death.c  **** {
+  66:anim_death.c  ****   switch(image)
+  67:anim_death.c  ****   {
+  68:anim_death.c  ****     default:
+  69:anim_death.c  ****     case SKULL:
+  70:anim_death.c  ****       if((x > -76) && (x < 128))
+  71:anim_death.c  ****         death_blitsegs_rom(x+0,0,skull0_p, 76, 64, inverted);
+  72:anim_death.c  ****       break;
+  73:anim_death.c  ****     case REAPER:
+  74:anim_death.c  ****       if((x > -42) && (x < 128))
+  75:anim_death.c  ****         death_blitsegs_rom(x+0,0,reaper0_p, 42, 64, inverted);
+  76:anim_death.c  ****       break;
+  77:anim_death.c  ****     case RIP:
+  78:anim_death.c  ****       if((x > -56) && (x < 128))
+  79:anim_death.c  ****         death_blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
+  80:anim_death.c  ****       break;
+  81:anim_death.c  ****     case REAPER_TOW_RIP:
+  82:anim_death.c  ****       if((x > -56) && (x <= 36))
+  83:anim_death.c  ****         death_blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
+  84:anim_death.c  ****       if((x > -98) && (x < 212))
+  85:anim_death.c  ****         death_blitsegs_rom(x+56,0,reaper0_p, 42, 64, inverted);
+  86:anim_death.c  ****       if((x >= -30 ) && (x < -24)) {
+  87:anim_death.c  ****         glcdSetAddress(30+x,5);
+  88:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+  89:anim_death.c  ****       } else if ((x >= -24 ) && (x < -18)) {
+  90:anim_death.c  ****         glcdSetAddress(24+x,5);
+  91:anim_death.c  ****         glcdWriteChar(((death_y%100)/10)+'0', inverted);
+  92:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+  93:anim_death.c  ****       } else if ((x >= -18 ) && (x < -12)) {
+  94:anim_death.c  ****         glcdSetAddress(18+x,5);
+  95:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+  96:anim_death.c  ****         glcdWriteChar(((death_y%100)/10)+'0', inverted);
+  97:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+  98:anim_death.c  ****       } else if ((x >= -12 ) && (x < 36)) {
+  99:anim_death.c  ****         glcdSetAddress(12+x,5);
+ 100:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))/10)+'0', inverted);
+ 101:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+ 102:anim_death.c  ****         glcdWriteChar(((death_y%100)/10)+'0', inverted);
+ 103:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+ 104:anim_death.c  ****       } else if (x >= 36) {
+ 105:anim_death.c  ****         glcdSetAddress(48,5);
+ 106:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))/10)+'0', inverted);
+ 107:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+ 108:anim_death.c  ****         glcdWriteChar(((death_y%100)/10)+'0', inverted);
+ 109:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+ 110:anim_death.c  ****       }
+ 111:anim_death.c  ****   }
+ 112:anim_death.c  **** }
+ 113:anim_death.c  **** 
+ 114:anim_death.c  **** 
+ 115:anim_death.c  **** void death_setscore(void)
+ 116:anim_death.c  **** {
+ 141               	.LM0:
+ 142               	.LFBB1:
+ 143 0000 EF92      		push r14
+ 144 0002 FF92      		push r15
+ 145 0004 0F93      		push r16
+ 146 0006 1F93      		push r17
+ 147               	/* prologue: function */
+ 148               	/* frame size = 0 */
+ 117:anim_death.c  ****   if(score_mode != last_score_mode) {
+ 150               	.LM1:
+ 151 0008 9091 0000 		lds r25,score_mode
+ 152 000c 8091 0000 		lds r24,last_score_mode
+ 153 0010 9817      		cp r25,r24
+ 154 0012 01F0      		breq .L2
+ 118:anim_death.c  ****     //Death Clock and Death Alarm requires 8 digits to be drawn, while the remaining modes, only re
+ 119:anim_death.c  ****     //if(((score_mode == SCORE_MODE_DEATH_TIME) || (score_mode == SCORE_MODE_DEATH_ALARM)) && ((las
+ 120:anim_death.c  ****     //  redraw_time = 2;
+ 121:anim_death.c  ****     //else if(((last_score_mode == SCORE_MODE_DEATH_TIME) || (last_score_mode == SCORE_MODE_DEATH_A
+ 122:anim_death.c  ****     //  redraw_time = 2;
+ 123:anim_death.c  ****     //else
+ 124:anim_death.c  ****       redraw_time = 1;
+ 156               	.LM2:
+ 157 0014 81E0      		ldi r24,lo8(1)
+ 158 0016 8093 0000 		sts redraw_time,r24
+ 125:anim_death.c  ****     last_score_mode = score_mode;
+ 160               	.LM3:
+ 161 001a 8091 0000 		lds r24,score_mode
+ 162 001e 8093 0000 		sts last_score_mode,r24
+ 163               	.L2:
+ 126:anim_death.c  ****   }
+ 127:anim_death.c  ****   switch(score_mode) {
+ 165               	.LM4:
+ 166 0022 8091 0000 		lds r24,score_mode
+ 167 0026 8330      		cpi r24,lo8(3)
+ 168 0028 01F4      		brne .+2
+ 169 002a 00C0      		rjmp .L7
+ 170 002c 8430      		cpi r24,lo8(4)
+ 171 002e 00F4      		brsh .L12
+ 172 0030 8130      		cpi r24,lo8(1)
+ 173 0032 01F4      		brne .+2
+ 174 0034 00C0      		rjmp .L5
+ 175 0036 8230      		cpi r24,lo8(2)
+ 176 0038 00F0      		brlo .+2
+ 177 003a 00C0      		rjmp .L6
+ 178 003c 00C0      		rjmp .L39
+ 179               	.L12:
+ 180 003e 8530      		cpi r24,lo8(5)
+ 181 0040 01F4      		brne .+2
+ 182 0042 00C0      		rjmp .L9
+ 183 0044 8530      		cpi r24,lo8(5)
+ 184 0046 00F4      		brsh .+2
+ 185 0048 00C0      		rjmp .L8
+ 186 004a 8630      		cpi r24,lo8(6)
+ 187 004c 01F4      		brne .+2
+ 188 004e 00C0      		rjmp .L10
+ 189 0050 8730      		cpi r24,lo8(7)
+ 190 0052 01F0      		breq .+2
+ 191 0054 00C0      		rjmp .L33
+ 192 0056 00C0      		rjmp .L40
+ 193               	.L39:
+ 128:anim_death.c  ****     case SCORE_MODE_TIME:
+ 129:anim_death.c  ****       if((minute_changed || hour_changed)) {
+ 195               	.LM5:
+ 196 0058 8091 0000 		lds r24,minute_changed
+ 197 005c 8823      		tst r24
+ 198 005e 01F4      		brne .L13
+ 199 0060 8091 0000 		lds r24,hour_changed
+ 200 0064 8823      		tst r24
+ 201 0066 01F0      		breq .L14
+ 202               	.L13:
+ 130:anim_death.c  ****         if(hour_changed) {
+ 204               	.LM6:
+ 205 0068 8091 0000 		lds r24,hour_changed
+ 206 006c 8823      		tst r24
+ 207 006e 01F0      		breq .L15
+ 131:anim_death.c  ****           left_score = old_h;
+ 209               	.LM7:
+ 210 0070 8091 0000 		lds r24,old_h
+ 211 0074 90E0      		ldi r25,lo8(0)
+ 212 0076 A0E0      		ldi r26,lo8(0)
+ 213 0078 B0E0      		ldi r27,hi8(0)
+ 214 007a 8093 0000 		sts left_score,r24
+ 215 007e 9093 0000 		sts (left_score)+1,r25
+ 216 0082 A093 0000 		sts (left_score)+2,r26
+ 217 0086 B093 0000 		sts (left_score)+3,r27
+ 218 008a 00C0      		rjmp .L37
+ 219               	.L15:
+ 132:anim_death.c  ****           right_score = old_m;
+ 133:anim_death.c  ****         } else if (minute_changed) {
+ 221               	.LM8:
+ 222 008c 8091 0000 		lds r24,minute_changed
+ 223 0090 8823      		tst r24
+ 224 0092 01F4      		brne .+2
+ 225 0094 00C0      		rjmp .L33
+ 226               	.L37:
+ 134:anim_death.c  ****           right_score = old_m;
+ 228               	.LM9:
+ 229 0096 8091 0000 		lds r24,old_m
+ 230 009a 00C0      		rjmp .L38
+ 231               	.L14:
+ 135:anim_death.c  ****         }
+ 136:anim_death.c  ****       } else {
+ 137:anim_death.c  ****         left_score = time_h;
+ 233               	.LM10:
+ 234 009c 8091 0000 		lds r24,time_h
+ 235 00a0 90E0      		ldi r25,lo8(0)
+ 236 00a2 A0E0      		ldi r26,lo8(0)
+ 237 00a4 B0E0      		ldi r27,hi8(0)
+ 238 00a6 8093 0000 		sts left_score,r24
+ 239 00aa 9093 0000 		sts (left_score)+1,r25
+ 240 00ae A093 0000 		sts (left_score)+2,r26
+ 241 00b2 B093 0000 		sts (left_score)+3,r27
+ 138:anim_death.c  ****         right_score = time_m;
+ 243               	.LM11:
+ 244 00b6 8091 0000 		lds r24,time_m
+ 245 00ba 00C0      		rjmp .L38
+ 246               	.L5:
+ 139:anim_death.c  ****       }
+ 140:anim_death.c  ****       break;
+ 141:anim_death.c  ****     case SCORE_MODE_DATE:
+ 142:anim_death.c  ****       if(region == REGION_US) {
+ 248               	.LM12:
+ 249 00bc 8091 0000 		lds r24,region
+ 250 00c0 8823      		tst r24
+ 251 00c2 01F4      		brne .L16
+ 143:anim_death.c  ****         left_score = date_m;
+ 253               	.LM13:
+ 254 00c4 8091 0000 		lds r24,date_m
+ 255 00c8 90E0      		ldi r25,lo8(0)
+ 256 00ca A0E0      		ldi r26,lo8(0)
+ 257 00cc B0E0      		ldi r27,hi8(0)
+ 258 00ce 8093 0000 		sts left_score,r24
+ 259 00d2 9093 0000 		sts (left_score)+1,r25
+ 260 00d6 A093 0000 		sts (left_score)+2,r26
+ 261 00da B093 0000 		sts (left_score)+3,r27
+ 144:anim_death.c  ****         right_score = date_d;
+ 263               	.LM14:
+ 264 00de 8091 0000 		lds r24,date_d
+ 265 00e2 00C0      		rjmp .L38
+ 266               	.L16:
+ 145:anim_death.c  ****       } else {
+ 146:anim_death.c  ****         left_score = date_d;
+ 268               	.LM15:
+ 269 00e4 8091 0000 		lds r24,date_d
+ 270 00e8 90E0      		ldi r25,lo8(0)
+ 271 00ea A0E0      		ldi r26,lo8(0)
+ 272 00ec B0E0      		ldi r27,hi8(0)
+ 273 00ee 8093 0000 		sts left_score,r24
+ 274 00f2 9093 0000 		sts (left_score)+1,r25
+ 275 00f6 A093 0000 		sts (left_score)+2,r26
+ 276 00fa B093 0000 		sts (left_score)+3,r27
+ 147:anim_death.c  ****         right_score = date_m;
+ 278               	.LM16:
+ 279 00fe 8091 0000 		lds r24,date_m
+ 280 0102 00C0      		rjmp .L38
+ 281               	.L6:
+ 148:anim_death.c  ****       }
+ 149:anim_death.c  ****       break;
+ 150:anim_death.c  ****     case SCORE_MODE_YEAR:
+ 151:anim_death.c  ****       left_score = 20;
+ 283               	.LM17:
+ 284 0104 84E1      		ldi r24,lo8(20)
+ 285 0106 90E0      		ldi r25,hi8(20)
+ 286 0108 A0E0      		ldi r26,hlo8(20)
+ 287 010a B0E0      		ldi r27,hhi8(20)
+ 288 010c 8093 0000 		sts left_score,r24
+ 289 0110 9093 0000 		sts (left_score)+1,r25
+ 290 0114 A093 0000 		sts (left_score)+2,r26
+ 291 0118 B093 0000 		sts (left_score)+3,r27
+ 152:anim_death.c  ****       right_score = date_y;
+ 293               	.LM18:
+ 294 011c 8091 0000 		lds r24,date_y
+ 295 0120 00C0      		rjmp .L38
+ 296               	.L8:
+ 153:anim_death.c  ****       break;
+ 154:anim_death.c  ****     case SCORE_MODE_DEATH_TIME:
+ 155:anim_death.c  ****       if((minute_changed || hour_changed)) {
+ 298               	.LM19:
+ 299 0122 8091 0000 		lds r24,minute_changed
+ 300 0126 8823      		tst r24
+ 301 0128 01F4      		brne .L17
+ 302 012a 8091 0000 		lds r24,hour_changed
+ 303 012e 8823      		tst r24
+ 304 0130 01F0      		breq .L18
+ 305               	.L17:
+ 156:anim_death.c  ****           left_score = old_minutes_left/10000;
+ 307               	.LM20:
+ 308 0132 6091 0000 		lds r22,old_minutes_left
+ 309 0136 7091 0000 		lds r23,(old_minutes_left)+1
+ 310 013a 8091 0000 		lds r24,(old_minutes_left)+2
+ 311 013e 9091 0000 		lds r25,(old_minutes_left)+3
+ 312 0142 20E1      		ldi r18,lo8(10000)
+ 313 0144 37E2      		ldi r19,hi8(10000)
+ 314 0146 40E0      		ldi r20,hlo8(10000)
+ 315 0148 50E0      		ldi r21,hhi8(10000)
+ 316 014a 0E94 0000 		call __divmodsi4
+ 317 014e 2093 0000 		sts left_score,r18
+ 318 0152 3093 0000 		sts (left_score)+1,r19
+ 319 0156 4093 0000 		sts (left_score)+2,r20
+ 320 015a 5093 0000 		sts (left_score)+3,r21
+ 157:anim_death.c  ****           right_score = old_minutes_left%10000;
+ 322               	.LM21:
+ 323 015e 6091 0000 		lds r22,old_minutes_left
+ 324 0162 7091 0000 		lds r23,(old_minutes_left)+1
+ 325 0166 8091 0000 		lds r24,(old_minutes_left)+2
+ 326 016a 9091 0000 		lds r25,(old_minutes_left)+3
+ 327 016e 00C0      		rjmp .L35
+ 328               	.L18:
+ 158:anim_death.c  ****       } else {
+ 159:anim_death.c  ****           //if((minutes_left - ((dc_mode == DC_mode_sadistic)?(time_s/15):0)) > 0)
+ 160:anim_death.c  ****         left_score = (minutes_left - ((dc_mode == DC_mode_sadistic)?(time_s/15):0))/10000;
+ 330               	.LM22:
+ 331 0170 2091 0000 		lds r18,minutes_left
+ 332 0174 3091 0000 		lds r19,(minutes_left)+1
+ 333 0178 4091 0000 		lds r20,(minutes_left)+2
+ 334 017c 5091 0000 		lds r21,(minutes_left)+3
+ 335 0180 8091 0000 		lds r24,dc_mode
+ 336 0184 8330      		cpi r24,lo8(3)
+ 337 0186 01F0      		breq .L20
+ 338 0188 80E0      		ldi r24,lo8(0)
+ 339 018a 90E0      		ldi r25,hi8(0)
+ 340 018c A0E0      		ldi r26,hlo8(0)
+ 341 018e B0E0      		ldi r27,hhi8(0)
+ 342 0190 00C0      		rjmp .L21
+ 343               	.L20:
+ 344 0192 8091 0000 		lds r24,time_s
+ 345 0196 6FE0      		ldi r22,lo8(15)
+ 346 0198 0E94 0000 		call __udivmodqi4
+ 347 019c 90E0      		ldi r25,lo8(0)
+ 348 019e A0E0      		ldi r26,lo8(0)
+ 349 01a0 B0E0      		ldi r27,hi8(0)
+ 350               	.L21:
+ 351 01a2 281B      		sub r18,r24
+ 352 01a4 390B      		sbc r19,r25
+ 353 01a6 4A0B      		sbc r20,r26
+ 354 01a8 5B0B      		sbc r21,r27
+ 355 01aa CA01      		movw r24,r20
+ 356 01ac B901      		movw r22,r18
+ 357 01ae 20E1      		ldi r18,lo8(10000)
+ 358 01b0 37E2      		ldi r19,hi8(10000)
+ 359 01b2 40E0      		ldi r20,hlo8(10000)
+ 360 01b4 50E0      		ldi r21,hhi8(10000)
+ 361 01b6 0E94 0000 		call __divmodsi4
+ 362 01ba 2093 0000 		sts left_score,r18
+ 363 01be 3093 0000 		sts (left_score)+1,r19
+ 364 01c2 4093 0000 		sts (left_score)+2,r20
+ 365 01c6 5093 0000 		sts (left_score)+3,r21
+ 161:anim_death.c  ****         right_score = (minutes_left - ((dc_mode == DC_mode_sadistic)?(time_s/15):0))%10000;
+ 367               	.LM23:
+ 368 01ca 2091 0000 		lds r18,minutes_left
+ 369 01ce 3091 0000 		lds r19,(minutes_left)+1
+ 370 01d2 4091 0000 		lds r20,(minutes_left)+2
+ 371 01d6 5091 0000 		lds r21,(minutes_left)+3
+ 372 01da 8091 0000 		lds r24,dc_mode
+ 373 01de 8330      		cpi r24,lo8(3)
+ 374 01e0 01F0      		breq .L22
+ 375 01e2 80E0      		ldi r24,lo8(0)
+ 376 01e4 90E0      		ldi r25,hi8(0)
+ 377 01e6 A0E0      		ldi r26,hlo8(0)
+ 378 01e8 B0E0      		ldi r27,hhi8(0)
+ 379 01ea 00C0      		rjmp .L23
+ 380               	.L22:
+ 381 01ec 8091 0000 		lds r24,time_s
+ 382 01f0 6FE0      		ldi r22,lo8(15)
+ 383 01f2 0E94 0000 		call __udivmodqi4
+ 384 01f6 90E0      		ldi r25,lo8(0)
+ 385 01f8 A0E0      		ldi r26,lo8(0)
+ 386 01fa B0E0      		ldi r27,hi8(0)
+ 387               	.L23:
+ 388 01fc 281B      		sub r18,r24
+ 389 01fe 390B      		sbc r19,r25
+ 390 0200 4A0B      		sbc r20,r26
+ 391 0202 5B0B      		sbc r21,r27
+ 392 0204 CA01      		movw r24,r20
+ 393 0206 B901      		movw r22,r18
+ 394               	.L35:
+ 395 0208 20E1      		ldi r18,lo8(10000)
+ 396 020a 37E2      		ldi r19,hi8(10000)
+ 397 020c 40E0      		ldi r20,hlo8(10000)
+ 398 020e 50E0      		ldi r21,hhi8(10000)
+ 399 0210 0E94 0000 		call __divmodsi4
+ 400 0214 6093 0000 		sts right_score,r22
+ 401 0218 7093 0000 		sts (right_score)+1,r23
+ 402 021c 8093 0000 		sts (right_score)+2,r24
+ 403 0220 9093 0000 		sts (right_score)+3,r25
+ 162:anim_death.c  ****       }
+ 163:anim_death.c  ****       if(minutes_left <= 0)
+ 405               	.LM24:
+ 406 0224 8091 0000 		lds r24,minutes_left
+ 407 0228 9091 0000 		lds r25,(minutes_left)+1
+ 408 022c A091 0000 		lds r26,(minutes_left)+2
+ 409 0230 B091 0000 		lds r27,(minutes_left)+3
+ 410 0234 1816      		cp __zero_reg__,r24
+ 411 0236 1906      		cpc __zero_reg__,r25
+ 412 0238 1A06      		cpc __zero_reg__,r26
+ 413 023a 1B06      		cpc __zero_reg__,r27
+ 414 023c 04F4      		brge .+2
+ 415 023e 00C0      		rjmp .L33
+ 164:anim_death.c  ****           left_score = right_score = 0;
+ 417               	.LM25:
+ 418 0240 1092 0000 		sts right_score,__zero_reg__
+ 419 0244 1092 0000 		sts (right_score)+1,__zero_reg__
+ 420 0248 1092 0000 		sts (right_score)+2,__zero_reg__
+ 421 024c 1092 0000 		sts (right_score)+3,__zero_reg__
+ 422 0250 1092 0000 		sts left_score,__zero_reg__
+ 423 0254 1092 0000 		sts (left_score)+1,__zero_reg__
+ 424 0258 1092 0000 		sts (left_score)+2,__zero_reg__
+ 425 025c 1092 0000 		sts (left_score)+3,__zero_reg__
+ 426 0260 00C0      		rjmp .L33
+ 427               	.L9:
+ 165:anim_death.c  ****       break;
+ 166:anim_death.c  ****     case SCORE_MODE_DEATH_DATE:
+ 167:anim_death.c  ****       if(region == REGION_US) {
+ 429               	.LM26:
+ 430 0262 8091 0000 		lds r24,region
+ 431 0266 8823      		tst r24
+ 432 0268 01F4      		brne .L24
+ 168:anim_death.c  ****         left_score = death_m;
+ 434               	.LM27:
+ 435 026a 8091 0000 		lds r24,death_m
+ 436 026e 90E0      		ldi r25,lo8(0)
+ 437 0270 A0E0      		ldi r26,lo8(0)
+ 438 0272 B0E0      		ldi r27,hi8(0)
+ 439 0274 8093 0000 		sts left_score,r24
+ 440 0278 9093 0000 		sts (left_score)+1,r25
+ 441 027c A093 0000 		sts (left_score)+2,r26
+ 442 0280 B093 0000 		sts (left_score)+3,r27
+ 169:anim_death.c  ****         right_score = death_d;
+ 444               	.LM28:
+ 445 0284 8091 0000 		lds r24,death_d
+ 446 0288 00C0      		rjmp .L38
+ 447               	.L24:
+ 170:anim_death.c  ****       } else {
+ 171:anim_death.c  ****         left_score = death_d;
+ 449               	.LM29:
+ 450 028a 8091 0000 		lds r24,death_d
+ 451 028e 90E0      		ldi r25,lo8(0)
+ 452 0290 A0E0      		ldi r26,lo8(0)
+ 453 0292 B0E0      		ldi r27,hi8(0)
+ 454 0294 8093 0000 		sts left_score,r24
+ 455 0298 9093 0000 		sts (left_score)+1,r25
+ 456 029c A093 0000 		sts (left_score)+2,r26
+ 457 02a0 B093 0000 		sts (left_score)+3,r27
+ 172:anim_death.c  ****         right_score = death_m;
+ 459               	.LM30:
+ 460 02a4 8091 0000 		lds r24,death_m
+ 461 02a8 00C0      		rjmp .L38
+ 462               	.L10:
+ 173:anim_death.c  ****       }
+ 174:anim_death.c  ****       break;
+ 175:anim_death.c  ****     case SCORE_MODE_DEATH_YEAR:
+ 176:anim_death.c  ****       left_score = 19 + (death_y / 100);
+ 464               	.LM31:
+ 465 02aa 8091 0000 		lds r24,death_y
+ 466 02ae 64E6      		ldi r22,lo8(100)
+ 467 02b0 0E94 0000 		call __udivmodqi4
+ 468 02b4 90E0      		ldi r25,lo8(0)
+ 469 02b6 4396      		adiw r24,19
+ 470 02b8 AA27      		clr r26
+ 471 02ba 97FD      		sbrc r25,7
+ 472 02bc A095      		com r26
+ 473 02be BA2F      		mov r27,r26
+ 474 02c0 8093 0000 		sts left_score,r24
+ 475 02c4 9093 0000 		sts (left_score)+1,r25
+ 476 02c8 A093 0000 		sts (left_score)+2,r26
+ 477 02cc B093 0000 		sts (left_score)+3,r27
+ 177:anim_death.c  ****       right_score = death_y % 100;
+ 479               	.LM32:
+ 480 02d0 8091 0000 		lds r24,death_y
+ 481 02d4 0E94 0000 		call __udivmodqi4
+ 482 02d8 892F      		mov r24,r25
+ 483 02da 00C0      		rjmp .L38
+ 484               	.L7:
+ 178:anim_death.c  ****       break;
+ 179:anim_death.c  ****     case SCORE_MODE_ALARM:
+ 180:anim_death.c  ****       left_score = alarm_h;
+ 486               	.LM33:
+ 487 02dc 8091 0000 		lds r24,alarm_h
+ 488 02e0 90E0      		ldi r25,lo8(0)
+ 489 02e2 A0E0      		ldi r26,lo8(0)
+ 490 02e4 B0E0      		ldi r27,hi8(0)
+ 491 02e6 8093 0000 		sts left_score,r24
+ 492 02ea 9093 0000 		sts (left_score)+1,r25
+ 493 02ee A093 0000 		sts (left_score)+2,r26
+ 494 02f2 B093 0000 		sts (left_score)+3,r27
+ 181:anim_death.c  ****       right_score = alarm_m;
+ 496               	.LM34:
+ 497 02f6 8091 0000 		lds r24,alarm_m
+ 498               	.L38:
+ 499 02fa 90E0      		ldi r25,lo8(0)
+ 500 02fc A0E0      		ldi r26,lo8(0)
+ 501 02fe B0E0      		ldi r27,hi8(0)
+ 502 0300 8093 0000 		sts right_score,r24
+ 503 0304 9093 0000 		sts (right_score)+1,r25
+ 504 0308 A093 0000 		sts (right_score)+2,r26
+ 505 030c B093 0000 		sts (right_score)+3,r27
+ 506 0310 00C0      		rjmp .L33
+ 507               	.L40:
+ 182:anim_death.c  ****       break;
+ 183:anim_death.c  ****     case SCORE_MODE_DEATH_ALARM:
+ 184:anim_death.c  ****       results = minutes_left;
+ 509               	.LM35:
+ 510 0312 E090 0000 		lds r14,minutes_left
+ 511 0316 F090 0000 		lds r15,(minutes_left)+1
+ 512 031a 0091 0000 		lds r16,(minutes_left)+2
+ 513 031e 1091 0000 		lds r17,(minutes_left)+3
+ 514 0322 E092 0000 		sts results,r14
+ 515 0326 F092 0000 		sts (results)+1,r15
+ 516 032a 0093 0000 		sts (results)+2,r16
+ 517 032e 1093 0000 		sts (results)+3,r17
+ 185:anim_death.c  ****       if((time_h > alarm_h) || ((time_h == alarm_h) && (time_m > alarm_m)) || ((time_h == alarm_h) 
+ 519               	.LM36:
+ 520 0332 9091 0000 		lds r25,time_h
+ 521 0336 8091 0000 		lds r24,alarm_h
+ 522 033a 8917      		cp r24,r25
+ 523 033c 00F0      		brlo .L25
+ 524 033e 9091 0000 		lds r25,time_h
+ 525 0342 8091 0000 		lds r24,alarm_h
+ 526 0346 9817      		cp r25,r24
+ 527 0348 01F4      		brne .L26
+ 528 034a 9091 0000 		lds r25,time_m
+ 529 034e 8091 0000 		lds r24,alarm_m
+ 530 0352 8917      		cp r24,r25
+ 531 0354 00F0      		brlo .L25
+ 532               	.L26:
+ 533 0356 9091 0000 		lds r25,time_h
+ 534 035a 8091 0000 		lds r24,alarm_h
+ 535 035e 9817      		cp r25,r24
+ 536 0360 01F4      		brne .L27
+ 537 0362 9091 0000 		lds r25,time_m
+ 538 0366 8091 0000 		lds r24,alarm_m
+ 539 036a 9817      		cp r25,r24
+ 540 036c 01F4      		brne .L27
+ 541 036e 8091 0000 		lds r24,time_s
+ 542 0372 8823      		tst r24
+ 543 0374 01F0      		breq .L27
+ 544               	.L25:
+ 186:anim_death.c  ****         results -= (((((alarm_h * 60) + alarm_m) + 1440) - ((time_h * 60) + time_m)) * ((dc_mode ==
+ 546               	.LM37:
+ 547 0376 9091 0000 		lds r25,alarm_h
+ 548 037a 2091 0000 		lds r18,alarm_m
+ 549 037e 4091 0000 		lds r20,time_h
+ 550 0382 E091 0000 		lds r30,time_m
+ 551 0386 8091 0000 		lds r24,dc_mode
+ 552 038a 8330      		cpi r24,lo8(3)
+ 553 038c 01F0      		breq .L28
+ 554 038e 61E0      		ldi r22,lo8(1)
+ 555 0390 70E0      		ldi r23,hi8(1)
+ 556 0392 00C0      		rjmp .L29
+ 557               	.L28:
+ 558 0394 64E0      		ldi r22,lo8(4)
+ 559 0396 70E0      		ldi r23,hi8(4)
+ 560               	.L29:
+ 561 0398 30E0      		ldi r19,lo8(0)
+ 562 039a 2056      		subi r18,lo8(-(1440))
+ 563 039c 3A4F      		sbci r19,hi8(-(1440))
+ 564 039e 8CE3      		ldi r24,lo8(60)
+ 565 03a0 989F      		mul r25,r24
+ 566 03a2 C001      		movw r24,r0
+ 567 03a4 1124      		clr r1
+ 568 03a6 280F      		add r18,r24
+ 569 03a8 391F      		adc r19,r25
+ 570 03aa 50E0      		ldi r21,lo8(0)
+ 571 03ac 84EC      		ldi r24,lo8(-60)
+ 572 03ae 9FEF      		ldi r25,hi8(-60)
+ 573 03b0 DC01      		movw r26,r24
+ 574 03b2 4A9F      		mul r20,r26
+ 575 03b4 C001      		movw r24,r0
+ 576 03b6 4B9F      		mul r20,r27
+ 577 03b8 900D      		add r25,r0
+ 578 03ba 5A9F      		mul r21,r26
+ 579 03bc 900D      		add r25,r0
+ 580 03be 1124      		clr r1
+ 581 03c0 280F      		add r18,r24
+ 582 03c2 391F      		adc r19,r25
+ 583 03c4 2E1B      		sub r18,r30
+ 584 03c6 3109      		sbc r19,__zero_reg__
+ 585 03c8 00C0      		rjmp .L36
+ 586               	.L27:
+ 187:anim_death.c  ****       else
+ 188:anim_death.c  ****         results -= ((((alarm_h * 60) + alarm_m) - ((time_h * 60) + time_m)) * ((dc_mode == DC_mode_
+ 588               	.LM38:
+ 589 03ca 9091 0000 		lds r25,alarm_h
+ 590 03ce F091 0000 		lds r31,alarm_m
+ 591 03d2 4091 0000 		lds r20,time_h
+ 592 03d6 E091 0000 		lds r30,time_m
+ 593 03da 8091 0000 		lds r24,dc_mode
+ 594 03de 8330      		cpi r24,lo8(3)
+ 595 03e0 01F0      		breq .L31
+ 596 03e2 61E0      		ldi r22,lo8(1)
+ 597 03e4 70E0      		ldi r23,hi8(1)
+ 598 03e6 00C0      		rjmp .L32
+ 599               	.L31:
+ 600 03e8 64E0      		ldi r22,lo8(4)
+ 601 03ea 70E0      		ldi r23,hi8(4)
+ 602               	.L32:
+ 603 03ec 8CE3      		ldi r24,lo8(60)
+ 604 03ee 989F      		mul r25,r24
+ 605 03f0 C001      		movw r24,r0
+ 606 03f2 1124      		clr r1
+ 607 03f4 50E0      		ldi r21,lo8(0)
+ 608 03f6 24EC      		ldi r18,lo8(-60)
+ 609 03f8 3FEF      		ldi r19,hi8(-60)
+ 610 03fa D901      		movw r26,r18
+ 611 03fc 4A9F      		mul r20,r26
+ 612 03fe 9001      		movw r18,r0
+ 613 0400 4B9F      		mul r20,r27
+ 614 0402 300D      		add r19,r0
+ 615 0404 5A9F      		mul r21,r26
+ 616 0406 300D      		add r19,r0
+ 617 0408 1124      		clr r1
+ 618 040a 820F      		add r24,r18
+ 619 040c 931F      		adc r25,r19
+ 620 040e 8F0F      		add r24,r31
+ 621 0410 911D      		adc r25,__zero_reg__
+ 622 0412 8E1B      		sub r24,r30
+ 623 0414 9109      		sbc r25,__zero_reg__
+ 624 0416 9C01      		movw r18,r24
+ 625               	.L36:
+ 626 0418 629F      		mul r22,r18
+ 627 041a C001      		movw r24,r0
+ 628 041c 639F      		mul r22,r19
+ 629 041e 900D      		add r25,r0
+ 630 0420 729F      		mul r23,r18
+ 631 0422 900D      		add r25,r0
+ 632 0424 1124      		clr r1
+ 633 0426 AA27      		clr r26
+ 634 0428 97FD      		sbrc r25,7
+ 635 042a A095      		com r26
+ 636 042c BA2F      		mov r27,r26
+ 637 042e E81A      		sub r14,r24
+ 638 0430 F90A      		sbc r15,r25
+ 639 0432 0A0B      		sbc r16,r26
+ 640 0434 1B0B      		sbc r17,r27
+ 641 0436 E092 0000 		sts results,r14
+ 642 043a F092 0000 		sts (results)+1,r15
+ 643 043e 0093 0000 		sts (results)+2,r16
+ 644 0442 1093 0000 		sts (results)+3,r17
+ 189:anim_death.c  ****       left_score = results / 10000;
+ 646               	.LM39:
+ 647 0446 E090 0000 		lds r14,results
+ 648 044a F090 0000 		lds r15,(results)+1
+ 649 044e 0091 0000 		lds r16,(results)+2
+ 650 0452 1091 0000 		lds r17,(results)+3
+ 651 0456 C801      		movw r24,r16
+ 652 0458 B701      		movw r22,r14
+ 653 045a 20E1      		ldi r18,lo8(10000)
+ 654 045c 37E2      		ldi r19,hi8(10000)
+ 655 045e 40E0      		ldi r20,hlo8(10000)
+ 656 0460 50E0      		ldi r21,hhi8(10000)
+ 657 0462 0E94 0000 		call __divmodsi4
+ 658 0466 2093 0000 		sts left_score,r18
+ 659 046a 3093 0000 		sts (left_score)+1,r19
+ 660 046e 4093 0000 		sts (left_score)+2,r20
+ 661 0472 5093 0000 		sts (left_score)+3,r21
+ 190:anim_death.c  ****       right_score = results % 10000;
+ 663               	.LM40:
+ 664 0476 C801      		movw r24,r16
+ 665 0478 B701      		movw r22,r14
+ 666 047a 20E1      		ldi r18,lo8(10000)
+ 667 047c 37E2      		ldi r19,hi8(10000)
+ 668 047e 40E0      		ldi r20,hlo8(10000)
+ 669 0480 50E0      		ldi r21,hhi8(10000)
+ 670 0482 0E94 0000 		call __divmodsi4
+ 671 0486 6093 0000 		sts right_score,r22
+ 672 048a 7093 0000 		sts (right_score)+1,r23
+ 673 048e 8093 0000 		sts (right_score)+2,r24
+ 674 0492 9093 0000 		sts (right_score)+3,r25
+ 191:anim_death.c  ****       if(results < 0) {
+ 676               	.LM41:
+ 677 0496 17FF      		sbrs r17,7
+ 678 0498 00C0      		rjmp .L33
+ 192:anim_death.c  ****         left_score = 0;
+ 680               	.LM42:
+ 681 049a 1092 0000 		sts left_score,__zero_reg__
+ 682 049e 1092 0000 		sts (left_score)+1,__zero_reg__
+ 683 04a2 1092 0000 		sts (left_score)+2,__zero_reg__
+ 684 04a6 1092 0000 		sts (left_score)+3,__zero_reg__
+ 193:anim_death.c  ****         right_score = 0;
+ 686               	.LM43:
+ 687 04aa 1092 0000 		sts right_score,__zero_reg__
+ 688 04ae 1092 0000 		sts (right_score)+1,__zero_reg__
+ 689 04b2 1092 0000 		sts (right_score)+2,__zero_reg__
+ 690 04b6 1092 0000 		sts (right_score)+3,__zero_reg__
+ 691               	.L33:
+ 692               	/* epilogue start */
+ 194:anim_death.c  ****       }
+ 195:anim_death.c  ****       break;
+ 196:anim_death.c  ****   }
+ 197:anim_death.c  **** }
+ 694               	.LM44:
+ 695 04ba 1F91      		pop r17
+ 696 04bc 0F91      		pop r16
+ 697 04be FF90      		pop r15
+ 698 04c0 EF90      		pop r14
+ 699 04c2 0895      		ret
+ 701               	.Lscope1:
+ 703               		.stabd	78,0,0
+ 705               	.global	prep_digits
+ 707               	prep_digits:
+ 708               		.stabd	46,0,0
+ 198:anim_death.c  **** 
+ 199:anim_death.c  **** void initanim_death(void) {
+ 200:anim_death.c  ****   static int16_t scroller = -84;
+ 201:anim_death.c  ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, scroller==-84);
+ 202:anim_death.c  ****   for(;scroller<138;scroller++)
+ 203:anim_death.c  ****   {
+ 204:anim_death.c  ****     render_image (SKULL,scroller,1);
+ 205:anim_death.c  ****     delay_ms(16);
+ 206:anim_death.c  ****     if(scroller==26)
+ 207:anim_death.c  ****     	delay_ms(2000);
+ 208:anim_death.c  ****   }
+ 209:anim_death.c  ****   score_mode = SCORE_MODE_DEATH_TIME;
+ 210:anim_death.c  ****   minute_changed = hour_changed = 0;
+ 211:anim_death.c  ****   load_etd();
+ 212:anim_death.c  ****   initdisplay(0);
+ 213:anim_death.c  **** }
+ 214:anim_death.c  **** 
+ 215:anim_death.c  **** uint8_t display_digits[8];
+ 216:anim_death.c  **** 
+ 217:anim_death.c  **** void prep_digits(void)
+ 218:anim_death.c  **** {
+ 710               	.LM45:
+ 711               	.LFBB2:
+ 712 04c4 9F92      		push r9
+ 713 04c6 AF92      		push r10
+ 714 04c8 BF92      		push r11
+ 715 04ca CF92      		push r12
+ 716 04cc DF92      		push r13
+ 717 04ce EF92      		push r14
+ 718 04d0 FF92      		push r15
+ 719 04d2 0F93      		push r16
+ 720 04d4 1F93      		push r17
+ 721               	/* prologue: function */
+ 722               	/* frame size = 0 */
+ 219:anim_death.c  **** 	uint8_t i;
+ 220:anim_death.c  **** 	uint16_t temp1=left_score, temp2=right_score;
+ 724               	.LM46:
+ 725 04d6 E090 0000 		lds r14,left_score
+ 726 04da F090 0000 		lds r15,(left_score)+1
+ 727 04de 0091 0000 		lds r16,(left_score)+2
+ 728 04e2 1091 0000 		lds r17,(left_score)+3
+ 729 04e6 9E2C      		mov r9,r14
+ 730 04e8 4F2D      		mov r20,r15
+ 731 04ea A090 0000 		lds r10,right_score
+ 732 04ee B090 0000 		lds r11,(right_score)+1
+ 733 04f2 C090 0000 		lds r12,(right_score)+2
+ 734 04f6 D090 0000 		lds r13,(right_score)+3
+ 735 04fa 3A2D      		mov r19,r10
+ 736 04fc 2B2D      		mov r18,r11
+ 221:anim_death.c  **** 	if((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM))
+ 738               	.LM47:
+ 739 04fe 8091 0000 		lds r24,score_mode
+ 740 0502 8430      		cpi r24,lo8(4)
+ 741 0504 01F4      		brne .+2
+ 742 0506 00C0      		rjmp .L42
+ 743 0508 8091 0000 		lds r24,score_mode
+ 744 050c 8730      		cpi r24,lo8(7)
+ 745 050e 01F4      		brne .+2
+ 746 0510 00C0      		rjmp .L42
+ 222:anim_death.c  ****     {
+ 223:anim_death.c  **** 		if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_AL
+ 748               	.LM48:
+ 749 0512 8091 0000 		lds r24,time_format
+ 750 0516 8823      		tst r24
+ 751 0518 01F4      		brne .L43
+ 752 051a 8091 0000 		lds r24,score_mode
+ 753 051e 8823      		tst r24
+ 754 0520 01F0      		breq .L44
+ 755 0522 8091 0000 		lds r24,score_mode
+ 756 0526 8330      		cpi r24,lo8(3)
+ 757 0528 01F4      		brne .L43
+ 758               	.L44:
+ 224:anim_death.c  **** 	      display_digits[0] = ((left_score + 23)%12 + 1)/10;
+ 760               	.LM49:
+ 761 052a C801      		movw r24,r16
+ 762 052c B701      		movw r22,r14
+ 763 052e 695E      		subi r22,lo8(-(23))
+ 764 0530 7F4F      		sbci r23,hi8(-(23))
+ 765 0532 8F4F      		sbci r24,hlo8(-(23))
+ 766 0534 9F4F      		sbci r25,hhi8(-(23))
+ 767 0536 2CE0      		ldi r18,lo8(12)
+ 768 0538 30E0      		ldi r19,hi8(12)
+ 769 053a 40E0      		ldi r20,hlo8(12)
+ 770 053c 50E0      		ldi r21,hhi8(12)
+ 771 053e 0E94 0000 		call __udivmodsi4
+ 772 0542 6F5F      		subi r22,lo8(-(1))
+ 773 0544 7F4F      		sbci r23,hi8(-(1))
+ 774 0546 8F4F      		sbci r24,hlo8(-(1))
+ 775 0548 9F4F      		sbci r25,hhi8(-(1))
+ 776 054a 00C0      		rjmp .L69
+ 777               	.L43:
+ 225:anim_death.c  **** 	    else 
+ 226:anim_death.c  **** 	      display_digits[0] = left_score/10;
+ 779               	.LM50:
+ 780 054c C801      		movw r24,r16
+ 781 054e B701      		movw r22,r14
+ 782               	.L69:
+ 783 0550 2AE0      		ldi r18,lo8(10)
+ 784 0552 30E0      		ldi r19,hi8(10)
+ 785 0554 40E0      		ldi r20,hlo8(10)
+ 786 0556 50E0      		ldi r21,hhi8(10)
+ 787 0558 0E94 0000 		call __udivmodsi4
+ 788 055c 2093 0000 		sts display_digits,r18
+ 227:anim_death.c  **** 	    
+ 228:anim_death.c  **** 	    if ((time_format == TIME_12H) && ((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE
+ 790               	.LM51:
+ 791 0560 8091 0000 		lds r24,time_format
+ 792 0564 8823      		tst r24
+ 793 0566 01F4      		brne .L46
+ 794 0568 8091 0000 		lds r24,score_mode
+ 795 056c 8823      		tst r24
+ 796 056e 01F0      		breq .L47
+ 797 0570 8091 0000 		lds r24,score_mode
+ 798 0574 8330      		cpi r24,lo8(3)
+ 799 0576 01F4      		brne .L46
+ 800               	.L47:
+ 229:anim_death.c  **** 	      display_digits[1] = ((left_score + 23)%12 + 1)%10;
+ 802               	.LM52:
+ 803 0578 87E1      		ldi r24,lo8(23)
+ 804 057a 90E0      		ldi r25,hi8(23)
+ 805 057c A0E0      		ldi r26,hlo8(23)
+ 806 057e B0E0      		ldi r27,hhi8(23)
+ 807 0580 E80E      		add r14,r24
+ 808 0582 F91E      		adc r15,r25
+ 809 0584 0A1F      		adc r16,r26
+ 810 0586 1B1F      		adc r17,r27
+ 811 0588 C801      		movw r24,r16
+ 812 058a B701      		movw r22,r14
+ 813 058c 2CE0      		ldi r18,lo8(12)
+ 814 058e 30E0      		ldi r19,hi8(12)
+ 815 0590 40E0      		ldi r20,hlo8(12)
+ 816 0592 50E0      		ldi r21,hhi8(12)
+ 817 0594 0E94 0000 		call __udivmodsi4
+ 818 0598 6F5F      		subi r22,lo8(-(1))
+ 819 059a 7F4F      		sbci r23,hi8(-(1))
+ 820 059c 8F4F      		sbci r24,hlo8(-(1))
+ 821 059e 9F4F      		sbci r25,hhi8(-(1))
+ 822 05a0 00C0      		rjmp .L70
+ 823               	.L46:
+ 230:anim_death.c  **** 	    else
+ 231:anim_death.c  **** 	      display_digits[1] = left_score%10;
+ 825               	.LM53:
+ 826 05a2 C801      		movw r24,r16
+ 827 05a4 B701      		movw r22,r14
+ 828               	.L70:
+ 829 05a6 2AE0      		ldi r18,lo8(10)
+ 830 05a8 30E0      		ldi r19,hi8(10)
+ 831 05aa 40E0      		ldi r20,hlo8(10)
+ 832 05ac 50E0      		ldi r21,hhi8(10)
+ 833 05ae 0E94 0000 		call __udivmodsi4
+ 834 05b2 6093 0000 		sts display_digits+1,r22
+ 232:anim_death.c  **** 	    
+ 233:anim_death.c  **** 	    display_digits[3] = right_score/10;
+ 836               	.LM54:
+ 837 05b6 C601      		movw r24,r12
+ 838 05b8 B501      		movw r22,r10
+ 839 05ba 2AE0      		ldi r18,lo8(10)
+ 840 05bc 30E0      		ldi r19,hi8(10)
+ 841 05be 40E0      		ldi r20,hlo8(10)
+ 842 05c0 50E0      		ldi r21,hhi8(10)
+ 843 05c2 0E94 0000 		call __udivmodsi4
+ 844 05c6 2093 0000 		sts display_digits+3,r18
+ 234:anim_death.c  **** 	    display_digits[4] = right_score%10;
+ 846               	.LM55:
+ 847 05ca C601      		movw r24,r12
+ 848 05cc B501      		movw r22,r10
+ 849 05ce 2AE0      		ldi r18,lo8(10)
+ 850 05d0 30E0      		ldi r19,hi8(10)
+ 851 05d2 40E0      		ldi r20,hlo8(10)
+ 852 05d4 50E0      		ldi r21,hhi8(10)
+ 853 05d6 0E94 0000 		call __udivmodsi4
+ 854 05da 6093 0000 		sts display_digits+4,r22
+ 235:anim_death.c  **** 	    
+ 236:anim_death.c  **** 	    if(score_mode == SCORE_MODE_TIME)
+ 856               	.LM56:
+ 857 05de 8091 0000 		lds r24,score_mode
+ 858 05e2 8823      		tst r24
+ 859 05e4 01F4      		brne .L49
+ 237:anim_death.c  **** 	    {
+ 238:anim_death.c  **** 	      if(time_format == TIME_12H)
+ 861               	.LM57:
+ 862 05e6 8091 0000 		lds r24,time_format
+ 863 05ea 8823      		tst r24
+ 864 05ec 01F4      		brne .L50
+ 239:anim_death.c  **** 	      {
+ 240:anim_death.c  **** 	      	  display_digits[2] = ((time_s & 1)?((time_s < 30)?17:16):10) | 0x80;
+ 866               	.LM58:
+ 867 05ee 8091 0000 		lds r24,time_s
+ 868 05f2 80FD      		sbrc r24,0
+ 869 05f4 00C0      		rjmp .L51
+ 870 05f6 8AE8      		ldi r24,lo8(-118)
+ 871 05f8 00C0      		rjmp .L52
+ 872               	.L51:
+ 873 05fa 8091 0000 		lds r24,time_s
+ 874 05fe 8E31      		cpi r24,lo8(30)
+ 875 0600 00F0      		brlo .L53
+ 876 0602 80E9      		ldi r24,lo8(-112)
+ 877 0604 00C0      		rjmp .L52
+ 878               	.L53:
+ 879 0606 81E9      		ldi r24,lo8(-111)
+ 880               	.L52:
+ 881 0608 8093 0000 		sts display_digits+2,r24
+ 241:anim_death.c  **** 	      	  display_digits[5] = 12;
+ 883               	.LM59:
+ 884 060c 8CE0      		ldi r24,lo8(12)
+ 885 060e 8093 0000 		sts display_digits+5,r24
+ 242:anim_death.c  **** 	      	  if(time_h < 12)
+ 887               	.LM60:
+ 888 0612 8091 0000 		lds r24,time_h
+ 889 0616 00C0      		rjmp .L77
+ 890               	.L50:
+ 243:anim_death.c  **** 		      	display_digits[6] = 13;
+ 244:anim_death.c  **** 		      else
+ 245:anim_death.c  **** 		      	display_digits[6] = 14;
+ 246:anim_death.c  **** 		      display_digits[7] = 15;
+ 247:anim_death.c  **** 	      }
+ 248:anim_death.c  **** 	      else
+ 249:anim_death.c  **** 	      {
+ 250:anim_death.c  **** 		      display_digits[2] = display_digits[5] = 10;
+ 892               	.LM61:
+ 893 0618 8AE0      		ldi r24,lo8(10)
+ 894 061a 8093 0000 		sts display_digits+5,r24
+ 895 061e 8093 0000 		sts display_digits+2,r24
+ 251:anim_death.c  **** 		      display_digits[6] = (time_s/10) | 0x80;
+ 897               	.LM62:
+ 898 0622 8091 0000 		lds r24,time_s
+ 899 0626 6AE0      		ldi r22,lo8(10)
+ 900 0628 0E94 0000 		call __udivmodqi4
+ 901 062c 8068      		ori r24,lo8(-128)
+ 902 062e 8093 0000 		sts display_digits+6,r24
+ 252:anim_death.c  **** 		      display_digits[7] = (time_s%10) | 0x80;
+ 904               	.LM63:
+ 905 0632 8091 0000 		lds r24,time_s
+ 906 0636 0E94 0000 		call __udivmodqi4
+ 907 063a 9068      		ori r25,lo8(-128)
+ 908 063c 9093 0000 		sts display_digits+7,r25
+ 909 0640 00C0      		rjmp .L67
+ 910               	.L49:
+ 253:anim_death.c  **** 		  }
+ 254:anim_death.c  **** 	    }
+ 255:anim_death.c  **** 	    else if (score_mode == SCORE_MODE_ALARM)
+ 912               	.LM64:
+ 913 0642 8091 0000 		lds r24,score_mode
+ 914 0646 8330      		cpi r24,lo8(3)
+ 915 0648 01F4      		brne .L57
+ 256:anim_death.c  **** 	    {
+ 257:anim_death.c  **** 	      display_digits[2] = 10;
+ 917               	.LM65:
+ 918 064a 8AE0      		ldi r24,lo8(10)
+ 919 064c 8093 0000 		sts display_digits+2,r24
+ 258:anim_death.c  **** 	      display_digits[5] = 12;
+ 921               	.LM66:
+ 922 0650 9CE0      		ldi r25,lo8(12)
+ 923 0652 9093 0000 		sts display_digits+5,r25
+ 259:anim_death.c  **** 	      if(time_format == TIME_12H)
+ 925               	.LM67:
+ 926 0656 8091 0000 		lds r24,time_format
+ 927 065a 8823      		tst r24
+ 928 065c 01F4      		brne .L58
+ 260:anim_death.c  **** 	      {
+ 261:anim_death.c  **** 	      	  if(alarm_h < 12)
+ 930               	.LM68:
+ 931 065e 8091 0000 		lds r24,alarm_h
+ 932               	.L77:
+ 933 0662 8C30      		cpi r24,lo8(12)
+ 934 0664 00F4      		brsh .L59
+ 262:anim_death.c  **** 		      	display_digits[6] = 13;
+ 936               	.LM69:
+ 937 0666 8DE0      		ldi r24,lo8(13)
+ 938 0668 00C0      		rjmp .L72
+ 939               	.L59:
+ 263:anim_death.c  **** 		      else
+ 264:anim_death.c  **** 		      	display_digits[6] = 14;
+ 941               	.LM70:
+ 942 066a 8EE0      		ldi r24,lo8(14)
+ 943               	.L72:
+ 944 066c 8093 0000 		sts display_digits+6,r24
+ 265:anim_death.c  **** 		      display_digits[7] = 15;
+ 946               	.LM71:
+ 947 0670 8FE0      		ldi r24,lo8(15)
+ 948 0672 8093 0000 		sts display_digits+7,r24
+ 949 0676 00C0      		rjmp .L67
+ 950               	.L58:
+ 266:anim_death.c  **** 		  }
+ 267:anim_death.c  **** 		  else
+ 268:anim_death.c  **** 		  {
+ 269:anim_death.c  **** 		  	  display_digits[6] = display_digits[7] = 12;
+ 952               	.LM72:
+ 953 0678 9093 0000 		sts display_digits+7,r25
+ 954 067c 9093 0000 		sts display_digits+6,r25
+ 955 0680 00C0      		rjmp .L67
+ 956               	.L57:
+ 270:anim_death.c  **** 		  }
+ 271:anim_death.c  **** 	    }
+ 272:anim_death.c  **** 	    else if ((score_mode == SCORE_MODE_DATE) || (score_mode == SCORE_MODE_DEATH_DATE))
+ 958               	.LM73:
+ 959 0682 8091 0000 		lds r24,score_mode
+ 960 0686 8130      		cpi r24,lo8(1)
+ 961 0688 01F0      		breq .L61
+ 962 068a 8091 0000 		lds r24,score_mode
+ 963 068e 8530      		cpi r24,lo8(5)
+ 964 0690 01F4      		brne .L62
+ 965               	.L61:
+ 273:anim_death.c  **** 	    {
+ 274:anim_death.c  **** 	    	display_digits[6] = display_digits[4];
+ 967               	.LM74:
+ 968 0692 6093 0000 		sts display_digits+6,r22
+ 275:anim_death.c  **** 	    	display_digits[5] = display_digits[3];
+ 970               	.LM75:
+ 971 0696 8091 0000 		lds r24,display_digits+3
+ 972 069a 8093 0000 		sts display_digits+5,r24
+ 276:anim_death.c  **** 	    	display_digits[4] = 11;
+ 974               	.LM76:
+ 975 069e 8BE0      		ldi r24,lo8(11)
+ 976 06a0 8093 0000 		sts display_digits+4,r24
+ 277:anim_death.c  **** 	    	display_digits[3] = display_digits[1];
+ 978               	.LM77:
+ 979 06a4 8091 0000 		lds r24,display_digits+1
+ 980 06a8 8093 0000 		sts display_digits+3,r24
+ 278:anim_death.c  **** 	    	display_digits[2] = display_digits[0];
+ 982               	.LM78:
+ 983 06ac 8091 0000 		lds r24,display_digits
+ 984 06b0 8093 0000 		sts display_digits+2,r24
+ 279:anim_death.c  **** 	    	display_digits[0] = display_digits[1] = display_digits[7] = 12;
+ 986               	.LM79:
+ 987 06b4 8CE0      		ldi r24,lo8(12)
+ 988 06b6 8093 0000 		sts display_digits+7,r24
+ 989 06ba 00C0      		rjmp .L74
+ 990               	.L62:
+ 280:anim_death.c  **** 	    }
+ 281:anim_death.c  **** 	    else if ((score_mode == SCORE_MODE_YEAR) || (score_mode == SCORE_MODE_DEATH_YEAR))
+ 992               	.LM80:
+ 993 06bc 8091 0000 		lds r24,score_mode
+ 994 06c0 8230      		cpi r24,lo8(2)
+ 995 06c2 01F0      		breq .L63
+ 996 06c4 8091 0000 		lds r24,score_mode
+ 997 06c8 8630      		cpi r24,lo8(6)
+ 998 06ca 01F0      		breq .+2
+ 999 06cc 00C0      		rjmp .L67
+ 1000               	.L63:
+ 282:anim_death.c  **** 	    {
+ 283:anim_death.c  **** 	    	display_digits[6] = display_digits[4];
+ 1002               	.LM81:
+ 1003 06ce 6093 0000 		sts display_digits+6,r22
+ 284:anim_death.c  **** 	    	display_digits[5] = display_digits[3];
+ 1005               	.LM82:
+ 1006 06d2 8091 0000 		lds r24,display_digits+3
+ 1007 06d6 8093 0000 		sts display_digits+5,r24
+ 285:anim_death.c  **** 	    	display_digits[4] = display_digits[1];
+ 1009               	.LM83:
+ 1010 06da 8091 0000 		lds r24,display_digits+1
+ 1011 06de 8093 0000 		sts display_digits+4,r24
+ 286:anim_death.c  **** 	    	display_digits[3] = display_digits[0];
+ 1013               	.LM84:
+ 1014 06e2 8091 0000 		lds r24,display_digits
+ 1015 06e6 8093 0000 		sts display_digits+3,r24
+ 287:anim_death.c  **** 	    	display_digits[0] = display_digits[1] = display_digits[2] = display_digits[7] = 12;
+ 1017               	.LM85:
+ 1018 06ea 8CE0      		ldi r24,lo8(12)
+ 1019 06ec 8093 0000 		sts display_digits+7,r24
+ 1020 06f0 8093 0000 		sts display_digits+2,r24
+ 1021               	.L74:
+ 1022 06f4 8093 0000 		sts display_digits+1,r24
+ 1023 06f8 8093 0000 		sts display_digits,r24
+ 1024 06fc 00C0      		rjmp .L67
+ 1025               	.L42:
+ 288:anim_death.c  **** 	    }
+ 289:anim_death.c  **** 	}
+ 290:anim_death.c  **** 	else
+ 291:anim_death.c  ****     {
+ 292:anim_death.c  **** 	    if((left_score != 0) || (right_score != 0))
+ 1027               	.LM86:
+ 1028 06fe E114      		cp r14,__zero_reg__
+ 1029 0700 F104      		cpc r15,__zero_reg__
+ 1030 0702 0105      		cpc r16,__zero_reg__
+ 1031 0704 1105      		cpc r17,__zero_reg__
+ 1032 0706 01F0      		breq .L64
+ 1033               	.L66:
+ 1034 0708 E0E0      		ldi r30,lo8(display_digits+3)
+ 1035 070a F0E0      		ldi r31,hi8(display_digits+3)
+ 1036 070c 00C0      		rjmp .L65
+ 1037               	.L64:
+ 1038 070e A114      		cp r10,__zero_reg__
+ 1039 0710 B104      		cpc r11,__zero_reg__
+ 1040 0712 C104      		cpc r12,__zero_reg__
+ 1041 0714 D104      		cpc r13,__zero_reg__
+ 1042 0716 01F4      		brne .L66
+ 1043 0718 00C0      		rjmp .L67
+ 1044               	.L65:
+ 293:anim_death.c  **** 	    {
+ 294:anim_death.c  **** 	    	for(i=0;i<4;i++,temp1/=10,temp2/=10)
+ 295:anim_death.c  **** 	    	{
+ 296:anim_death.c  **** 	    		//drawbigdigit(DISPLAY_DL4_X_DEATH - i, DISPLAY_TIME_Y_DEATH, temp1 % 10, inverted);
+ 297:anim_death.c  **** 	    		//drawbigdigit(DISPLAY_DR4_X_DEATH - i, DISPLAY_TIME_Y_DEATH, temp2 % 10, inverted);
+ 298:anim_death.c  **** 	    		display_digits[3-i] = temp1 % 10;
+ 1046               	.LM87:
+ 1047 071a 892D      		mov r24,r9
+ 1048 071c 942F      		mov r25,r20
+ 1049 071e 6AE0      		ldi r22,lo8(10)
+ 1050 0720 70E0      		ldi r23,hi8(10)
+ 1051 0722 0E94 0000 		call __udivmodhi4
+ 1052 0726 8083      		st Z,r24
+ 299:anim_death.c  **** 	    		display_digits[7-i] = temp2 % 10;
+ 1054               	.LM88:
+ 1055 0728 832F      		mov r24,r19
+ 1056 072a 922F      		mov r25,r18
+ 1057 072c 6AE0      		ldi r22,lo8(10)
+ 1058 072e 70E0      		ldi r23,hi8(10)
+ 1059 0730 0E94 0000 		call __udivmodhi4
+ 1060 0734 8483      		std Z+4,r24
+ 295:anim_death.c  **** 	    	for(i=0;i<4;i++,temp1/=10,temp2/=10)
+ 1062               	.LM89:
+ 1063 0736 892D      		mov r24,r9
+ 1064 0738 942F      		mov r25,r20
+ 1065 073a 6AE0      		ldi r22,lo8(10)
+ 1066 073c 70E0      		ldi r23,hi8(10)
+ 1067 073e 0E94 0000 		call __udivmodhi4
+ 1068 0742 962E      		mov r9,r22
+ 1069 0744 472F      		mov r20,r23
+ 1070 0746 832F      		mov r24,r19
+ 1071 0748 922F      		mov r25,r18
+ 1072 074a 6AE0      		ldi r22,lo8(10)
+ 1073 074c 70E0      		ldi r23,hi8(10)
+ 1074 074e 0E94 0000 		call __udivmodhi4
+ 1075 0752 362F      		mov r19,r22
+ 1076 0754 272F      		mov r18,r23
+ 1077 0756 3197      		sbiw r30,1
+ 1078 0758 90E0      		ldi r25,hi8(display_digits-1)
+ 1079 075a E030      		cpi r30,lo8(display_digits-1)
+ 1080 075c F907      		cpc r31,r25
+ 1081 075e 01F4      		brne .L65
+ 1082               	.L67:
+ 1083               	/* epilogue start */
+ 300:anim_death.c  **** 	    	}
+ 301:anim_death.c  **** 	    }
+ 302:anim_death.c  ****     }
+ 303:anim_death.c  **** }
+ 1085               	.LM90:
+ 1086 0760 1F91      		pop r17
+ 1087 0762 0F91      		pop r16
+ 1088 0764 FF90      		pop r15
+ 1089 0766 EF90      		pop r14
+ 1090 0768 DF90      		pop r13
+ 1091 076a CF90      		pop r12
+ 1092 076c BF90      		pop r11
+ 1093 076e AF90      		pop r10
+ 1094 0770 9F90      		pop r9
+ 1095 0772 0895      		ret
+ 1097               	.Lscope2:
+ 1099               		.stabd	78,0,0
+ 1107               	.global	death_bitblit_ram
+ 1109               	death_bitblit_ram:
+ 1110               		.stabd	46,0,0
+ 304:anim_death.c  **** 
+ 305:anim_death.c  **** void initdisplay_death(uint8_t inverted) {
+ 306:anim_death.c  ****   int16_t i;
+ 307:anim_death.c  ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
+ 308:anim_death.c  ****   death_setscore();
+ 309:anim_death.c  ****   prep_digits();
+ 310:anim_death.c  ****   // time
+ 311:anim_death.c  ****   if(score_mode == SCORE_MODE_TIME)
+ 312:anim_death.c  ****   {
+ 313:anim_death.c  ****   	  display_digits[2] = 10;
+ 314:anim_death.c  ****   	  if(time_format == TIME_24H)
+ 315:anim_death.c  ****   	  {
+ 316:anim_death.c  ****   	  	  display_digits[6] = time_s / 10;
+ 317:anim_death.c  ****   	  	  display_digits[7] = time_s % 10;
+ 318:anim_death.c  ****   	  }
+ 319:anim_death.c  ****   }
+ 320:anim_death.c  ****   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+ 321:anim_death.c  ****   ((left_score != 0) || (right_score != 0))) {
+ 322:anim_death.c  ****     for(i=0;i<8;i++)
+ 323:anim_death.c  ****     	drawbigdigit(DISPLAY_H10_X_DEATH + (i*15), DISPLAY_TIME_Y_DEATH, display_digits[i], inverted);
+ 324:anim_death.c  ****   }
+ 325:anim_death.c  ****   else
+ 326:anim_death.c  ****   {
+ 327:anim_death.c  ****     
+ 328:anim_death.c  ****       calc_death_date();
+ 329:anim_death.c  ****       if(!reaper_tow_rip)
+ 330:anim_death.c  ****       {
+ 331:anim_death.c  ****         reaper_tow_rip = 1;
+ 332:anim_death.c  ****         for(i=-108;i<82;i++)
+ 333:anim_death.c  ****         {
+ 334:anim_death.c  ****           render_image(REAPER_TOW_RIP,i,inverted);
+ 335:anim_death.c  ****           delay_ms(16);
+ 336:anim_death.c  ****         }
+ 337:anim_death.c  ****       }
+ 338:anim_death.c  ****       
+ 339:anim_death.c  ****       render_image(RIP,36,inverted);
+ 340:anim_death.c  ****       glcdSetAddress(48, 5);
+ 341:anim_death.c  ****       glcdWriteChar(((19+(death_y/100))/10)+'0', NORMAL);
+ 342:anim_death.c  ****       glcdWriteChar(((19+(death_y/100))%10)+'0', NORMAL);
+ 343:anim_death.c  ****       glcdWriteChar(((death_y%100)/10)+'0', NORMAL);
+ 344:anim_death.c  ****       glcdWriteChar((death_y%10)+'0', NORMAL);
+ 345:anim_death.c  ****   }
+ 346:anim_death.c  **** 
+ 347:anim_death.c  ****   //drawmidline(inverted);
+ 348:anim_death.c  **** }
+ 349:anim_death.c  **** 
+ 350:anim_death.c  **** int16_t reaper_x;
+ 351:anim_death.c  **** #define reaper_y 0
+ 352:anim_death.c  **** #define reaper_w 56
+ 353:anim_death.c  **** #define reaper_h 64
+ 354:anim_death.c  **** void step_death(void) {
+ 355:anim_death.c  ****   uint8_t i;
+ 356:anim_death.c  ****   death_setscore();
+ 357:anim_death.c  ****   if((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_DEATH_TIME))
+ 358:anim_death.c  ****   {
+ 359:anim_death.c  ****     if(minute_changed) 
+ 360:anim_death.c  ****     {
+ 361:anim_death.c  ****       redraw_time = 1;
+ 362:anim_death.c  ****       minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
+ 363:anim_death.c  ****       minute_changed = 0;
+ 364:anim_death.c  ****       death_setscore();
+ 365:anim_death.c  ****     }
+ 366:anim_death.c  ****     if(hour_changed) 
+ 367:anim_death.c  ****     {
+ 368:anim_death.c  ****       minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
+ 369:anim_death.c  ****       initdisplay_death(1);
+ 370:anim_death.c  ****       for(reaper_x = -52;reaper_x<138;reaper_x++)
+ 371:anim_death.c  ****       {
+ 372:anim_death.c  ****         //redraw_time = 1;
+ 373:anim_death.c  ****         //if((reaper_x%8)==0)
+ 374:anim_death.c  ****         //  draw(1);
+ 375:anim_death.c  ****         render_image (REAPER,reaper_x+1,1);
+ 376:anim_death.c  ****         delay_ms(16);
+ 377:anim_death.c  ****         if(((reaper_x%15)==6)&&(reaper_x>6))
+ 378:anim_death.c  ****         {
+ 379:anim_death.c  ****         	prep_digits();
+ 380:anim_death.c  ****         	for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 381:anim_death.c  ****         	{
+ 382:anim_death.c  ****         		display_digits[(reaper_x/15)+i] |= 0x40;
+ 383:anim_death.c  ****         	}
+ 384:anim_death.c  ****             redraw_time = 1;
+ 385:anim_death.c  ****             drawdisplay_death(1);
+ 386:anim_death.c  ****         }
+ 387:anim_death.c  ****         if(reaper_x==43) 
+ 388:anim_death.c  ****         {
+ 389:anim_death.c  ****           //render_image (REAPER,reaper_x+1,1);
+ 390:anim_death.c  ****           delay_ms(500);
+ 391:anim_death.c  ****           hour_changed = 0;
+ 392:anim_death.c  ****           death_setscore();
+ 393:anim_death.c  ****           hour_changed = 1;
+ 394:anim_death.c  ****           prep_digits();
+ 395:anim_death.c  ****           for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 396:anim_death.c  ****           	display_digits[(reaper_x/15)+i] |= 0x40;
+ 397:anim_death.c  ****           redraw_time = 1;
+ 398:anim_death.c  ****           drawdisplay_death(1);
+ 399:anim_death.c  ****           delay_ms(500);
+ 400:anim_death.c  ****         }
+ 401:anim_death.c  ****       }
+ 402:anim_death.c  ****       hour_changed = 0;
+ 403:anim_death.c  ****       initdisplay_death(0);
+ 404:anim_death.c  ****     }
+ 405:anim_death.c  ****   }
+ 406:anim_death.c  **** }
+ 407:anim_death.c  **** 
+ 408:anim_death.c  **** static uint8_t border_x=0, border_y=0, border_state=0,border_on=0;
+ 409:anim_death.c  **** void next_border(void)
+ 410:anim_death.c  **** {
+ 411:anim_death.c  ****   if(!border_on)
+ 412:anim_death.c  ****   	  return;
+ 413:anim_death.c  ****   glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
+ 414:anim_death.c  ****   if(++border_state >= 4) border_state = 0;
+ 415:anim_death.c  ****   if((border_x == 0) && (border_y == 0))
+ 416:anim_death.c  ****   {
+ 417:anim_death.c  ****     border_state += 2;
+ 418:anim_death.c  ****     if(border_state >= 4) border_state = 0;
+ 419:anim_death.c  ****     border_y+=2;
+ 420:anim_death.c  ****   }
+ 421:anim_death.c  ****   else if ((border_x == 0) && (border_y < 62))
+ 422:anim_death.c  ****     border_y+=2;
+ 423:anim_death.c  ****   else if ((border_x == 0) && (border_y == 62))
+ 424:anim_death.c  ****     border_x+=2;
+ 425:anim_death.c  ****   else if ((border_x < 126) && (border_y == 62))
+ 426:anim_death.c  ****     border_x+=2;
+ 427:anim_death.c  ****   else if ((border_x == 126) && (border_y == 62))
+ 428:anim_death.c  ****     border_y-=2;
+ 429:anim_death.c  ****   else if ((border_x == 126) && (border_y > 0))
+ 430:anim_death.c  ****     border_y-=2;
+ 431:anim_death.c  ****   else if ((border_x == 126) && (border_y == 0))
+ 432:anim_death.c  ****     border_x-=2;
+ 433:anim_death.c  ****   else if ((border_x > 0) && (border_y == 0))
+ 434:anim_death.c  ****     border_x-=2;
+ 435:anim_death.c  **** }
+ 436:anim_death.c  **** 
+ 437:anim_death.c  **** void drawdisplay_death(uint8_t inverted) {
+ 438:anim_death.c  ****    // draw time
+ 439:anim_death.c  ****    volatile uint8_t redraw_digits = 0;
+ 440:anim_death.c  ****    static volatile uint8_t old_seconds, old_border_tick;
+ 441:anim_death.c  ****    uint8_t i;
+ 442:anim_death.c  ****    TIMSK2 = 0;  //Disable Timer 2 interrupt, to prevent a race condition.
+ 443:anim_death.c  ****    if(redraw_time)
+ 444:anim_death.c  ****    {
+ 445:anim_death.c  ****      //if(redraw_time == 2)
+ 446:anim_death.c  ****      //  initdisplay(inverted);
+ 447:anim_death.c  ****      //else
+ 448:anim_death.c  ****        redraw_digits = 1;
+ 449:anim_death.c  ****      redraw_time = 0;
+ 450:anim_death.c  ****    }
+ 451:anim_death.c  ****    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
+ 452:anim_death.c  ****     
+ 453:anim_death.c  ****     // redraw 10's of hours
+ 454:anim_death.c  ****   if(!hour_changed)
+ 455:anim_death.c  ****   	prep_digits();
+ 456:anim_death.c  ****   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+ 457:anim_death.c  ****   	  (minutes_left > 0)) {
+ 458:anim_death.c  ****     if(reaper_x == 256) {
+ 459:anim_death.c  ****       reaper_x--;
+ 460:anim_death.c  ****       initdisplay(inverted);
+ 461:anim_death.c  ****     }
+ 462:anim_death.c  ****     
+ 463:anim_death.c  ****     for(i=0;i<8;i++)
+ 464:anim_death.c  ****     {
+ 465:anim_death.c  ****     	if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
+ 466:anim_death.c  ****     	DISPLAY_H10_X_DEATH + (i*15), DISPLAY_TIME_Y_DEATH, DISPLAY_DIGITW, DISPLAY_DIGITH) ||
+ 467:anim_death.c  ****     	(display_digits[i] & 0x80)) {
+ 468:anim_death.c  ****     		drawbigdigit(DISPLAY_H10_X_DEATH + (i*15), DISPLAY_TIME_Y_DEATH, display_digits[i] & 0x7F, in
+ 469:anim_death.c  ****     	}
+ 470:anim_death.c  ****     }
+ 471:anim_death.c  ****     
+ 472:anim_death.c  ****     if(score_mode >= SCORE_MODE_DEATH_TIME)
+ 473:anim_death.c  ****     {
+ 474:anim_death.c  ****       border_on = 1;
+ 475:anim_death.c  ****       if(border_tick != old_border_tick)
+ 476:anim_death.c  ****       {
+ 477:anim_death.c  ****         next_border();
+ 478:anim_death.c  ****       }
+ 479:anim_death.c  ****     }
+ 480:anim_death.c  ****     else
+ 481:anim_death.c  ****     {
+ 482:anim_death.c  ****     	uint8_t current_x = border_x, current_y = border_y;
+ 483:anim_death.c  ****     	do {
+ 484:anim_death.c  **** 	    	border_state = 3;
+ 485:anim_death.c  **** 	    	next_border();
+ 486:anim_death.c  ****     	} while((border_x != current_x) || (border_y != current_y));
+ 487:anim_death.c  ****     	border_on = 0;
+ 488:anim_death.c  ****     }
+ 489:anim_death.c  ****   }
+ 490:anim_death.c  ****   else
+ 491:anim_death.c  ****   {
+ 492:anim_death.c  ****     if(hour_changed)
+ 493:anim_death.c  ****       hour_changed = 0;
+ 494:anim_death.c  ****     if (redraw_digits || (reaper_x < 256)) {
+ 495:anim_death.c  ****       reaper_x = 256; //Stop drawing the reaper, already dead. :)
+ 496:anim_death.c  ****       initdisplay_death(inverted);
+ 497:anim_death.c  ****     }
+ 498:anim_death.c  ****   }
+ 499:anim_death.c  ****   old_border_tick = border_tick;
+ 500:anim_death.c  ****   old_seconds = time_s;
+ 501:anim_death.c  ****   redraw_digits = 0;
+ 502:anim_death.c  **** }
+ 503:anim_death.c  **** 
+ 504:anim_death.c  **** #define DIGIT_WIDTH_DEATH 76
+ 505:anim_death.c  **** #define DIGIT_HEIGHT_DEATH 64
+ 506:anim_death.c  **** 
+ 507:anim_death.c  **** void death_bitblit_ram(int16_t x_origin, uint8_t y_origin, uint8_t width, uint8_t *bitmap_p, uint16
+ 1112               	.LM91:
+ 1113               	.LFBB3:
+ 1114 0774 6F92      		push r6
+ 1115 0776 7F92      		push r7
+ 1116 0778 8F92      		push r8
+ 1117 077a 9F92      		push r9
+ 1118 077c AF92      		push r10
+ 1119 077e BF92      		push r11
+ 1120 0780 CF92      		push r12
+ 1121 0782 DF92      		push r13
+ 1122 0784 EF92      		push r14
+ 1123 0786 FF92      		push r15
+ 1124 0788 0F93      		push r16
+ 1125 078a 1F93      		push r17
+ 1126 078c CF93      		push r28
+ 1127 078e DF93      		push r29
+ 1128               	/* prologue: function */
+ 1129               	/* frame size = 0 */
+ 1130 0790 6C01      		movw r12,r24
+ 1131 0792 B42E      		mov r11,r20
+ 1132 0794 3901      		movw r6,r18
+ 1133 0796 4801      		movw r8,r16
+ 1134 0798 AE2C      		mov r10,r14
+ 508:anim_death.c  ****   uint8_t xx,y, p;
+ 509:anim_death.c  ****   int16_t x;
+ 510:anim_death.c  **** 
+ 511:anim_death.c  ****   if((x_origin+width+1)<0)
+ 1136               	.LM92:
+ 1137 079a 840F      		add r24,r20
+ 1138 079c 911D      		adc r25,__zero_reg__
+ 1139 079e 8F5F      		subi r24,lo8(-1)
+ 1140 07a0 9F4F      		sbci r25,hi8(-1)
+ 1141 07a2 04F4      		brge .+2
+ 1142 07a4 00C0      		rjmp .L87
+ 1143               	.LBB2:
+ 512:anim_death.c  ****     return;
+ 513:anim_death.c  ****   for (uint16_t i = 0; i<size; i++) {
+ 514:anim_death.c  ****     p = bitmap_p[i];
+ 515:anim_death.c  ****     
+ 516:anim_death.c  ****     x = i % width;
+ 517:anim_death.c  ****     if (x == 0) {
+ 518:anim_death.c  ****       while((x+x_origin)<0)
+ 519:anim_death.c  ****       {
+ 520:anim_death.c  ****         i++;
+ 521:anim_death.c  ****         p = bitmap_p[i];
+ 522:anim_death.c  ****         x = i % width;
+ 523:anim_death.c  ****       }
+ 524:anim_death.c  ****       xx = x+x_origin;
+ 525:anim_death.c  ****       y = i / width;
+ 526:anim_death.c  ****       //if(((x+x_origin)>=0) && ((x+x_origin)<128))
+ 527:anim_death.c  ****       glcdSetAddress(xx, (y_origin/8)+y);
+ 1145               	.LM93:
+ 1146 07a6 E62E      		mov r14,r22
+ 1147 07a8 E694      		lsr r14
+ 1148 07aa E694      		lsr r14
+ 1149 07ac E694      		lsr r14
+ 1150 07ae 00E0      		ldi r16,lo8(0)
+ 1151 07b0 10E0      		ldi r17,hi8(0)
+ 1152 07b2 00C0      		rjmp .L80
+ 1153               	.L86:
+ 515:anim_death.c  ****     p = bitmap_p[i];
+ 1155               	.LM94:
+ 1156 07b4 F301      		movw r30,r6
+ 1157 07b6 E00F      		add r30,r16
+ 1158 07b8 F11F      		adc r31,r17
+ 1159 07ba F080      		ld r15,Z
+ 517:anim_death.c  ****     x = i % width;
+ 1161               	.LM95:
+ 1162 07bc C801      		movw r24,r16
+ 1163 07be 6B2D      		mov r22,r11
+ 1164 07c0 70E0      		ldi r23,lo8(0)
+ 1165 07c2 0E94 0000 		call __udivmodhi4
+ 1166 07c6 EC01      		movw r28,r24
+ 518:anim_death.c  ****     if (x == 0) {
+ 1168               	.LM96:
+ 1169 07c8 0097      		sbiw r24,0
+ 1170 07ca 01F4      		brne .L81
+ 1171 07cc 00C0      		rjmp .L82
+ 1172               	.L83:
+ 521:anim_death.c  ****         i++;
+ 1174               	.LM97:
+ 1175 07ce 0F5F      		subi r16,lo8(-(1))
+ 1176 07d0 1F4F      		sbci r17,hi8(-(1))
+ 522:anim_death.c  ****         p = bitmap_p[i];
+ 1178               	.LM98:
+ 1179 07d2 F080      		ld r15,Z
+ 523:anim_death.c  ****         x = i % width;
+ 1181               	.LM99:
+ 1182 07d4 C801      		movw r24,r16
+ 1183 07d6 6B2D      		mov r22,r11
+ 1184 07d8 70E0      		ldi r23,lo8(0)
+ 1185 07da 0E94 0000 		call __udivmodhi4
+ 1186 07de EC01      		movw r28,r24
+ 1187               	.L82:
+ 1188 07e0 3196      		adiw r30,1
+ 519:anim_death.c  ****       while((x+x_origin)<0)
+ 1190               	.LM100:
+ 1191 07e2 CE01      		movw r24,r28
+ 1192 07e4 8C0D      		add r24,r12
+ 1193 07e6 9D1D      		adc r25,r13
+ 1194 07e8 97FD      		sbrc r25,7
+ 1195 07ea 00C0      		rjmp .L83
+ 1197               	.LM101:
+ 1198 07ec C801      		movw r24,r16
+ 1199 07ee 6B2D      		mov r22,r11
+ 1200 07f0 70E0      		ldi r23,lo8(0)
+ 1201 07f2 0E94 0000 		call __udivmodhi4
+ 1202 07f6 6E0D      		add r22,r14
+ 1203 07f8 9E01      		movw r18,r28
+ 1204 07fa 2C0D      		add r18,r12
+ 1205 07fc 822F      		mov r24,r18
+ 1206 07fe 0E94 0000 		call glcdSetAddress
+ 1207               	.L81:
+ 528:anim_death.c  ****       //else
+ 529:anim_death.c  ****       //   continue;
+ 530:anim_death.c  ****     }
+ 531:anim_death.c  ****     if((x+x_origin)<128)
+ 1209               	.LM102:
+ 1210 0802 CC0D      		add r28,r12
+ 1211 0804 DD1D      		adc r29,r13
+ 1212 0806 C038      		cpi r28,128
+ 1213 0808 D105      		cpc r29,__zero_reg__
+ 1214 080a 04F4      		brge .L84
+ 532:anim_death.c  ****     {
+ 533:anim_death.c  ****       if (inverted) 
+ 1216               	.LM103:
+ 1217 080c AA20      		tst r10
+ 1218 080e 01F0      		breq .L85
+ 534:anim_death.c  ****         glcdDataWrite(~p);  
+ 1220               	.LM104:
+ 1221 0810 8F2D      		mov r24,r15
+ 1222 0812 8095      		com r24
+ 1223 0814 00C0      		rjmp .L88
+ 1224               	.L85:
+ 535:anim_death.c  ****       else 
+ 536:anim_death.c  ****         glcdDataWrite(p);  
+ 1226               	.LM105:
+ 1227 0816 8F2D      		mov r24,r15
+ 1228               	.L88:
+ 1229 0818 0E94 0000 		call glcdDataWrite
+ 1230               	.L84:
+ 514:anim_death.c  ****   for (uint16_t i = 0; i<size; i++) {
+ 1232               	.LM106:
+ 1233 081c 0F5F      		subi r16,lo8(-(1))
+ 1234 081e 1F4F      		sbci r17,hi8(-(1))
+ 1235               	.L80:
+ 1236 0820 0815      		cp r16,r8
+ 1237 0822 1905      		cpc r17,r9
+ 1238 0824 00F0      		brlo .L86
+ 1239               	.L87:
+ 1240               	/* epilogue start */
+ 1241               	.LBE2:
+ 537:anim_death.c  ****     }
+ 538:anim_death.c  ****   }
+ 539:anim_death.c  **** }
+ 1243               	.LM107:
+ 1244 0826 DF91      		pop r29
+ 1245 0828 CF91      		pop r28
+ 1246 082a 1F91      		pop r17
+ 1247 082c 0F91      		pop r16
+ 1248 082e FF90      		pop r15
+ 1249 0830 EF90      		pop r14
+ 1250 0832 DF90      		pop r13
+ 1251 0834 CF90      		pop r12
+ 1252 0836 BF90      		pop r11
+ 1253 0838 AF90      		pop r10
+ 1254 083a 9F90      		pop r9
+ 1255 083c 8F90      		pop r8
+ 1256 083e 7F90      		pop r7
+ 1257 0840 6F90      		pop r6
+ 1258 0842 0895      		ret
+ 1267               	.Lscope3:
+ 1269               		.stabd	78,0,0
+ 1277               	.global	death_blitsegs_rom
+ 1279               	death_blitsegs_rom:
+ 1280               		.stabd	46,0,0
+ 540:anim_death.c  **** 
+ 541:anim_death.c  **** // number of segments to expect
+ 542:anim_death.c  **** #define SEGMENTS 2
+ 543:anim_death.c  **** 
+ 544:anim_death.c  **** void death_blitsegs_rom(int16_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t width, uint8_t 
+ 1282               	.LM108:
+ 1283               	.LFBB4:
+ 1284 0844 2F92      		push r2
+ 1285 0846 3F92      		push r3
+ 1286 0848 4F92      		push r4
+ 1287 084a 5F92      		push r5
+ 1288 084c 6F92      		push r6
+ 1289 084e 7F92      		push r7
+ 1290 0850 8F92      		push r8
+ 1291 0852 9F92      		push r9
+ 1292 0854 AF92      		push r10
+ 1293 0856 BF92      		push r11
+ 1294 0858 CF92      		push r12
+ 1295 085a DF92      		push r13
+ 1296 085c EF92      		push r14
+ 1297 085e FF92      		push r15
+ 1298 0860 0F93      		push r16
+ 1299 0862 1F93      		push r17
+ 1300 0864 DF93      		push r29
+ 1301 0866 CF93      		push r28
+ 1302 0868 CDB7      		in r28,__SP_L__
+ 1303 086a DEB7      		in r29,__SP_H__
+ 1304 086c C156      		subi r28,lo8(-(-609))
+ 1305 086e D240      		sbci r29,hi8(-(-609))
+ 1306 0870 0FB6      		in __tmp_reg__,__SREG__
+ 1307 0872 F894      		cli
+ 1308 0874 DEBF      		out __SP_H__,r29
+ 1309 0876 0FBE      		out __SREG__,__tmp_reg__
+ 1310 0878 CDBF      		out __SP_L__,r28
+ 1311               	/* prologue: function */
+ 1312               	/* frame size = 609 */
+ 1313 087a 6C01      		movw r12,r24
+ 1314 087c 362E      		mov r3,r22
+ 1315 087e 4A01      		movw r8,r20
+ 1316 0880 B22E      		mov r11,r18
+ 1317 0882 202E      		mov r2,r16
+ 1318 0884 CF59      		subi r28,lo8(-609)
+ 1319 0886 DD4F      		sbci r29,hi8(-609)
+ 1320 0888 E882      		st Y,r14
+ 1321 088a C156      		subi r28,lo8(609)
+ 1322 088c D240      		sbci r29,hi8(609)
+ 545:anim_death.c  ****   uint8_t bitmap[DIGIT_WIDTH_DEATH * DIGIT_HEIGHT_DEATH / 8] = {0};
+ 546:anim_death.c  ****   
+ 547:anim_death.c  ****   if(width > DIGIT_WIDTH_DEATH)
+ 1324               	.LM109:
+ 1325 088e 2CE4      		ldi r18,lo8(76)
+ 1326 0890 2B15      		cp r18,r11
+ 1327 0892 00F4      		brsh .+2
+ 1328 0894 00C0      		rjmp .L97
+ 548:anim_death.c  ****   	  return;
+ 549:anim_death.c  ****   if((x_origin + width) < 0)
+ 1330               	.LM110:
+ 1331 0896 0B2D      		mov r16,r11
+ 1332 0898 10E0      		ldi r17,lo8(0)
+ 1333 089a C801      		movw r24,r16
+ 1334 089c 8C0D      		add r24,r12
+ 1335 089e 9D1D      		adc r25,r13
+ 1336 08a0 97FD      		sbrc r25,7
+ 1337 08a2 00C0      		rjmp .L97
+ 550:anim_death.c  ****     return;
+ 551:anim_death.c  ****   if(x_origin >= 128)
+ 1339               	.LM111:
+ 1340 08a4 30E8      		ldi r19,lo8(128)
+ 1341 08a6 C316      		cp r12,r19
+ 1342 08a8 D104      		cpc r13,__zero_reg__
+ 1343 08aa 04F0      		brlt .+2
+ 1344 08ac 00C0      		rjmp .L97
+ 552:anim_death.c  ****     return;
+ 553:anim_death.c  ****   if((y_origin + DIGIT_HEIGHT_DEATH) < 0)
+ 554:anim_death.c  ****     return;
+ 555:anim_death.c  ****   if(y_origin >= 64)
+ 1346               	.LM112:
+ 1347 08ae 8FE3      		ldi r24,lo8(63)
+ 1348 08b0 8617      		cp r24,r22
+ 1349 08b2 00F4      		brsh .+2
+ 1350 08b4 00C0      		rjmp .L97
+ 546:anim_death.c  ****   uint8_t bitmap[DIGIT_WIDTH_DEATH * DIGIT_HEIGHT_DEATH / 8] = {0};
+ 1352               	.LM113:
+ 1353 08b6 FE01      		movw r30,r28
+ 1354 08b8 3196      		adiw r30,1
+ 1355 08ba 80E6      		ldi r24,lo8(608)
+ 1356 08bc 92E0      		ldi r25,hi8(608)
+ 1357 08be DF01      		movw r26,r30
+ 1358 08c0 9C01      		movw r18,r24
+ 1359 08c2 1D92      		st X+,__zero_reg__
+ 1360 08c4 2150      		subi r18,1
+ 1361 08c6 3040      		sbci r19,0
+ 1362 08c8 01F4      		brne .-8
+ 1363 08ca 20E0      		ldi r18,lo8(0)
+ 1364 08cc 30E0      		ldi r19,hi8(0)
+ 1365 08ce 40E0      		ldi r20,lo8(0)
+ 1366               	.LBB3:
+ 1367               	.LBB4:
+ 1368               	.LBB5:
+ 556:anim_death.c  ****     return;
+ 557:anim_death.c  ****   
+ 558:anim_death.c  ****   uint16_t pointer=0;
+ 559:anim_death.c  ****   for (uint8_t line = 0; line<height; line++) {
+ 560:anim_death.c  ****     uint8_t count = pgm_read_byte(bitmap_p+pointer);
+ 561:anim_death.c  ****     pointer++;
+ 562:anim_death.c  ****     while(count--) {
+ 563:anim_death.c  ****       uint8_t start = pgm_read_byte(bitmap_p+pointer);pointer++;
+ 564:anim_death.c  ****       uint8_t stop = pgm_read_byte(bitmap_p+pointer);pointer++;
+ 565:anim_death.c  ****     
+ 566:anim_death.c  ****       while (start <= stop) {
+ 567:anim_death.c  ****         bitmap[start + (line/8)*width ] |= _BV(line%8);
+ 1370               	.LM114:
+ 1371 08d0 61E0      		ldi r22,lo8(1)
+ 1372 08d2 462E      		mov r4,r22
+ 1373 08d4 512C      		mov r5,__zero_reg__
+ 1374 08d6 3F01      		movw r6,r30
+ 1375 08d8 00C0      		rjmp .L91
+ 1376               	.L96:
+ 1377               	.LBE5:
+ 1378               	.LBB8:
+ 561:anim_death.c  ****     uint8_t count = pgm_read_byte(bitmap_p+pointer);
+ 1380               	.LM115:
+ 1381 08da F401      		movw r30,r8
+ 1382 08dc E20F      		add r30,r18
+ 1383 08de F31F      		adc r31,r19
+ 1384               	/* #APP */
+ 1385               	 ;  561 "anim_death.c" 1
+ 1386 08e0 6491      		lpm r22, Z
+ 1387               		
+ 1388               	 ;  0 "" 2
+ 1389               	/* #NOAPP */
+ 1390               	.LBE8:
+ 1391               	.LBB9:
+ 1393               	.LM116:
+ 1394 08e2 842F      		mov r24,r20
+ 1395 08e4 8695      		lsr r24
+ 1396 08e6 8695      		lsr r24
+ 1397 08e8 8695      		lsr r24
+ 1398 08ea 90E0      		ldi r25,lo8(0)
+ 1399 08ec 809F      		mul r24,r16
+ 1400 08ee 7001      		movw r14,r0
+ 1401 08f0 819F      		mul r24,r17
+ 1402 08f2 F00C      		add r15,r0
+ 1403 08f4 909F      		mul r25,r16
+ 1404 08f6 F00C      		add r15,r0
+ 1405 08f8 1124      		clr r1
+ 1406 08fa 842F      		mov r24,r20
+ 1407 08fc 8770      		andi r24,lo8(7)
+ 1408 08fe A42C      		mov r10,r4
+ 1409 0900 00C0      		rjmp 2f
+ 1410 0902 AA0C      	1:	lsl r10
+ 1411 0904 8A95      	2:	dec r24
+ 1412 0906 02F4      		brpl 1b
+ 1413 0908 2F5F      		subi r18,lo8(-(1))
+ 1414 090a 3F4F      		sbci r19,hi8(-(1))
+ 1415 090c D401      		movw r26,r8
+ 1416 090e A20F      		add r26,r18
+ 1417 0910 B31F      		adc r27,r19
+ 1418 0912 2150      		subi r18,lo8(-(-1))
+ 1419 0914 3040      		sbci r19,hi8(-(-1))
+ 1420 0916 762F      		mov r23,r22
+ 1421 0918 00C0      		rjmp .L92
+ 1422               	.L95:
+ 1423               	.LBB6:
+ 564:anim_death.c  ****       uint8_t start = pgm_read_byte(bitmap_p+pointer);pointer++;
+ 1425               	.LM117:
+ 1426 091a FD01      		movw r30,r26
+ 1427               	/* #APP */
+ 1428               	 ;  564 "anim_death.c" 1
+ 1429 091c 8491      		lpm r24, Z
+ 1430               		
+ 1431               	 ;  0 "" 2
+ 1432               	/* #NOAPP */
+ 1433               	.LBE6:
+ 1434               	.LBB7:
+ 565:anim_death.c  ****       uint8_t stop = pgm_read_byte(bitmap_p+pointer);pointer++;
+ 1436               	.LM118:
+ 1437 091e 1196      		adiw r26,1
+ 1438 0920 FD01      		movw r30,r26
+ 1439               	/* #APP */
+ 1440               	 ;  565 "anim_death.c" 1
+ 1441 0922 5491      		lpm r21, Z
+ 1442               		
+ 1443               	 ;  0 "" 2
+ 1444               	/* #NOAPP */
+ 1445 0924 1197      		sbiw r26,1
+ 1446 0926 982F      		mov r25,r24
+ 1447 0928 00C0      		rjmp .L93
+ 1448               	.L94:
+ 1449               	.LBE7:
+ 1451               	.LM119:
+ 1452 092a F701      		movw r30,r14
+ 1453 092c E90F      		add r30,r25
+ 1454 092e F11D      		adc r31,__zero_reg__
+ 1455 0930 E60D      		add r30,r6
+ 1456 0932 F71D      		adc r31,r7
+ 1457 0934 8081      		ld r24,Z
+ 1458 0936 8A29      		or r24,r10
+ 1459 0938 8083      		st Z,r24
+ 568:anim_death.c  ****         start++;
+ 1461               	.LM120:
+ 1462 093a 9F5F      		subi r25,lo8(-(1))
+ 1463               	.L93:
+ 567:anim_death.c  ****       while (start <= stop) {
+ 1465               	.LM121:
+ 1466 093c 5917      		cp r21,r25
+ 1467 093e 00F4      		brsh .L94
+ 1468 0940 7150      		subi r23,lo8(-(-1))
+ 1469 0942 1296      		adiw r26,2
+ 1470               	.L92:
+ 1471               	.LBE9:
+ 563:anim_death.c  ****     while(count--) {
+ 1473               	.LM122:
+ 1474 0944 7723      		tst r23
+ 1475 0946 01F4      		brne .L95
+ 562:anim_death.c  ****     pointer++;
+ 1477               	.LM123:
+ 1478 0948 862F      		mov r24,r22
+ 1479 094a 90E0      		ldi r25,lo8(0)
+ 1480 094c 880F      		lsl r24
+ 1481 094e 991F      		rol r25
+ 1482 0950 0196      		adiw r24,1
+ 1483 0952 280F      		add r18,r24
+ 1484 0954 391F      		adc r19,r25
+ 1485               	.LBE4:
+ 560:anim_death.c  ****   for (uint8_t line = 0; line<height; line++) {
+ 1487               	.LM124:
+ 1488 0956 4F5F      		subi r20,lo8(-(1))
+ 1489               	.L91:
+ 1490 0958 4215      		cp r20,r2
+ 1491 095a 00F4      		brsh .+2
+ 1492 095c 00C0      		rjmp .L96
+ 1493               	.LBE3:
+ 569:anim_death.c  ****       }
+ 570:anim_death.c  ****     }
+ 571:anim_death.c  ****   }
+ 572:anim_death.c  ****   death_bitblit_ram(x_origin, y_origin, width, bitmap, DIGIT_HEIGHT_DEATH*width/8, inverted);
+ 1495               	.LM125:
+ 1496 095e 83E0      		ldi r24,3
+ 1497 0960 000F      	1:	lsl r16
+ 1498 0962 111F      		rol r17
+ 1499 0964 8A95      		dec r24
+ 1500 0966 01F4      		brne 1b
+ 1501 0968 C601      		movw r24,r12
+ 1502 096a 632D      		mov r22,r3
+ 1503 096c 4B2D      		mov r20,r11
+ 1504 096e 9E01      		movw r18,r28
+ 1505 0970 2F5F      		subi r18,lo8(-(1))
+ 1506 0972 3F4F      		sbci r19,hi8(-(1))
+ 1507 0974 CF59      		subi r28,lo8(-609)
+ 1508 0976 DD4F      		sbci r29,hi8(-609)
+ 1509 0978 E880      		ld r14,Y
+ 1510 097a C156      		subi r28,lo8(609)
+ 1511 097c D240      		sbci r29,hi8(609)
+ 1512 097e 0E94 0000 		call death_bitblit_ram
+ 1513               	.L97:
+ 1514               	/* epilogue start */
+ 573:anim_death.c  **** }
+ 1516               	.LM126:
+ 1517 0982 CF59      		subi r28,lo8(-(609))
+ 1518 0984 DD4F      		sbci r29,hi8(-(609))
+ 1519 0986 0FB6      		in __tmp_reg__,__SREG__
+ 1520 0988 F894      		cli
+ 1521 098a DEBF      		out __SP_H__,r29
+ 1522 098c 0FBE      		out __SREG__,__tmp_reg__
+ 1523 098e CDBF      		out __SP_L__,r28
+ 1524 0990 CF91      		pop r28
+ 1525 0992 DF91      		pop r29
+ 1526 0994 1F91      		pop r17
+ 1527 0996 0F91      		pop r16
+ 1528 0998 FF90      		pop r15
+ 1529 099a EF90      		pop r14
+ 1530 099c DF90      		pop r13
+ 1531 099e CF90      		pop r12
+ 1532 09a0 BF90      		pop r11
+ 1533 09a2 AF90      		pop r10
+ 1534 09a4 9F90      		pop r9
+ 1535 09a6 8F90      		pop r8
+ 1536 09a8 7F90      		pop r7
+ 1537 09aa 6F90      		pop r6
+ 1538 09ac 5F90      		pop r5
+ 1539 09ae 4F90      		pop r4
+ 1540 09b0 3F90      		pop r3
+ 1541 09b2 2F90      		pop r2
+ 1542 09b4 0895      		ret
+ 1566               	.Lscope4:
+ 1568               		.stabd	78,0,0
+ 1570               	.global	next_border
+ 1572               	next_border:
+ 1573               		.stabd	46,0,0
+ 411:anim_death.c  **** {
+ 1575               	.LM127:
+ 1576               	.LFBB5:
+ 1577 09b6 0F93      		push r16
+ 1578               	/* prologue: function */
+ 1579               	/* frame size = 0 */
+ 412:anim_death.c  ****   if(!border_on)
+ 1581               	.LM128:
+ 1582 09b8 8091 0000 		lds r24,border_on
+ 1583 09bc 8823      		tst r24
+ 1584 09be 01F4      		brne .+2
+ 1585 09c0 00C0      		rjmp .L111
+ 414:anim_death.c  ****   glcdFillRectangle(border_x, border_y, 2, 2, (border_state<2));
+ 1587               	.LM129:
+ 1588 09c2 00E0      		ldi r16,lo8(0)
+ 1589 09c4 8091 0000 		lds r24,border_state
+ 1590 09c8 8230      		cpi r24,lo8(2)
+ 1591 09ca 00F4      		brsh .L100
+ 1592 09cc 01E0      		ldi r16,lo8(1)
+ 1593               	.L100:
+ 1594 09ce 8091 0000 		lds r24,border_x
+ 1595 09d2 6091 0000 		lds r22,border_y
+ 1596 09d6 42E0      		ldi r20,lo8(2)
+ 1597 09d8 22E0      		ldi r18,lo8(2)
+ 1598 09da 0E94 0000 		call glcdFillRectangle
+ 415:anim_death.c  ****   if(++border_state >= 4) border_state = 0;
+ 1600               	.LM130:
+ 1601 09de 8091 0000 		lds r24,border_state
+ 1602 09e2 8F5F      		subi r24,lo8(-(1))
+ 1603 09e4 8093 0000 		sts border_state,r24
+ 1604 09e8 8430      		cpi r24,lo8(4)
+ 1605 09ea 00F0      		brlo .L101
+ 1606 09ec 1092 0000 		sts border_state,__zero_reg__
+ 1607               	.L101:
+ 416:anim_death.c  ****   if((border_x == 0) && (border_y == 0))
+ 1609               	.LM131:
+ 1610 09f0 9091 0000 		lds r25,border_x
+ 1611 09f4 9923      		tst r25
+ 1612 09f6 01F4      		brne .L102
+ 1613 09f8 8091 0000 		lds r24,border_y
+ 1614 09fc 8823      		tst r24
+ 1615 09fe 01F4      		brne .L103
+ 418:anim_death.c  ****     border_state += 2;
+ 1617               	.LM132:
+ 1618 0a00 8091 0000 		lds r24,border_state
+ 1619 0a04 8E5F      		subi r24,lo8(-(2))
+ 1620 0a06 8093 0000 		sts border_state,r24
+ 419:anim_death.c  ****     if(border_state >= 4) border_state = 0;
+ 1622               	.LM133:
+ 1623 0a0a 8430      		cpi r24,lo8(4)
+ 1624 0a0c 00F0      		brlo .L104
+ 1625 0a0e 1092 0000 		sts border_state,__zero_reg__
+ 1626               	.L104:
+ 420:anim_death.c  ****     border_y+=2;
+ 1628               	.LM134:
+ 1629 0a12 82E0      		ldi r24,lo8(2)
+ 1630 0a14 00C0      		rjmp .L112
+ 1631               	.L103:
+ 422:anim_death.c  ****   else if ((border_x == 0) && (border_y < 62))
+ 1633               	.LM135:
+ 1634 0a16 8E33      		cpi r24,lo8(62)
+ 1635 0a18 00F4      		brsh .L105
+ 423:anim_death.c  ****     border_y+=2;
+ 1637               	.LM136:
+ 1638 0a1a 8E5F      		subi r24,lo8(-(2))
+ 1639               	.L112:
+ 1640 0a1c 8093 0000 		sts border_y,r24
+ 1641 0a20 00C0      		rjmp .L111
+ 1642               	.L105:
+ 424:anim_death.c  ****   else if ((border_x == 0) && (border_y == 62))
+ 1644               	.LM137:
+ 1645 0a22 8E33      		cpi r24,lo8(62)
+ 1646 0a24 01F4      		brne .L106
+ 425:anim_death.c  ****     border_x+=2;
+ 1648               	.LM138:
+ 1649 0a26 82E0      		ldi r24,lo8(2)
+ 1650 0a28 00C0      		rjmp .L113
+ 1651               	.L102:
+ 426:anim_death.c  ****   else if ((border_x < 126) && (border_y == 62))
+ 1653               	.LM139:
+ 1654 0a2a 9E37      		cpi r25,lo8(126)
+ 1655 0a2c 00F4      		brsh .L107
+ 1656               	.L106:
+ 1657 0a2e 8091 0000 		lds r24,border_y
+ 1658 0a32 8E33      		cpi r24,lo8(62)
+ 1659 0a34 01F4      		brne .L107
+ 427:anim_death.c  ****     border_x+=2;
+ 1661               	.LM140:
+ 1662 0a36 9E5F      		subi r25,lo8(-(2))
+ 1663 0a38 00C0      		rjmp .L114
+ 1664               	.L107:
+ 428:anim_death.c  ****   else if ((border_x == 126) && (border_y == 62))
+ 1666               	.LM141:
+ 1667 0a3a 9E37      		cpi r25,lo8(126)
+ 1668 0a3c 01F4      		brne .L108
+ 1669 0a3e 8091 0000 		lds r24,border_y
+ 1670 0a42 8E33      		cpi r24,lo8(62)
+ 1671 0a44 01F4      		brne .L109
+ 429:anim_death.c  ****     border_y-=2;
+ 1673               	.LM142:
+ 1674 0a46 8CE3      		ldi r24,lo8(60)
+ 1675 0a48 00C0      		rjmp .L112
+ 1676               	.L109:
+ 430:anim_death.c  ****   else if ((border_x == 126) && (border_y > 0))
+ 1678               	.LM143:
+ 1679 0a4a 8823      		tst r24
+ 1680 0a4c 01F0      		breq .L110
+ 431:anim_death.c  ****     border_y-=2;
+ 1682               	.LM144:
+ 1683 0a4e 8250      		subi r24,lo8(-(-2))
+ 1684 0a50 00C0      		rjmp .L112
+ 1685               	.L110:
+ 433:anim_death.c  ****     border_x-=2;
+ 1687               	.LM145:
+ 1688 0a52 8CE7      		ldi r24,lo8(124)
+ 1689               	.L113:
+ 1690 0a54 8093 0000 		sts border_x,r24
+ 1691 0a58 00C0      		rjmp .L111
+ 1692               	.L108:
+ 434:anim_death.c  ****   else if ((border_x > 0) && (border_y == 0))
+ 1694               	.LM146:
+ 1695 0a5a 9923      		tst r25
+ 1696 0a5c 01F0      		breq .L111
+ 1697 0a5e 8091 0000 		lds r24,border_y
+ 1698 0a62 8823      		tst r24
+ 1699 0a64 01F4      		brne .L111
+ 435:anim_death.c  ****     border_x-=2;
+ 1701               	.LM147:
+ 1702 0a66 9250      		subi r25,lo8(-(-2))
+ 1703               	.L114:
+ 1704 0a68 9093 0000 		sts border_x,r25
+ 1705               	.L111:
+ 1706               	/* epilogue start */
+ 436:anim_death.c  **** }
+ 1708               	.LM148:
+ 1709 0a6c 0F91      		pop r16
+ 1710 0a6e 0895      		ret
+ 1712               	.Lscope5:
+ 1714               		.stabd	78,0,0
+ 1719               	.global	render_image
+ 1721               	render_image:
+ 1722               		.stabd	46,0,0
+  66:anim_death.c  **** {
+ 1724               	.LM149:
+ 1725               	.LFBB6:
+ 1726 0a70 EF92      		push r14
+ 1727 0a72 0F93      		push r16
+ 1728 0a74 1F93      		push r17
+ 1729 0a76 CF93      		push r28
+ 1730 0a78 DF93      		push r29
+ 1731               	/* prologue: function */
+ 1732               	/* frame size = 0 */
+ 1733 0a7a EB01      		movw r28,r22
+ 1734 0a7c 142F      		mov r17,r20
+  67:anim_death.c  ****   switch(image)
+ 1736               	.LM150:
+ 1737 0a7e 8230      		cpi r24,lo8(2)
+ 1738 0a80 01F0      		breq .L118
+ 1739 0a82 8330      		cpi r24,lo8(3)
+ 1740 0a84 01F0      		breq .L119
+ 1741 0a86 8130      		cpi r24,lo8(1)
+ 1742 0a88 01F0      		breq .L117
+  71:anim_death.c  ****       if((x > -76) && (x < 128))
+ 1744               	.LM151:
+ 1745 0a8a CB01      		movw r24,r22
+ 1746 0a8c 855B      		subi r24,lo8(-(75))
+ 1747 0a8e 9F4F      		sbci r25,hi8(-(75))
+ 1748 0a90 8B3C      		cpi r24,203
+ 1749 0a92 9105      		cpc r25,__zero_reg__
+ 1750 0a94 00F0      		brlo .+2
+ 1751 0a96 00C0      		rjmp .L127
+  72:anim_death.c  ****         death_blitsegs_rom(x+0,0,skull0_p, 76, 64, inverted);
+ 1753               	.LM152:
+ 1754 0a98 CB01      		movw r24,r22
+ 1755 0a9a 60E0      		ldi r22,lo8(0)
+ 1756 0a9c 40E0      		ldi r20,lo8(skull_on_white)
+ 1757 0a9e 50E0      		ldi r21,hi8(skull_on_white)
+ 1758 0aa0 2CE4      		ldi r18,lo8(76)
+ 1759 0aa2 00C0      		rjmp .L128
+ 1760               	.L117:
+  75:anim_death.c  ****       if((x > -42) && (x < 128))
+ 1762               	.LM153:
+ 1763 0aa4 CB01      		movw r24,r22
+ 1764 0aa6 8996      		adiw r24,41
+ 1765 0aa8 893A      		cpi r24,169
+ 1766 0aaa 9105      		cpc r25,__zero_reg__
+ 1767 0aac 00F0      		brlo .+2
+ 1768 0aae 00C0      		rjmp .L127
+  76:anim_death.c  ****         death_blitsegs_rom(x+0,0,reaper0_p, 42, 64, inverted);
+ 1770               	.LM154:
+ 1771 0ab0 CB01      		movw r24,r22
+ 1772 0ab2 60E0      		ldi r22,lo8(0)
+ 1773 0ab4 40E0      		ldi r20,lo8(reaper_on_white)
+ 1774 0ab6 50E0      		ldi r21,hi8(reaper_on_white)
+ 1775 0ab8 2AE2      		ldi r18,lo8(42)
+ 1776               	.L128:
+ 1777 0aba 00E4      		ldi r16,lo8(64)
+ 1778 0abc E12E      		mov r14,r17
+ 1779 0abe 0E94 0000 		call death_blitsegs_rom
+ 1780 0ac2 00C0      		rjmp .L127
+ 1781               	.L118:
+  79:anim_death.c  ****       if((x > -56) && (x < 128))
+ 1783               	.LM155:
+ 1784 0ac4 CB01      		movw r24,r22
+ 1785 0ac6 C796      		adiw r24,55
+ 1786 0ac8 873B      		cpi r24,183
+ 1787 0aca 9105      		cpc r25,__zero_reg__
+ 1788 0acc 00F0      		brlo .+2
+ 1789 0ace 00C0      		rjmp .L127
+  80:anim_death.c  ****         death_blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
+ 1791               	.LM156:
+ 1792 0ad0 CB01      		movw r24,r22
+ 1793 0ad2 60E0      		ldi r22,lo8(0)
+ 1794 0ad4 40E0      		ldi r20,lo8(rip_on_white)
+ 1795 0ad6 50E0      		ldi r21,hi8(rip_on_white)
+ 1796 0ad8 28E3      		ldi r18,lo8(56)
+ 1797 0ada 00C0      		rjmp .L128
+ 1798               	.L119:
+  83:anim_death.c  ****       if((x > -56) && (x <= 36))
+ 1800               	.LM157:
+ 1801 0adc CB01      		movw r24,r22
+ 1802 0ade C796      		adiw r24,55
+ 1803 0ae0 8C35      		cpi r24,92
+ 1804 0ae2 9105      		cpc r25,__zero_reg__
+ 1805 0ae4 00F4      		brsh .L121
+  84:anim_death.c  ****         death_blitsegs_rom(x+0,0,rip0_p, 56, 64, inverted);
+ 1807               	.LM158:
+ 1808 0ae6 CB01      		movw r24,r22
+ 1809 0ae8 60E0      		ldi r22,lo8(0)
+ 1810 0aea 40E0      		ldi r20,lo8(rip_on_white)
+ 1811 0aec 50E0      		ldi r21,hi8(rip_on_white)
+ 1812 0aee 28E3      		ldi r18,lo8(56)
+ 1813 0af0 00E4      		ldi r16,lo8(64)
+ 1814 0af2 E12E      		mov r14,r17
+ 1815 0af4 0E94 0000 		call death_blitsegs_rom
+ 1816               	.L121:
+  85:anim_death.c  ****       if((x > -98) && (x < 212))
+ 1818               	.LM159:
+ 1819 0af8 CE01      		movw r24,r28
+ 1820 0afa 8F59      		subi r24,lo8(-(97))
+ 1821 0afc 9F4F      		sbci r25,hi8(-(97))
+ 1822 0afe 8553      		subi r24,lo8(309)
+ 1823 0b00 9140      		sbci r25,hi8(309)
+ 1824 0b02 00F4      		brsh .L122
+  86:anim_death.c  ****         death_blitsegs_rom(x+56,0,reaper0_p, 42, 64, inverted);
+ 1826               	.LM160:
+ 1827 0b04 CE01      		movw r24,r28
+ 1828 0b06 C896      		adiw r24,56
+ 1829 0b08 60E0      		ldi r22,lo8(0)
+ 1830 0b0a 40E0      		ldi r20,lo8(reaper_on_white)
+ 1831 0b0c 50E0      		ldi r21,hi8(reaper_on_white)
+ 1832 0b0e 2AE2      		ldi r18,lo8(42)
+ 1833 0b10 00E4      		ldi r16,lo8(64)
+ 1834 0b12 E12E      		mov r14,r17
+ 1835 0b14 0E94 0000 		call death_blitsegs_rom
+ 1836               	.L122:
+  87:anim_death.c  ****       if((x >= -30 ) && (x < -24)) {
+ 1838               	.LM161:
+ 1839 0b18 CE01      		movw r24,r28
+ 1840 0b1a 4E96      		adiw r24,30
+ 1841 0b1c 0697      		sbiw r24,6
+ 1842 0b1e 00F4      		brsh .L123
+  88:anim_death.c  ****         glcdSetAddress(30+x,5);
+ 1844               	.LM162:
+ 1845 0b20 9E01      		movw r18,r28
+ 1846 0b22 225E      		subi r18,lo8(-(30))
+ 1847 0b24 822F      		mov r24,r18
+ 1848 0b26 65E0      		ldi r22,lo8(5)
+ 1849 0b28 0E94 0000 		call glcdSetAddress
+ 1850 0b2c 00C0      		rjmp .L132
+ 1851               	.L123:
+  90:anim_death.c  ****       } else if ((x >= -24 ) && (x < -18)) {
+ 1853               	.LM163:
+ 1854 0b2e CE01      		movw r24,r28
+ 1855 0b30 4896      		adiw r24,24
+ 1856 0b32 0697      		sbiw r24,6
+ 1857 0b34 00F4      		brsh .L124
+  91:anim_death.c  ****         glcdSetAddress(24+x,5);
+ 1859               	.LM164:
+ 1860 0b36 9E01      		movw r18,r28
+ 1861 0b38 285E      		subi r18,lo8(-(24))
+ 1862 0b3a 822F      		mov r24,r18
+ 1863 0b3c 65E0      		ldi r22,lo8(5)
+ 1864 0b3e 0E94 0000 		call glcdSetAddress
+ 1865 0b42 00C0      		rjmp .L131
+ 1866               	.L124:
+  94:anim_death.c  ****       } else if ((x >= -18 ) && (x < -12)) {
+ 1868               	.LM165:
+ 1869 0b44 CE01      		movw r24,r28
+ 1870 0b46 4296      		adiw r24,18
+ 1871 0b48 0697      		sbiw r24,6
+ 1872 0b4a 00F4      		brsh .L125
+  95:anim_death.c  ****         glcdSetAddress(18+x,5);
+ 1874               	.LM166:
+ 1875 0b4c 9E01      		movw r18,r28
+ 1876 0b4e 2E5E      		subi r18,lo8(-(18))
+ 1877 0b50 822F      		mov r24,r18
+ 1878 0b52 65E0      		ldi r22,lo8(5)
+ 1879 0b54 0E94 0000 		call glcdSetAddress
+ 1880 0b58 00C0      		rjmp .L130
+ 1881               	.L125:
+  99:anim_death.c  ****       } else if ((x >= -12 ) && (x < 36)) {
+ 1883               	.LM167:
+ 1884 0b5a CE01      		movw r24,r28
+ 1885 0b5c 0C96      		adiw r24,12
+ 1886 0b5e C097      		sbiw r24,48
+ 1887 0b60 00F4      		brsh .L126
+ 100:anim_death.c  ****         glcdSetAddress(12+x,5);
+ 1889               	.LM168:
+ 1890 0b62 9E01      		movw r18,r28
+ 1891 0b64 245F      		subi r18,lo8(-(12))
+ 1892 0b66 822F      		mov r24,r18
+ 1893 0b68 00C0      		rjmp .L129
+ 1894               	.L126:
+ 105:anim_death.c  ****       } else if (x >= 36) {
+ 1896               	.LM169:
+ 1897 0b6a A497      		sbiw r28,36
+ 1898 0b6c 04F0      		brlt .L127
+ 106:anim_death.c  ****         glcdSetAddress(48,5);
+ 1900               	.LM170:
+ 1901 0b6e 80E3      		ldi r24,lo8(48)
+ 1902               	.L129:
+ 1903 0b70 65E0      		ldi r22,lo8(5)
+ 1904 0b72 0E94 0000 		call glcdSetAddress
+ 107:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))/10)+'0', inverted);
+ 1906               	.LM171:
+ 1907 0b76 8091 0000 		lds r24,death_y
+ 1908 0b7a 64E6      		ldi r22,lo8(100)
+ 1909 0b7c 0E94 0000 		call __udivmodqi4
+ 1910 0b80 90E0      		ldi r25,lo8(0)
+ 1911 0b82 4396      		adiw r24,19
+ 1912 0b84 6AE0      		ldi r22,lo8(10)
+ 1913 0b86 70E0      		ldi r23,hi8(10)
+ 1914 0b88 0E94 0000 		call __divmodhi4
+ 1915 0b8c 862F      		mov r24,r22
+ 1916 0b8e 805D      		subi r24,lo8(-(48))
+ 1917 0b90 612F      		mov r22,r17
+ 1918 0b92 0E94 0000 		call glcdWriteChar
+ 1919               	.L130:
+ 108:anim_death.c  ****         glcdWriteChar(((19+(death_y/100))%10)+'0', inverted);
+ 1921               	.LM172:
+ 1922 0b96 8091 0000 		lds r24,death_y
+ 1923 0b9a 64E6      		ldi r22,lo8(100)
+ 1924 0b9c 0E94 0000 		call __udivmodqi4
+ 1925 0ba0 90E0      		ldi r25,lo8(0)
+ 1926 0ba2 4396      		adiw r24,19
+ 1927 0ba4 6AE0      		ldi r22,lo8(10)
+ 1928 0ba6 70E0      		ldi r23,hi8(10)
+ 1929 0ba8 0E94 0000 		call __divmodhi4
+ 1930 0bac 805D      		subi r24,lo8(-(48))
+ 1931 0bae 612F      		mov r22,r17
+ 1932 0bb0 0E94 0000 		call glcdWriteChar
+ 1933               	.L131:
+ 109:anim_death.c  ****         glcdWriteChar(((death_y%100)/10)+'0', inverted);
+ 1935               	.LM173:
+ 1936 0bb4 8091 0000 		lds r24,death_y
+ 1937 0bb8 64E6      		ldi r22,lo8(100)
+ 1938 0bba 0E94 0000 		call __udivmodqi4
+ 1939 0bbe 892F      		mov r24,r25
+ 1940 0bc0 6AE0      		ldi r22,lo8(10)
+ 1941 0bc2 0E94 0000 		call __udivmodqi4
+ 1942 0bc6 805D      		subi r24,lo8(-(48))
+ 1943 0bc8 612F      		mov r22,r17
+ 1944 0bca 0E94 0000 		call glcdWriteChar
+ 1945               	.L132:
+ 110:anim_death.c  ****         glcdWriteChar((death_y%10)+'0', inverted);
+ 1947               	.LM174:
+ 1948 0bce 8091 0000 		lds r24,death_y
+ 1949 0bd2 6AE0      		ldi r22,lo8(10)
+ 1950 0bd4 0E94 0000 		call __udivmodqi4
+ 1951 0bd8 892F      		mov r24,r25
+ 1952 0bda 805D      		subi r24,lo8(-(48))
+ 1953 0bdc 612F      		mov r22,r17
+ 1954 0bde 0E94 0000 		call glcdWriteChar
+ 1955               	.L127:
+ 1956               	/* epilogue start */
+ 113:anim_death.c  **** }
+ 1958               	.LM175:
+ 1959 0be2 DF91      		pop r29
+ 1960 0be4 CF91      		pop r28
+ 1961 0be6 1F91      		pop r17
+ 1962 0be8 0F91      		pop r16
+ 1963 0bea EF90      		pop r14
+ 1964 0bec 0895      		ret
+ 1966               	.Lscope6:
+ 1968               		.stabd	78,0,0
+ 1971               	.global	initdisplay_death
+ 1973               	initdisplay_death:
+ 1974               		.stabd	46,0,0
+ 306:anim_death.c  **** void initdisplay_death(uint8_t inverted) {
+ 1976               	.LM176:
+ 1977               	.LFBB7:
+ 1978 0bee 0F93      		push r16
+ 1979 0bf0 1F93      		push r17
+ 1980 0bf2 CF93      		push r28
+ 1981 0bf4 DF93      		push r29
+ 1982               	/* prologue: function */
+ 1983               	/* frame size = 0 */
+ 1984 0bf6 182F      		mov r17,r24
+ 308:anim_death.c  ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, inverted);
+ 1986               	.LM177:
+ 1987 0bf8 80E0      		ldi r24,lo8(0)
+ 1988 0bfa 60E0      		ldi r22,lo8(0)
+ 1989 0bfc 40E8      		ldi r20,lo8(-128)
+ 1990 0bfe 20E4      		ldi r18,lo8(64)
+ 1991 0c00 012F      		mov r16,r17
+ 1992 0c02 0E94 0000 		call glcdFillRectangle
+ 309:anim_death.c  ****   death_setscore();
+ 1994               	.LM178:
+ 1995 0c06 0E94 0000 		call death_setscore
+ 310:anim_death.c  ****   prep_digits();
+ 1997               	.LM179:
+ 1998 0c0a 0E94 0000 		call prep_digits
+ 312:anim_death.c  ****   if(score_mode == SCORE_MODE_TIME)
+ 2000               	.LM180:
+ 2001 0c0e 8091 0000 		lds r24,score_mode
+ 2002 0c12 8823      		tst r24
+ 2003 0c14 01F4      		brne .L134
+ 314:anim_death.c  ****   	  display_digits[2] = 10;
+ 2005               	.LM181:
+ 2006 0c16 8AE0      		ldi r24,lo8(10)
+ 2007 0c18 8093 0000 		sts display_digits+2,r24
+ 315:anim_death.c  ****   	  if(time_format == TIME_24H)
+ 2009               	.LM182:
+ 2010 0c1c 8091 0000 		lds r24,time_format
+ 2011 0c20 8130      		cpi r24,lo8(1)
+ 2012 0c22 01F4      		brne .L134
+ 317:anim_death.c  ****   	  	  display_digits[6] = time_s / 10;
+ 2014               	.LM183:
+ 2015 0c24 8091 0000 		lds r24,time_s
+ 2016 0c28 6AE0      		ldi r22,lo8(10)
+ 2017 0c2a 0E94 0000 		call __udivmodqi4
+ 2018 0c2e 8093 0000 		sts display_digits+6,r24
+ 318:anim_death.c  ****   	  	  display_digits[7] = time_s % 10;
+ 2020               	.LM184:
+ 2021 0c32 8091 0000 		lds r24,time_s
+ 2022 0c36 0E94 0000 		call __udivmodqi4
+ 2023 0c3a 9093 0000 		sts display_digits+7,r25
+ 2024               	.L134:
+ 321:anim_death.c  ****   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+ 2026               	.LM185:
+ 2027 0c3e 8091 0000 		lds r24,score_mode
+ 2028 0c42 8430      		cpi r24,lo8(4)
+ 2029 0c44 01F0      		breq .L135
+ 2030 0c46 8091 0000 		lds r24,score_mode
+ 2031 0c4a 8730      		cpi r24,lo8(7)
+ 2032 0c4c 01F4      		brne .L136
+ 2033               	.L135:
+ 2034 0c4e 8091 0000 		lds r24,left_score
+ 2035 0c52 9091 0000 		lds r25,(left_score)+1
+ 2036 0c56 A091 0000 		lds r26,(left_score)+2
+ 2037 0c5a B091 0000 		lds r27,(left_score)+3
+ 2038 0c5e 0097      		sbiw r24,0
+ 2039 0c60 A105      		cpc r26,__zero_reg__
+ 2040 0c62 B105      		cpc r27,__zero_reg__
+ 2041 0c64 01F0      		breq .L137
+ 2042               	.L136:
+ 2043 0c66 C0E0      		ldi r28,lo8(display_digits)
+ 2044 0c68 D0E0      		ldi r29,hi8(display_digits)
+ 2045 0c6a 05E0      		ldi r16,lo8(5)
+ 2046 0c6c 00C0      		rjmp .L138
+ 2047               	.L137:
+ 2048 0c6e 8091 0000 		lds r24,right_score
+ 2049 0c72 9091 0000 		lds r25,(right_score)+1
+ 2050 0c76 A091 0000 		lds r26,(right_score)+2
+ 2051 0c7a B091 0000 		lds r27,(right_score)+3
+ 2052 0c7e 0097      		sbiw r24,0
+ 2053 0c80 A105      		cpc r26,__zero_reg__
+ 2054 0c82 B105      		cpc r27,__zero_reg__
+ 2055 0c84 01F4      		brne .L136
+ 2056 0c86 00C0      		rjmp .L147
+ 2057               	.L138:
+ 324:anim_death.c  ****     	drawbigdigit(DISPLAY_H10_X_DEATH + (i*15), DISPLAY_TIME_Y_DEATH, display_digits[i], inverted);
+ 2059               	.LM186:
+ 2060 0c88 802F      		mov r24,r16
+ 2061 0c8a 6CE0      		ldi r22,lo8(12)
+ 2062 0c8c 4991      		ld r20,Y+
+ 2063 0c8e 212F      		mov r18,r17
+ 2064 0c90 0E94 0000 		call drawbigdigit
+ 2065 0c94 015F      		subi r16,lo8(-(15))
+ 323:anim_death.c  ****     for(i=0;i<8;i++)
+ 2067               	.LM187:
+ 2068 0c96 0D37      		cpi r16,lo8(125)
+ 2069 0c98 01F4      		brne .L138
+ 2070 0c9a 00C0      		rjmp .L143
+ 2071               	.L147:
+ 329:anim_death.c  ****       calc_death_date();
+ 2073               	.LM188:
+ 2074 0c9c 0E94 0000 		call calc_death_date
+ 330:anim_death.c  ****       if(!reaper_tow_rip)
+ 2076               	.LM189:
+ 2077 0ca0 8091 0000 		lds r24,reaper_tow_rip
+ 2078 0ca4 8823      		tst r24
+ 2079 0ca6 01F4      		brne .L141
+ 332:anim_death.c  ****         reaper_tow_rip = 1;
+ 2081               	.LM190:
+ 2082 0ca8 81E0      		ldi r24,lo8(1)
+ 2083 0caa 8093 0000 		sts reaper_tow_rip,r24
+ 2084 0cae C4E9      		ldi r28,lo8(-108)
+ 2085 0cb0 DFEF      		ldi r29,hi8(-108)
+ 2086               	.L142:
+ 335:anim_death.c  ****           render_image(REAPER_TOW_RIP,i,inverted);
+ 2088               	.LM191:
+ 2089 0cb2 83E0      		ldi r24,lo8(3)
+ 2090 0cb4 BE01      		movw r22,r28
+ 2091 0cb6 412F      		mov r20,r17
+ 2092 0cb8 0E94 0000 		call render_image
+ 336:anim_death.c  ****           delay_ms(16);
+ 2094               	.LM192:
+ 2095 0cbc 80E1      		ldi r24,lo8(16)
+ 2096 0cbe 90E0      		ldi r25,hi8(16)
+ 2097 0cc0 0E94 0000 		call delay_ms
+ 333:anim_death.c  ****         for(i=-108;i<82;i++)
+ 2099               	.LM193:
+ 2100 0cc4 2196      		adiw r28,1
+ 2101 0cc6 C235      		cpi r28,82
+ 2102 0cc8 D105      		cpc r29,__zero_reg__
+ 2103 0cca 01F4      		brne .L142
+ 2104               	.L141:
+ 340:anim_death.c  ****       render_image(RIP,36,inverted);
+ 2106               	.LM194:
+ 2107 0ccc 82E0      		ldi r24,lo8(2)
+ 2108 0cce 64E2      		ldi r22,lo8(36)
+ 2109 0cd0 70E0      		ldi r23,hi8(36)
+ 2110 0cd2 412F      		mov r20,r17
+ 2111 0cd4 0E94 0000 		call render_image
+ 341:anim_death.c  ****       glcdSetAddress(48, 5);
+ 2113               	.LM195:
+ 2114 0cd8 80E3      		ldi r24,lo8(48)
+ 2115 0cda 65E0      		ldi r22,lo8(5)
+ 2116 0cdc 0E94 0000 		call glcdSetAddress
+ 342:anim_death.c  ****       glcdWriteChar(((19+(death_y/100))/10)+'0', NORMAL);
+ 2118               	.LM196:
+ 2119 0ce0 8091 0000 		lds r24,death_y
+ 2120 0ce4 64E6      		ldi r22,lo8(100)
+ 2121 0ce6 0E94 0000 		call __udivmodqi4
+ 2122 0cea 90E0      		ldi r25,lo8(0)
+ 2123 0cec 4396      		adiw r24,19
+ 2124 0cee 6AE0      		ldi r22,lo8(10)
+ 2125 0cf0 70E0      		ldi r23,hi8(10)
+ 2126 0cf2 0E94 0000 		call __divmodhi4
+ 2127 0cf6 862F      		mov r24,r22
+ 2128 0cf8 805D      		subi r24,lo8(-(48))
+ 2129 0cfa 60E0      		ldi r22,lo8(0)
+ 2130 0cfc 0E94 0000 		call glcdWriteChar
+ 343:anim_death.c  ****       glcdWriteChar(((19+(death_y/100))%10)+'0', NORMAL);
+ 2132               	.LM197:
+ 2133 0d00 8091 0000 		lds r24,death_y
+ 2134 0d04 64E6      		ldi r22,lo8(100)
+ 2135 0d06 0E94 0000 		call __udivmodqi4
+ 2136 0d0a 90E0      		ldi r25,lo8(0)
+ 2137 0d0c 4396      		adiw r24,19
+ 2138 0d0e 6AE0      		ldi r22,lo8(10)
+ 2139 0d10 70E0      		ldi r23,hi8(10)
+ 2140 0d12 0E94 0000 		call __divmodhi4
+ 2141 0d16 805D      		subi r24,lo8(-(48))
+ 2142 0d18 60E0      		ldi r22,lo8(0)
+ 2143 0d1a 0E94 0000 		call glcdWriteChar
+ 344:anim_death.c  ****       glcdWriteChar(((death_y%100)/10)+'0', NORMAL);
+ 2145               	.LM198:
+ 2146 0d1e 8091 0000 		lds r24,death_y
+ 2147 0d22 64E6      		ldi r22,lo8(100)
+ 2148 0d24 0E94 0000 		call __udivmodqi4
+ 2149 0d28 892F      		mov r24,r25
+ 2150 0d2a 6AE0      		ldi r22,lo8(10)
+ 2151 0d2c 0E94 0000 		call __udivmodqi4
+ 2152 0d30 805D      		subi r24,lo8(-(48))
+ 2153 0d32 60E0      		ldi r22,lo8(0)
+ 2154 0d34 0E94 0000 		call glcdWriteChar
+ 345:anim_death.c  ****       glcdWriteChar((death_y%10)+'0', NORMAL);
+ 2156               	.LM199:
+ 2157 0d38 8091 0000 		lds r24,death_y
+ 2158 0d3c 6AE0      		ldi r22,lo8(10)
+ 2159 0d3e 0E94 0000 		call __udivmodqi4
+ 2160 0d42 892F      		mov r24,r25
+ 2161 0d44 805D      		subi r24,lo8(-(48))
+ 2162 0d46 60E0      		ldi r22,lo8(0)
+ 2163 0d48 0E94 0000 		call glcdWriteChar
+ 2164               	.L143:
+ 2165               	/* epilogue start */
+ 349:anim_death.c  **** }
+ 2167               	.LM200:
+ 2168 0d4c DF91      		pop r29
+ 2169 0d4e CF91      		pop r28
+ 2170 0d50 1F91      		pop r17
+ 2171 0d52 0F91      		pop r16
+ 2172 0d54 0895      		ret
+ 2177               	.Lscope7:
+ 2179               		.stabd	78,0,0
+ 2182               	.global	drawdisplay_death
+ 2184               	drawdisplay_death:
+ 2185               		.stabd	46,0,0
+ 438:anim_death.c  **** void drawdisplay_death(uint8_t inverted) {
+ 2187               	.LM201:
+ 2188               	.LFBB8:
+ 2189 0d56 8F92      		push r8
+ 2190 0d58 9F92      		push r9
+ 2191 0d5a AF92      		push r10
+ 2192 0d5c CF92      		push r12
+ 2193 0d5e EF92      		push r14
+ 2194 0d60 FF92      		push r15
+ 2195 0d62 0F93      		push r16
+ 2196 0d64 1F93      		push r17
+ 2197 0d66 DF93      		push r29
+ 2198 0d68 CF93      		push r28
+ 2199 0d6a 0F92      		push __tmp_reg__
+ 2200 0d6c CDB7      		in r28,__SP_L__
+ 2201 0d6e DEB7      		in r29,__SP_H__
+ 2202               	/* prologue: function */
+ 2203               	/* frame size = 1 */
+ 2204 0d70 F82E      		mov r15,r24
+ 440:anim_death.c  ****    volatile uint8_t redraw_digits = 0;
+ 2206               	.LM202:
+ 2207 0d72 1982      		std Y+1,__zero_reg__
+ 443:anim_death.c  ****    TIMSK2 = 0;  //Disable Timer 2 interrupt, to prevent a race condition.
+ 2209               	.LM203:
+ 2210 0d74 1092 7000 		sts 112,__zero_reg__
+ 444:anim_death.c  ****    if(redraw_time)
+ 2212               	.LM204:
+ 2213 0d78 8091 0000 		lds r24,redraw_time
+ 2214 0d7c 8823      		tst r24
+ 2215 0d7e 01F0      		breq .L149
+ 449:anim_death.c  ****        redraw_digits = 1;
+ 2217               	.LM205:
+ 2218 0d80 81E0      		ldi r24,lo8(1)
+ 2219 0d82 8983      		std Y+1,r24
+ 450:anim_death.c  ****      redraw_time = 0;
+ 2221               	.LM206:
+ 2222 0d84 1092 0000 		sts redraw_time,__zero_reg__
+ 2223               	.L149:
+ 452:anim_death.c  ****    TIMSK2 = _BV(TOIE2); //Race issue gone, renable.
+ 2225               	.LM207:
+ 2226 0d88 81E0      		ldi r24,lo8(1)
+ 2227 0d8a 8093 7000 		sts 112,r24
+ 455:anim_death.c  ****   if(!hour_changed)
+ 2229               	.LM208:
+ 2230 0d8e 8091 0000 		lds r24,hour_changed
+ 2231 0d92 8823      		tst r24
+ 2232 0d94 01F4      		brne .L150
+ 456:anim_death.c  ****   	prep_digits();
+ 2234               	.LM209:
+ 2235 0d96 0E94 0000 		call prep_digits
+ 2236               	.L150:
+ 457:anim_death.c  ****   if(((score_mode != SCORE_MODE_DEATH_TIME) && (score_mode != SCORE_MODE_DEATH_ALARM)) ||
+ 2238               	.LM210:
+ 2239 0d9a 8091 0000 		lds r24,score_mode
+ 2240 0d9e 8430      		cpi r24,lo8(4)
+ 2241 0da0 01F0      		breq .L151
+ 2242 0da2 8091 0000 		lds r24,score_mode
+ 2243 0da6 8730      		cpi r24,lo8(7)
+ 2244 0da8 01F4      		brne .L152
+ 2245               	.L151:
+ 2246 0daa 8091 0000 		lds r24,minutes_left
+ 2247 0dae 9091 0000 		lds r25,(minutes_left)+1
+ 2248 0db2 A091 0000 		lds r26,(minutes_left)+2
+ 2249 0db6 B091 0000 		lds r27,(minutes_left)+3
+ 2250 0dba 1816      		cp __zero_reg__,r24
+ 2251 0dbc 1906      		cpc __zero_reg__,r25
+ 2252 0dbe 1A06      		cpc __zero_reg__,r26
+ 2253 0dc0 1B06      		cpc __zero_reg__,r27
+ 2254 0dc2 04F0      		brlt .+2
+ 2255 0dc4 00C0      		rjmp .L153
+ 2256               	.L152:
+ 459:anim_death.c  ****     if(reaper_x == 256) {
+ 2258               	.LM211:
+ 2259 0dc6 8091 0000 		lds r24,reaper_x
+ 2260 0dca 9091 0000 		lds r25,(reaper_x)+1
+ 2261 0dce 8050      		subi r24,lo8(256)
+ 2262 0dd0 9140      		sbci r25,hi8(256)
+ 2263 0dd2 01F4      		brne .L154
+ 460:anim_death.c  ****       reaper_x--;
+ 2265               	.LM212:
+ 2266 0dd4 8FEF      		ldi r24,lo8(255)
+ 2267 0dd6 90E0      		ldi r25,hi8(255)
+ 2268 0dd8 9093 0000 		sts (reaper_x)+1,r25
+ 2269 0ddc 8093 0000 		sts reaper_x,r24
+ 461:anim_death.c  ****       initdisplay(inverted);
+ 2271               	.LM213:
+ 2272 0de0 8F2D      		mov r24,r15
+ 2273 0de2 0E94 0000 		call initdisplay
+ 2274               	.L154:
+ 2275 0de6 B0E0      		ldi r27,lo8(display_digits)
+ 2276 0de8 8B2E      		mov r8,r27
+ 2277 0dea B0E0      		ldi r27,hi8(display_digits)
+ 2278 0dec 9B2E      		mov r9,r27
+ 2279 0dee 15E0      		ldi r17,lo8(5)
+ 2280               	.L157:
+ 466:anim_death.c  ****     	if (redraw_digits || intersectrect(reaper_x, reaper_y, reaper_w, reaper_h,
+ 2282               	.LM214:
+ 2283 0df0 8981      		ldd r24,Y+1
+ 2284 0df2 8823      		tst r24
+ 2285 0df4 01F4      		brne .L155
+ 2286 0df6 8091 0000 		lds r24,reaper_x
+ 2287 0dfa 60E0      		ldi r22,lo8(0)
+ 2288 0dfc 48E3      		ldi r20,lo8(56)
+ 2289 0dfe 20E4      		ldi r18,lo8(64)
+ 2290 0e00 012F      		mov r16,r17
+ 2291 0e02 ACE0      		ldi r26,lo8(12)
+ 2292 0e04 EA2E      		mov r14,r26
+ 2293 0e06 FAE0      		ldi r31,lo8(10)
+ 2294 0e08 CF2E      		mov r12,r31
+ 2295 0e0a E0E1      		ldi r30,lo8(16)
+ 2296 0e0c AE2E      		mov r10,r30
+ 2297 0e0e 0E94 0000 		call intersectrect
+ 2298 0e12 8823      		tst r24
+ 2299 0e14 01F4      		brne .L155
+ 2300 0e16 F401      		movw r30,r8
+ 2301 0e18 8081      		ld r24,Z
+ 2302 0e1a 87FF      		sbrs r24,7
+ 2303 0e1c 00C0      		rjmp .L156
+ 2304               	.L155:
+ 469:anim_death.c  ****     		drawbigdigit(DISPLAY_H10_X_DEATH + (i*15), DISPLAY_TIME_Y_DEATH, display_digits[i] & 0x7F, in
+ 2306               	.LM215:
+ 2307 0e1e F401      		movw r30,r8
+ 2308 0e20 4081      		ld r20,Z
+ 2309 0e22 4F77      		andi r20,lo8(127)
+ 2310 0e24 812F      		mov r24,r17
+ 2311 0e26 6CE0      		ldi r22,lo8(12)
+ 2312 0e28 2F2D      		mov r18,r15
+ 2313 0e2a 0E94 0000 		call drawbigdigit
+ 2314               	.L156:
+ 2315 0e2e 0894      		sec
+ 2316 0e30 811C      		adc r8,__zero_reg__
+ 2317 0e32 911C      		adc r9,__zero_reg__
+ 2318 0e34 115F      		subi r17,lo8(-(15))
+ 464:anim_death.c  ****     for(i=0;i<8;i++)
+ 2320               	.LM216:
+ 2321 0e36 1D37      		cpi r17,lo8(125)
+ 2322 0e38 01F4      		brne .L157
+ 473:anim_death.c  ****     if(score_mode >= SCORE_MODE_DEATH_TIME)
+ 2324               	.LM217:
+ 2325 0e3a 8091 0000 		lds r24,score_mode
+ 2326 0e3e 8430      		cpi r24,lo8(4)
+ 2327 0e40 00F0      		brlo .L158
+ 475:anim_death.c  ****       border_on = 1;
+ 2329               	.LM218:
+ 2330 0e42 81E0      		ldi r24,lo8(1)
+ 2331 0e44 8093 0000 		sts border_on,r24
+ 476:anim_death.c  ****       if(border_tick != old_border_tick)
+ 2333               	.LM219:
+ 2334 0e48 9091 0000 		lds r25,border_tick
+ 2335 0e4c 8091 0000 		lds r24,old_border_tick.2655
+ 2336 0e50 9817      		cp r25,r24
+ 2337 0e52 01F0      		breq .L159
+ 478:anim_death.c  ****         next_border();
+ 2339               	.LM220:
+ 2340 0e54 0E94 0000 		call next_border
+ 2341 0e58 00C0      		rjmp .L159
+ 2342               	.L158:
+ 2343               	.LBB10:
+ 483:anim_death.c  ****     	uint8_t current_x = border_x, current_y = border_y;
+ 2345               	.LM221:
+ 2346 0e5a 0091 0000 		lds r16,border_x
+ 2347 0e5e 1091 0000 		lds r17,border_y
+ 485:anim_death.c  **** 	    	border_state = 3;
+ 2349               	.LM222:
+ 2350 0e62 73E0      		ldi r23,lo8(3)
+ 2351 0e64 E72E      		mov r14,r23
+ 2352               	.L167:
+ 2353 0e66 E092 0000 		sts border_state,r14
+ 486:anim_death.c  **** 	    	next_border();
+ 2355               	.LM223:
+ 2356 0e6a 0E94 0000 		call next_border
+ 487:anim_death.c  ****     	} while((border_x != current_x) || (border_y != current_y));
+ 2358               	.LM224:
+ 2359 0e6e 8091 0000 		lds r24,border_x
+ 2360 0e72 8017      		cp r24,r16
+ 2361 0e74 01F4      		brne .L167
+ 2362 0e76 8091 0000 		lds r24,border_y
+ 2363 0e7a 8117      		cp r24,r17
+ 2364 0e7c 01F4      		brne .L167
+ 488:anim_death.c  ****     	border_on = 0;
+ 2366               	.LM225:
+ 2367 0e7e 1092 0000 		sts border_on,__zero_reg__
+ 2368 0e82 00C0      		rjmp .L159
+ 2369               	.L153:
+ 2370               	.LBE10:
+ 493:anim_death.c  ****     if(hour_changed)
+ 2372               	.LM226:
+ 2373 0e84 8091 0000 		lds r24,hour_changed
+ 2374 0e88 8823      		tst r24
+ 2375 0e8a 01F0      		breq .L161
+ 494:anim_death.c  ****       hour_changed = 0;
+ 2377               	.LM227:
+ 2378 0e8c 1092 0000 		sts hour_changed,__zero_reg__
+ 2379               	.L161:
+ 495:anim_death.c  ****     if (redraw_digits || (reaper_x < 256)) {
+ 2381               	.LM228:
+ 2382 0e90 8981      		ldd r24,Y+1
+ 2383 0e92 8823      		tst r24
+ 2384 0e94 01F4      		brne .L162
+ 2385 0e96 8091 0000 		lds r24,reaper_x
+ 2386 0e9a 9091 0000 		lds r25,(reaper_x)+1
+ 2387 0e9e 8F3F      		cpi r24,255
+ 2388 0ea0 9105      		cpc r25,__zero_reg__
+ 2389 0ea2 01F0      		breq .+2
+ 2390 0ea4 04F4      		brge .L159
+ 2391               	.L162:
+ 496:anim_death.c  ****       reaper_x = 256; //Stop drawing the reaper, already dead. :)
+ 2393               	.LM229:
+ 2394 0ea6 80E0      		ldi r24,lo8(256)
+ 2395 0ea8 91E0      		ldi r25,hi8(256)
+ 2396 0eaa 9093 0000 		sts (reaper_x)+1,r25
+ 2397 0eae 8093 0000 		sts reaper_x,r24
+ 497:anim_death.c  ****       initdisplay_death(inverted);
+ 2399               	.LM230:
+ 2400 0eb2 8F2D      		mov r24,r15
+ 2401 0eb4 0E94 0000 		call initdisplay_death
+ 2402               	.L159:
+ 500:anim_death.c  ****   old_border_tick = border_tick;
+ 2404               	.LM231:
+ 2405 0eb8 8091 0000 		lds r24,border_tick
+ 2406 0ebc 8093 0000 		sts old_border_tick.2655,r24
+ 501:anim_death.c  ****   old_seconds = time_s;
+ 2408               	.LM232:
+ 2409 0ec0 8091 0000 		lds r24,time_s
+ 2410 0ec4 8093 0000 		sts old_seconds.2654,r24
+ 502:anim_death.c  ****   redraw_digits = 0;
+ 2412               	.LM233:
+ 2413 0ec8 1982      		std Y+1,__zero_reg__
+ 2414               	/* epilogue start */
+ 503:anim_death.c  **** }
+ 2416               	.LM234:
+ 2417 0eca 0F90      		pop __tmp_reg__
+ 2418 0ecc CF91      		pop r28
+ 2419 0ece DF91      		pop r29
+ 2420 0ed0 1F91      		pop r17
+ 2421 0ed2 0F91      		pop r16
+ 2422 0ed4 FF90      		pop r15
+ 2423 0ed6 EF90      		pop r14
+ 2424 0ed8 CF90      		pop r12
+ 2425 0eda AF90      		pop r10
+ 2426 0edc 9F90      		pop r9
+ 2427 0ede 8F90      		pop r8
+ 2428 0ee0 0895      		ret
+ 2439               	.Lscope8:
+ 2441               		.stabd	78,0,0
+ 2443               	.global	step_death
+ 2445               	step_death:
+ 2446               		.stabd	46,0,0
+ 355:anim_death.c  **** void step_death(void) {
+ 2448               	.LM235:
+ 2449               	.LFBB9:
+ 2450               	/* prologue: function */
+ 2451               	/* frame size = 0 */
+ 357:anim_death.c  ****   death_setscore();
+ 2453               	.LM236:
+ 2454 0ee2 0E94 0000 		call death_setscore
+ 358:anim_death.c  ****   if((score_mode == SCORE_MODE_TIME) || (score_mode == SCORE_MODE_DEATH_TIME))
+ 2456               	.LM237:
+ 2457 0ee6 8091 0000 		lds r24,score_mode
+ 2458 0eea 8823      		tst r24
+ 2459 0eec 01F0      		breq .L169
+ 2460 0eee 8091 0000 		lds r24,score_mode
+ 2461 0ef2 8430      		cpi r24,lo8(4)
+ 2462 0ef4 01F0      		breq .+2
+ 2463 0ef6 00C0      		rjmp .L186
+ 2464               	.L169:
+ 360:anim_death.c  ****     if(minute_changed) 
+ 2466               	.LM238:
+ 2467 0ef8 8091 0000 		lds r24,minute_changed
+ 2468 0efc 8823      		tst r24
+ 2469 0efe 01F0      		breq .L171
+ 362:anim_death.c  ****       redraw_time = 1;
+ 2471               	.LM239:
+ 2472 0f00 81E0      		ldi r24,lo8(1)
+ 2473 0f02 8093 0000 		sts redraw_time,r24
+ 363:anim_death.c  ****       minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
+ 2475               	.LM240:
+ 2476 0f06 2091 0000 		lds r18,minutes_left
+ 2477 0f0a 3091 0000 		lds r19,(minutes_left)+1
+ 2478 0f0e 4091 0000 		lds r20,(minutes_left)+2
+ 2479 0f12 5091 0000 		lds r21,(minutes_left)+3
+ 2480 0f16 8091 0000 		lds r24,dc_mode
+ 2481 0f1a 8330      		cpi r24,lo8(3)
+ 2482 0f1c 01F0      		breq .L172
+ 2483 0f1e 81E0      		ldi r24,lo8(1)
+ 2484 0f20 90E0      		ldi r25,hi8(1)
+ 2485 0f22 A0E0      		ldi r26,hlo8(1)
+ 2486 0f24 B0E0      		ldi r27,hhi8(1)
+ 2487 0f26 00C0      		rjmp .L173
+ 2488               	.L172:
+ 2489 0f28 84E0      		ldi r24,lo8(4)
+ 2490 0f2a 90E0      		ldi r25,hi8(4)
+ 2491 0f2c A0E0      		ldi r26,hlo8(4)
+ 2492 0f2e B0E0      		ldi r27,hhi8(4)
+ 2493               	.L173:
+ 2494 0f30 281B      		sub r18,r24
+ 2495 0f32 390B      		sbc r19,r25
+ 2496 0f34 4A0B      		sbc r20,r26
+ 2497 0f36 5B0B      		sbc r21,r27
+ 2498 0f38 2093 0000 		sts minutes_left,r18
+ 2499 0f3c 3093 0000 		sts (minutes_left)+1,r19
+ 2500 0f40 4093 0000 		sts (minutes_left)+2,r20
+ 2501 0f44 5093 0000 		sts (minutes_left)+3,r21
+ 364:anim_death.c  ****       minute_changed = 0;
+ 2503               	.LM241:
+ 2504 0f48 1092 0000 		sts minute_changed,__zero_reg__
+ 365:anim_death.c  ****       death_setscore();
+ 2506               	.LM242:
+ 2507 0f4c 0E94 0000 		call death_setscore
+ 2508               	.L171:
+ 367:anim_death.c  ****     if(hour_changed) 
+ 2510               	.LM243:
+ 2511 0f50 8091 0000 		lds r24,hour_changed
+ 2512 0f54 8823      		tst r24
+ 2513 0f56 01F4      		brne .+2
+ 2514 0f58 00C0      		rjmp .L186
+ 369:anim_death.c  ****       minutes_left -= ((dc_mode == DC_mode_sadistic)?4:1);
+ 2516               	.LM244:
+ 2517 0f5a 2091 0000 		lds r18,minutes_left
+ 2518 0f5e 3091 0000 		lds r19,(minutes_left)+1
+ 2519 0f62 4091 0000 		lds r20,(minutes_left)+2
+ 2520 0f66 5091 0000 		lds r21,(minutes_left)+3
+ 2521 0f6a 8091 0000 		lds r24,dc_mode
+ 2522 0f6e 8330      		cpi r24,lo8(3)
+ 2523 0f70 01F0      		breq .L174
+ 2524 0f72 81E0      		ldi r24,lo8(1)
+ 2525 0f74 90E0      		ldi r25,hi8(1)
+ 2526 0f76 A0E0      		ldi r26,hlo8(1)
+ 2527 0f78 B0E0      		ldi r27,hhi8(1)
+ 2528 0f7a 00C0      		rjmp .L175
+ 2529               	.L174:
+ 2530 0f7c 84E0      		ldi r24,lo8(4)
+ 2531 0f7e 90E0      		ldi r25,hi8(4)
+ 2532 0f80 A0E0      		ldi r26,hlo8(4)
+ 2533 0f82 B0E0      		ldi r27,hhi8(4)
+ 2534               	.L175:
+ 2535 0f84 281B      		sub r18,r24
+ 2536 0f86 390B      		sbc r19,r25
+ 2537 0f88 4A0B      		sbc r20,r26
+ 2538 0f8a 5B0B      		sbc r21,r27
+ 2539 0f8c 2093 0000 		sts minutes_left,r18
+ 2540 0f90 3093 0000 		sts (minutes_left)+1,r19
+ 2541 0f94 4093 0000 		sts (minutes_left)+2,r20
+ 2542 0f98 5093 0000 		sts (minutes_left)+3,r21
+ 370:anim_death.c  ****       initdisplay_death(1);
+ 2544               	.LM245:
+ 2545 0f9c 81E0      		ldi r24,lo8(1)
+ 2546 0f9e 0E94 0000 		call initdisplay_death
+ 371:anim_death.c  ****       for(reaper_x = -52;reaper_x<138;reaper_x++)
+ 2548               	.LM246:
+ 2549 0fa2 8CEC      		ldi r24,lo8(-52)
+ 2550 0fa4 9FEF      		ldi r25,hi8(-52)
+ 2551 0fa6 00C0      		rjmp .L187
+ 2552               	.L185:
+ 376:anim_death.c  ****         render_image (REAPER,reaper_x+1,1);
+ 2554               	.LM247:
+ 2555 0fa8 6F5F      		subi r22,lo8(-(1))
+ 2556 0faa 7F4F      		sbci r23,hi8(-(1))
+ 2557 0fac 81E0      		ldi r24,lo8(1)
+ 2558 0fae 41E0      		ldi r20,lo8(1)
+ 2559 0fb0 0E94 0000 		call render_image
+ 377:anim_death.c  ****         delay_ms(16);
+ 2561               	.LM248:
+ 2562 0fb4 80E1      		ldi r24,lo8(16)
+ 2563 0fb6 90E0      		ldi r25,hi8(16)
+ 2564 0fb8 0E94 0000 		call delay_ms
+ 378:anim_death.c  ****         if(((reaper_x%15)==6)&&(reaper_x>6))
+ 2566               	.LM249:
+ 2567 0fbc 2091 0000 		lds r18,reaper_x
+ 2568 0fc0 3091 0000 		lds r19,(reaper_x)+1
+ 2569 0fc4 C901      		movw r24,r18
+ 2570 0fc6 6FE0      		ldi r22,lo8(15)
+ 2571 0fc8 70E0      		ldi r23,hi8(15)
+ 2572 0fca 0E94 0000 		call __divmodhi4
+ 2573 0fce 0697      		sbiw r24,6
+ 2574 0fd0 01F4      		brne .L177
+ 2575 0fd2 2730      		cpi r18,7
+ 2576 0fd4 3105      		cpc r19,__zero_reg__
+ 2577 0fd6 04F0      		brlt .L177
+ 380:anim_death.c  ****         	prep_digits();
+ 2579               	.LM250:
+ 2580 0fd8 0E94 0000 		call prep_digits
+ 381:anim_death.c  ****         	for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 2582               	.LM251:
+ 2583 0fdc 8091 0000 		lds r24,reaper_x
+ 2584 0fe0 9091 0000 		lds r25,(reaper_x)+1
+ 2585 0fe4 6FE0      		ldi r22,lo8(15)
+ 2586 0fe6 70E0      		ldi r23,hi8(15)
+ 2587 0fe8 0E94 0000 		call __divmodhi4
+ 2588 0fec 9B01      		movw r18,r22
+ 2589 0fee FB01      		movw r30,r22
+ 2590 0ff0 E050      		subi r30,lo8(-(display_digits))
+ 2591 0ff2 F040      		sbci r31,hi8(-(display_digits))
+ 2592 0ff4 40E0      		ldi r20,lo8(0)
+ 2593 0ff6 50E0      		ldi r21,hi8(0)
+ 2594 0ff8 00C0      		rjmp .L178
+ 2595               	.L180:
+ 383:anim_death.c  ****         		display_digits[(reaper_x/15)+i] |= 0x40;
+ 2597               	.LM252:
+ 2598 0ffa 8081      		ld r24,Z
+ 2599 0ffc 8064      		ori r24,lo8(64)
+ 2600 0ffe 8193      		st Z+,r24
+ 2601 1000 4F5F      		subi r20,lo8(-(1))
+ 2602 1002 5F4F      		sbci r21,hi8(-(1))
+ 381:anim_death.c  ****         	for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 2604               	.LM253:
+ 2605 1004 4430      		cpi r20,4
+ 2606 1006 5105      		cpc r21,__zero_reg__
+ 2607 1008 01F0      		breq .L179
+ 2608               	.L178:
+ 2609 100a CA01      		movw r24,r20
+ 2610 100c 820F      		add r24,r18
+ 2611 100e 931F      		adc r25,r19
+ 2612 1010 0897      		sbiw r24,8
+ 2613 1012 04F0      		brlt .L180
+ 2614               	.L179:
+ 385:anim_death.c  ****             redraw_time = 1;
+ 2616               	.LM254:
+ 2617 1014 81E0      		ldi r24,lo8(1)
+ 2618 1016 8093 0000 		sts redraw_time,r24
+ 386:anim_death.c  ****             drawdisplay_death(1);
+ 2620               	.LM255:
+ 2621 101a 0E94 0000 		call drawdisplay_death
+ 2622               	.L177:
+ 388:anim_death.c  ****         if(reaper_x==43) 
+ 2624               	.LM256:
+ 2625 101e 8091 0000 		lds r24,reaper_x
+ 2626 1022 9091 0000 		lds r25,(reaper_x)+1
+ 2627 1026 8B97      		sbiw r24,43
+ 2628 1028 01F4      		brne .L181
+ 391:anim_death.c  ****           delay_ms(500);
+ 2630               	.LM257:
+ 2631 102a 84EF      		ldi r24,lo8(500)
+ 2632 102c 91E0      		ldi r25,hi8(500)
+ 2633 102e 0E94 0000 		call delay_ms
+ 392:anim_death.c  ****           hour_changed = 0;
+ 2635               	.LM258:
+ 2636 1032 1092 0000 		sts hour_changed,__zero_reg__
+ 393:anim_death.c  ****           death_setscore();
+ 2638               	.LM259:
+ 2639 1036 0E94 0000 		call death_setscore
+ 394:anim_death.c  ****           hour_changed = 1;
+ 2641               	.LM260:
+ 2642 103a 81E0      		ldi r24,lo8(1)
+ 2643 103c 8093 0000 		sts hour_changed,r24
+ 395:anim_death.c  ****           prep_digits();
+ 2645               	.LM261:
+ 2646 1040 0E94 0000 		call prep_digits
+ 396:anim_death.c  ****           for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 2648               	.LM262:
+ 2649 1044 8091 0000 		lds r24,reaper_x
+ 2650 1048 9091 0000 		lds r25,(reaper_x)+1
+ 2651 104c 6FE0      		ldi r22,lo8(15)
+ 2652 104e 70E0      		ldi r23,hi8(15)
+ 2653 1050 0E94 0000 		call __divmodhi4
+ 2654 1054 9B01      		movw r18,r22
+ 2655 1056 FB01      		movw r30,r22
+ 2656 1058 E050      		subi r30,lo8(-(display_digits))
+ 2657 105a F040      		sbci r31,hi8(-(display_digits))
+ 2658 105c 40E0      		ldi r20,lo8(0)
+ 2659 105e 50E0      		ldi r21,hi8(0)
+ 2660 1060 00C0      		rjmp .L182
+ 2661               	.L184:
+ 397:anim_death.c  ****           	display_digits[(reaper_x/15)+i] |= 0x40;
+ 2663               	.LM263:
+ 2664 1062 8081      		ld r24,Z
+ 2665 1064 8064      		ori r24,lo8(64)
+ 2666 1066 8193      		st Z+,r24
+ 2667 1068 4F5F      		subi r20,lo8(-(1))
+ 2668 106a 5F4F      		sbci r21,hi8(-(1))
+ 396:anim_death.c  ****           for(i=0;(i<4)&&(((reaper_x/15)+i)<8);i++)
+ 2670               	.LM264:
+ 2671 106c 4430      		cpi r20,4
+ 2672 106e 5105      		cpc r21,__zero_reg__
+ 2673 1070 01F0      		breq .L183
+ 2674               	.L182:
+ 2675 1072 CA01      		movw r24,r20
+ 2676 1074 820F      		add r24,r18
+ 2677 1076 931F      		adc r25,r19
+ 2678 1078 0897      		sbiw r24,8
+ 2679 107a 04F0      		brlt .L184
+ 2680               	.L183:
+ 398:anim_death.c  ****           redraw_time = 1;
+ 2682               	.LM265:
+ 2683 107c 81E0      		ldi r24,lo8(1)
+ 2684 107e 8093 0000 		sts redraw_time,r24
+ 399:anim_death.c  ****           drawdisplay_death(1);
+ 2686               	.LM266:
+ 2687 1082 0E94 0000 		call drawdisplay_death
+ 400:anim_death.c  ****           delay_ms(500);
+ 2689               	.LM267:
+ 2690 1086 84EF      		ldi r24,lo8(500)
+ 2691 1088 91E0      		ldi r25,hi8(500)
+ 2692 108a 0E94 0000 		call delay_ms
+ 2693               	.L181:
+ 371:anim_death.c  ****       for(reaper_x = -52;reaper_x<138;reaper_x++)
+ 2695               	.LM268:
+ 2696 108e 8091 0000 		lds r24,reaper_x
+ 2697 1092 9091 0000 		lds r25,(reaper_x)+1
+ 2698 1096 0196      		adiw r24,1
+ 2699               	.L187:
+ 2700 1098 9093 0000 		sts (reaper_x)+1,r25
+ 2701 109c 8093 0000 		sts reaper_x,r24
+ 2702 10a0 6091 0000 		lds r22,reaper_x
+ 2703 10a4 7091 0000 		lds r23,(reaper_x)+1
+ 2704 10a8 6A38      		cpi r22,138
+ 2705 10aa 7105      		cpc r23,__zero_reg__
+ 2706 10ac 04F4      		brge .+2
+ 2707 10ae 00C0      		rjmp .L185
+ 403:anim_death.c  ****       hour_changed = 0;
+ 2709               	.LM269:
+ 2710 10b0 1092 0000 		sts hour_changed,__zero_reg__
+ 404:anim_death.c  ****       initdisplay_death(0);
+ 2712               	.LM270:
+ 2713 10b4 80E0      		ldi r24,lo8(0)
+ 2714 10b6 0E94 0000 		call initdisplay_death
+ 2715               	.L186:
+ 2716 10ba 0895      		ret
+ 2718               	.Lscope9:
+ 2720               		.stabd	78,0,0
+ 2722               	.global	initanim_death
+ 2724               	initanim_death:
+ 2725               		.stabd	46,0,0
+ 200:anim_death.c  **** void initanim_death(void) {
+ 2727               	.LM271:
+ 2728               	.LFBB10:
+ 2729 10bc 0F93      		push r16
+ 2730               	/* prologue: function */
+ 2731               	/* frame size = 0 */
+ 202:anim_death.c  ****   glcdFillRectangle(0, 0, GLCD_XPIXELS, GLCD_YPIXELS, scroller==-84);
+ 2733               	.LM272:
+ 2734 10be 00E0      		ldi r16,lo8(0)
+ 2735 10c0 8091 0000 		lds r24,scroller.2430
+ 2736 10c4 9091 0000 		lds r25,(scroller.2430)+1
+ 2737 10c8 8C5A      		subi r24,lo8(-84)
+ 2738 10ca 9F4F      		sbci r25,hi8(-84)
+ 2739 10cc 01F4      		brne .L189
+ 2740 10ce 01E0      		ldi r16,lo8(1)
+ 2741               	.L189:
+ 2742 10d0 80E0      		ldi r24,lo8(0)
+ 2743 10d2 60E0      		ldi r22,lo8(0)
+ 2744 10d4 40E8      		ldi r20,lo8(-128)
+ 2745 10d6 20E4      		ldi r18,lo8(64)
+ 2746 10d8 0E94 0000 		call glcdFillRectangle
+ 2747 10dc 00C0      		rjmp .L190
+ 2748               	.L192:
+ 205:anim_death.c  ****     render_image (SKULL,scroller,1);
+ 2750               	.LM273:
+ 2751 10de 80E0      		ldi r24,lo8(0)
+ 2752 10e0 41E0      		ldi r20,lo8(1)
+ 2753 10e2 0E94 0000 		call render_image
+ 206:anim_death.c  ****     delay_ms(16);
+ 2755               	.LM274:
+ 2756 10e6 80E1      		ldi r24,lo8(16)
+ 2757 10e8 90E0      		ldi r25,hi8(16)
+ 2758 10ea 0E94 0000 		call delay_ms
+ 207:anim_death.c  ****     if(scroller==26)
+ 2760               	.LM275:
+ 2761 10ee 8091 0000 		lds r24,scroller.2430
+ 2762 10f2 9091 0000 		lds r25,(scroller.2430)+1
+ 2763 10f6 4A97      		sbiw r24,26
+ 2764 10f8 01F4      		brne .L191
+ 208:anim_death.c  ****     	delay_ms(2000);
+ 2766               	.LM276:
+ 2767 10fa 80ED      		ldi r24,lo8(2000)
+ 2768 10fc 97E0      		ldi r25,hi8(2000)
+ 2769 10fe 0E94 0000 		call delay_ms
+ 2770               	.L191:
+ 203:anim_death.c  ****   for(;scroller<138;scroller++)
+ 2772               	.LM277:
+ 2773 1102 8091 0000 		lds r24,scroller.2430
+ 2774 1106 9091 0000 		lds r25,(scroller.2430)+1
+ 2775 110a 0196      		adiw r24,1
+ 2776 110c 9093 0000 		sts (scroller.2430)+1,r25
+ 2777 1110 8093 0000 		sts scroller.2430,r24
+ 2778               	.L190:
+ 2779 1114 6091 0000 		lds r22,scroller.2430
+ 2780 1118 7091 0000 		lds r23,(scroller.2430)+1
+ 2781 111c 6A38      		cpi r22,138
+ 2782 111e 7105      		cpc r23,__zero_reg__
+ 2783 1120 04F0      		brlt .L192
+ 210:anim_death.c  ****   score_mode = SCORE_MODE_DEATH_TIME;
+ 2785               	.LM278:
+ 2786 1122 84E0      		ldi r24,lo8(4)
+ 2787 1124 8093 0000 		sts score_mode,r24
+ 211:anim_death.c  ****   minute_changed = hour_changed = 0;
+ 2789               	.LM279:
+ 2790 1128 1092 0000 		sts hour_changed,__zero_reg__
+ 2791 112c 8091 0000 		lds r24,hour_changed
+ 2792 1130 8093 0000 		sts minute_changed,r24
+ 212:anim_death.c  ****   load_etd();
+ 2794               	.LM280:
+ 2795 1134 0E94 0000 		call load_etd
+ 213:anim_death.c  ****   initdisplay(0);
+ 2797               	.LM281:
+ 2798 1138 80E0      		ldi r24,lo8(0)
+ 2799 113a 0E94 0000 		call initdisplay
+ 2800               	/* epilogue start */
+ 214:anim_death.c  **** }
+ 2802               	.LM282:
+ 2803 113e 0F91      		pop r16
+ 2804 1140 0895      		ret
+ 2809               	.Lscope10:
+ 2811               		.stabd	78,0,0
+ 2812               	.global	border_tick
+ 2813               	.global	border_tick
+ 2814               		.section .bss
+ 2817               	border_tick:
+ 2818 0000 00        		.skip 1,0
+ 2819               	.global	redraw_time
+ 2820               	.global	redraw_time
+ 2823               	redraw_time:
+ 2824 0001 00        		.skip 1,0
+ 2825               	.global	last_score_mode
+ 2826               	.global	last_score_mode
+ 2829               	last_score_mode:
+ 2830 0002 00        		.skip 1,0
+ 2831               	.global	skull0_p
+ 2832               		.section	.progmem.data,"a",@progbits
+ 2835               	skull0_p:
+ 2836 0000 0000      		.word	skull_on_white
+ 2837               	.global	reaper0_p
+ 2840               	reaper0_p:
+ 2841 0002 0000      		.word	reaper_on_white
+ 2842               	.global	rip0_p
+ 2845               	rip0_p:
+ 2846 0004 0000      		.word	rip_on_white
+ 2847               		.lcomm border_on,1
+ 2848               		.lcomm border_x,1
+ 2849               		.lcomm border_y,1
+ 2850               		.lcomm border_state,1
+ 2851               		.lcomm old_border_tick.2655,1
+ 2852               		.lcomm old_seconds.2654,1
+ 2853               		.data
+ 2856               	scroller.2430:
+ 2857 0000 ACFF      		.word	-84
+ 2858               		.comm left_score,4,1
+ 2859               		.comm right_score,4,1
+ 2860               		.comm results,4,1
+ 2861               		.comm display_digits,8,1
+ 2862               		.comm reaper_x,2,1
+ 2881               		.text
+ 2883               	.Letext0:
+DEFINED SYMBOLS
+                            *ABS*:00000000 anim_death.c
+     /tmp/ccLVjvfO.s:2      *ABS*:0000003f __SREG__
+     /tmp/ccLVjvfO.s:3      *ABS*:0000003e __SP_H__
+     /tmp/ccLVjvfO.s:4      *ABS*:0000003d __SP_L__
+     /tmp/ccLVjvfO.s:5      *ABS*:00000034 __CCP__
+     /tmp/ccLVjvfO.s:6      *ABS*:00000000 __tmp_reg__
+     /tmp/ccLVjvfO.s:7      *ABS*:00000001 __zero_reg__
+     /tmp/ccLVjvfO.s:138    .text:00000000 death_setscore
+     /tmp/ccLVjvfO.s:2829   .bss:00000002 last_score_mode
+     /tmp/ccLVjvfO.s:2823   .bss:00000001 redraw_time
+                            *COM*:00000004 left_score
+                            *COM*:00000004 right_score
+                            *COM*:00000004 results
+     /tmp/ccLVjvfO.s:707    .text:000004c4 prep_digits
+                            *COM*:00000008 display_digits
+     /tmp/ccLVjvfO.s:1109   .text:00000774 death_bitblit_ram
+     /tmp/ccLVjvfO.s:1279   .text:00000844 death_blitsegs_rom
+     /tmp/ccLVjvfO.s:1572   .text:000009b6 next_border
+                             .bss:00000003 border_on
+     /tmp/ccLVjvfO.s:2849   .bss:00000006 border_state
+     /tmp/ccLVjvfO.s:2847   .bss:00000004 border_x
+     /tmp/ccLVjvfO.s:2848   .bss:00000005 border_y
+     /tmp/ccLVjvfO.s:1721   .text:00000a70 render_image
+     /tmp/ccLVjvfO.s:1973   .text:00000bee initdisplay_death
+     /tmp/ccLVjvfO.s:2184   .text:00000d56 drawdisplay_death
+                            *COM*:00000002 reaper_x
+     /tmp/ccLVjvfO.s:2817   .bss:00000000 border_tick
+     /tmp/ccLVjvfO.s:2850   .bss:00000007 old_border_tick.2655
+     /tmp/ccLVjvfO.s:2851   .bss:00000008 old_seconds.2654
+     /tmp/ccLVjvfO.s:2445   .text:00000ee2 step_death
+     /tmp/ccLVjvfO.s:2724   .text:000010bc initanim_death
+     /tmp/ccLVjvfO.s:2856   .data:00000000 scroller.2430
+     /tmp/ccLVjvfO.s:2835   .progmem.data:00000000 skull0_p
+     /tmp/ccLVjvfO.s:2840   .progmem.data:00000002 reaper0_p
+     /tmp/ccLVjvfO.s:2845   .progmem.data:00000004 rip0_p
+
+UNDEFINED SYMBOLS
+__do_copy_data
+__do_clear_bss
+score_mode
+minute_changed
+hour_changed
+old_h
+old_m
+time_h
+time_m
+region
+date_m
+date_d
+date_y
+old_minutes_left
+__divmodsi4
+minutes_left
+dc_mode
+time_s
+__udivmodqi4
+death_m
+death_d
+death_y
+alarm_h
+alarm_m
+time_format
+__udivmodsi4
+__udivmodhi4
+glcdSetAddress
+glcdDataWrite
+glcdFillRectangle
+skull_on_white
+reaper_on_white
+rip_on_white
+__divmodhi4
+glcdWriteChar
+drawbigdigit
+calc_death_date
+reaper_tow_rip
+delay_ms
+initdisplay
+intersectrect
+load_etd

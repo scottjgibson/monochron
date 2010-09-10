@@ -13,15 +13,37 @@
 //#define OPTION_DOW_DATELONG 1
 
 // Undefine to disable GPS
-#define GPSENABLE 1
+//#define GPSENABLE 1
 
 // Undefine the following to disable these clock modes
+//#define INTRUDERCHRON 1
+//#define SEVENCHRON 1
+//#define RATTCHRON 1
+//#define XDALICHRON 1
+//#define TSCHRON 1
+//#define DEATHCHRON 1
+
+//#define MULTICHRONA 1
+#define MULTICHRONB 1
+
+#ifdef MULTICHRONA
+//MultiCronA Mix:
+#define GPSENABLE 1
 #define INTRUDERCHRON 1
 #define SEVENCHRON 1
 #define RATTCHRON 1
 #define XDALICHRON 1
 #define TSCHRON 1
-//#define DEATHCHRON 1
+#else
+//MultiCronB DeathChron Mix:
+#define GPSENABLE 1
+#define RATTCHRON 1
+#define DEATHCHRON 1
+#endif
+
+
+
+
 
 // Undefine to use Lady A's disambiguified 9 (vs g). (SEVENCHRON, TSCHRON)
 #define FEATURE_9 1
