@@ -56,6 +56,7 @@ $(patsubst %,-I%,$(EXTRAINCDIRS))
 #CFLAGS += -std=c99
 CFLAGS += -std=gnu99
 
+CFLAGS += -DMULTICHRONA
 
 
 # Optional assembler flags.

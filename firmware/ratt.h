@@ -24,7 +24,8 @@
 //#define DEATHCHRON 1
 
 //#define MULTICHRONA 1
-#define MULTICHRONB 1
+//#define MULTICHRONB 1
+//MULTICHRONA / MULTICHRONB defined by the make files.
 
 #ifdef MULTICHRONA
 //MultiCronA Mix:

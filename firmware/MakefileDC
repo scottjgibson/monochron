@@ -56,7 +56,7 @@ $(patsubst %,-I%,$(EXTRAINCDIRS))
 #CFLAGS += -std=c99
 CFLAGS += -std=gnu99
 
-
+CFLAGS += -DMULTICHRONB
 
 # Optional assembler flags.
 #  -Wa,...:   tell GCC to pass this to the assembler.
