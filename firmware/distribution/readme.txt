@@ -17,7 +17,7 @@ DissolveChron - A Chron that time melts in and out as mosaic panels.
 Version 1.1
 9/10/2010
 Added TimesSqaureChron, Coding Dataman, Simulates the Scrolling Marquee of Times Square
-GPS Setup, GPS module will be detected and used if present, Coding Dataman, Making it work CaitSitch
+GPS Setup, GPS module will be detected and used if present, Coding Dataman, Making it work CaitSith
 Instructions on adding the GPS module to stock MonoChron at http://crjones.com/adamods
 Code highly optimized, Thank you CaitSith!
 Modules may be dropped in or out, Thank you again CaitSith!
@@ -31,7 +31,7 @@ When Daylight Savings Time ends, Adjust back to -8.
 Version 1.1b
 9/10/2010
 This is an alternate version of the 1.1 build
-Added DeathChron, Coding CaithSith,  A CountDown Clock 
+Added DeathChron, Coding CaitSith,  A CountDown Clock 
 Includes GPS Module & RattChron
 Use LoadFWb.bat or LoadFWb.sh
 
