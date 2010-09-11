@@ -1,35 +1,35 @@
 Archive member included because of file (symbol)
 
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
                               anim_rat.o (__mulsi3)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
                               anim_death.o (__udivmodqi4)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
                               anim_death.o (__udivmodhi4)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
                               anim_abo.o (__divmodhi4)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
                               anim_death.o (__udivmodsi4)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
                               anim_death.o (__divmodsi4)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
-                              /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o (exit)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
-                              anim_abo.o (__do_copy_data)
-/usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
-                              anim_abo.o (__do_clear_bss)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+                              c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o (exit)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+                              anim_death.o (__do_copy_data)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+                              anim_death.o (__do_clear_bss)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
                               ratt.o (strcmp)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
                               anim_abo.o (__eerd_byte_m328p)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
                               anim_deathcfg.o (__eerd_word_m328p)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
                               anim_deathcfg.o (__eewr_byte_m328p)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
                               anim_deathcfg.o (__eewr_word_m328p)
-/usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-                              /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o) (__eerd_blraw_m328p)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                              c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o) (__eerd_blraw_m328p)
 
 Allocating common symbols
 Common symbol       size              file
@@ -106,7 +106,7 @@ signature        0x00840000         0x00000400         rw !x
 Linker script and memory map
 
 Address of section .data set to 0x800100
-LOAD /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 LOAD anim_abo.o
 LOAD anim_death.o
 LOAD anim_deathcfg.o
@@ -127,9 +127,9 @@ LOAD ks0108.o
 LOAD ratt.o
 LOAD rle.o
 LOAD util.o
-LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
-LOAD /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a
-LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
+LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
+LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a
+LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
 
 .hash
  *(.hash)
@@ -221,9 +221,9 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x7870
+.text           0x00000000     0x7746
  *(.vectors)
- .vectors       0x00000000       0x68 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .vectors       0x00000000       0x68 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
                 0x00000000                __vectors
                 0x00000000                __vector_default
  *(.vectors)
@@ -242,23 +242,23 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
                 0x000001e7                region_setting_table
                 0x0000021b                style_setting_str
  .progmem.data  0x0000034d      0x102 deathclock.o
-                0x0000034d                normal_bmi_male
-                0x00000384                normal_bmi_female
                 0x000003c6                sadistic_bmi_male
-                0x000003d1                sadistic_bmi_female
+                0x00000384                normal_bmi_female
                 0x000003e7                normal_smoking_male
-                0x0000040f                normal_smoking_female
                 0x00000433                sadistic_smoking_male
                 0x0000043b                sadistic_smoking_female
+                0x0000040f                normal_smoking_female
                 0x00000443                day_in_month
+                0x000003d1                sadistic_bmi_female
+                0x0000034d                normal_bmi_male
  .progmem.data  0x0000044f        0x1 eeprom.o
-                0x0000044f                EE_DATA
                 0x00000450                FontGr
+                0x0000044f                EE_DATA
  .progmem.data  0x00000450      0x4f0 rle.o
                 0x00000450                skull_on_white
                 0x000005b2                reaper_on_white
-                0x00000690                rip_on_white
                 0x0000081e                adafruit
+                0x00000690                rip_on_white
  .progmem.data  0x00000940       0x46 util.o
                 0x00000986                . = ALIGN (0x2)
                 0x00000986                __trampolines_start = .
@@ -279,20 +279,20 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00000986        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .init0         0x00000986        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
                 0x00000986                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00000986        0xc /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .init2         0x00000986        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x00000992       0x16 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
+ .init4         0x00000992       0x16 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
                 0x00000992                __do_copy_data
- .init4         0x000009a8       0x10 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
+ .init4         0x000009a8       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
                 0x000009a8                __do_clear_bss
  *(.init4)
  *(.init5)
@@ -304,10 +304,10 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000009b8        0x8 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .init9         0x000009b8        0x8 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  *(.init9)
  *(.text)
- .text          0x000009c0        0x4 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .text          0x000009c0        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
                 0x000009c0                __vector_22
                 0x000009c0                __vector_1
                 0x000009c0                __vector_24
@@ -330,246 +330,246 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  .text          0x000009c4      0x108 anim_abo.o
                 0x000009c4                initanim_abo
  .text          0x00000acc     0x1142 anim_death.o
-                0x00000acc                death_setscore
-                0x00000f90                prep_digits
-                0x00001240                death_bitblit_ram
-                0x00001310                death_blitsegs_rom
-                0x00001482                next_border
-                0x0000153c                render_image
-                0x000016ba                initdisplay_death
                 0x00001822                drawdisplay_death
-                0x000019ae                step_death
+                0x00001310                death_blitsegs_rom
+                0x000016ba                initdisplay_death
+                0x00001482                next_border
+                0x00001240                death_bitblit_ram
+                0x00000f90                prep_digits
                 0x00001b88                initanim_death
+                0x000019ae                step_death
+                0x00000acc                death_setscore
+                0x0000153c                render_image
  .text          0x00001c0e      0xb28 anim_deathcfg.o
-                0x00001c0e                deathclock_changed
-                0x00001cf2                display_smoker
-                0x00001d24                display_dc_mode
-                0x00001d72                display_gender
                 0x00001da4                display_dob
                 0x00001e58                printnumber_3d
-                0x00001e8c                display_bmi_set
-                0x00001f8e                display_death_menu
                 0x00002076                init_set_death_menu
-                0x000020be                set_deathclock_smoker
-                0x00002168                set_deathclock_mode
                 0x00002212                set_deathclock_gender
                 0x000022bc                set_deathclock_dob
                 0x000023ea                set_deathclock_bmi
+                0x00001d72                display_gender
                 0x0000267c                initanim_deathcfg
+                0x00001d24                display_dc_mode
+                0x00001e8c                display_bmi_set
+                0x00001cf2                display_smoker
+                0x00001f8e                display_death_menu
+                0x00002168                set_deathclock_mode
+                0x00001c0e                deathclock_changed
+                0x000020be                set_deathclock_smoker
  .text          0x00002736      0x14c anim_gps.o
                 0x00002736                initanim_GPS
  .text          0x00002882        0x0 anim_int.o
- .text          0x00002882     0x13a6 anim_rat.o
+ .text          0x00002882     0x1302 anim_rat.o
+                0x00002fb4                drawdisplay_rat
+                0x00003ad0                initanim_rat
+                0x00002ef2                setscore_rat
+                0x00002eb2                drawmidline
+                0x00002c0a                calculate_dest_pos
                 0x00002882                sine
+                0x000039de                initdisplay_rat
                 0x000028de                cosine
+                0x00002dbc                check_ball_digit_collision
+                0x00002bae                random_angle
                 0x000028e6                move_paddle
                 0x00002938                calculate_keepout
-                0x00002bae                random_angle
-                0x00002c0a                calculate_dest_pos
-                0x00002dbc                check_ball_digit_collision
                 0x00002e4c                draw_score_rat
-                0x00002eb2                drawmidline
-                0x00002ef2                setscore_rat
-                0x00002fb4                drawdisplay_rat
                 0x0000330a                step_rat
-                0x00003a82                initdisplay_rat
-                0x00003b74                initanim_rat
- .text          0x00003c28        0x0 anim_sev.o
- .text          0x00003c28        0x0 anim_ts.o
- .text          0x00003c28        0x0 anim_xda.o
- .text          0x00003c28      0x204 buttons.o
-                0x00003c28                initbuttons
-                0x00003c56                readADC
-                0x00003c7e                __vector_3
-                0x00003cc8                __vector_21
- .text          0x00003e2c      0xa1e config.o
-                0x00003e2c                print_style_setting
-                0x00003e6e                print_region_setting
-                0x00003eb8                print_alarmhour
-                0x00003f42                print_timehour
-                0x00003fac                print_number_slash
-                0x00003fba                print_date
-                0x00004058                print_backlight
-                0x00004082                print_time
-                0x00004110                print_alarmline
-                0x00004152                print_monthday_help
-                0x00004186                display_menu
-                0x00004218                init_set_menu
-                0x00004228                set_time
-                0x0000437c                set_alarm
-                0x0000446e                set_backlight
-                0x00004514                set_date
-                0x00004688                set_region
-                0x00004762                set_style
- .text          0x0000484a      0x98e deathclock.o
-                0x0000484a                is_leap_year
-                0x0000487c                date_diff
-                0x00004ab6                BodyMassIndex
-                0x00004b28                random_days
-                0x00004b82                ETD
-                0x00004dea                load_raw_etd
-                0x00004ef4                calc_death_date
-                0x00004ff0                load_etd
- .text          0x000051d8      0x124 dispatch.o
-                0x000051d8                step
-                0x000051f2                initdisplay
-                0x0000520c                initanim
-                0x00005270                drawdisplay
- .text          0x000052fc        0x0 eeprom.o
- .text          0x000052fc      0x464 glcd.o
-                0x000052fc                get_font
-                0x00005306                glcdWriteCharGr
-                0x00005366                glcdWriteChar
-                0x000053bc                glcdPutStr_rom
-                0x000053ea                glcdPutStr_ram
-                0x0000540c                glcdFillRectangle
-                0x000055ec                glcdFillCircle
-                0x0000570e                glcdSetDot
- .text          0x00005760      0x1cc i2c.o
-                0x00005760                i2cInit
-                0x00005798                i2cSetBitrate
-                0x000057a0                i2cSendStart
-                0x000057ae                i2cSendStop
-                0x000057bc                i2cWaitForComplete
-                0x000057c6                i2cSendByte
-                0x000057d8                i2cReceiveByte
-                0x000057f4                i2cGetReceivedByte
-                0x000057fa                i2cGetStatus
-                0x00005800                i2cMasterSendNI
-                0x0000588e                i2cMasterReceiveNI
- .text          0x0000592c      0x310 ks0108.o
-                0x0000592c                glcdInitHW
-                0x0000595a                glcdControllerSelect
-                0x00005970                glcdBusyWait
-                0x000059ca                glcdControlWrite
-                0x00005a1c                glcdControlRead
-                0x00005a62                glcdDataRead
-                0x00005aa8                glcdReset
-                0x00005aaa                glcdSetXAddress
-                0x00005ade                glcdSetYAddress
-                0x00005afc                glcdDataWrite
-                0x00005b94                glcdStartLine
-                0x00005bae                glcdSetAddress
-                0x00005bc2                glcdClearScreen
-                0x00005bea                glcdHome
-                0x00005c0a                glcdInit
-                0x00005c28                glcdGotoChar
-                0x00005c3a                glcdDelay
- .text          0x00005c3c     0x10ba ratt.o
-                0x00005c3c                __vector_18
-                0x00005cb6                char_available
-                0x00005cd8                char_read
-                0x00005d16                __vector_13
-                0x00005d3a                __vector_14
-                0x00005dfc                __vector_11
-                0x00005e20                setalarmstate
-                0x00005e94                leapyear
-                0x00005ec6                tick
-                0x00005ec8                i2bcd
-                0x00005eea                setsnooze
-                0x00005f02                DecodeGPSBuffer
-                0x00005f16                printnumber
-                0x00005f44                GPSRead
-                0x000063a4                beep
-                0x000063f0                writei2ctime
-                0x000064b6                GPSCheck
-                0x00006514                init_eeprom
-                0x00006560                readi2ctime
-                0x0000673a                clock_init
-                0x000067a0                __vector_9
-                0x000069a8                drawArrow
-                0x000069f8                main
- .text          0x00006cf6        0x0 rle.o
- .text          0x00006cf6      0x9e4 util.o
-                0x00006cf6                uart_init
-                0x00006d10                delay_10us
-                0x00006d24                delay_ms
-                0x00006d3e                delay_s
-                0x00006d62                uart_putchar
-                0x00006d76                uart_getchar
-                0x00006d84                uart_getch
-                0x00006d8c                ROM_putstring
-                0x00006dce                uart_puts
-                0x00006de8                uart_putc_hex
-                0x00006e3a                uart_putw_hex
-                0x00006e4e                uart_putdw_hex
-                0x00006e74                uart_putw_dec
-                0x00006eea                uart_put_dec
-                0x00006f66                uart_putdw_dec
-                0x00007044                dotw
-                0x000070cc                hours
-                0x000070ec                encipher
-                0x00007276                init_crand_consistent
-                0x00007340                init_crand
-                0x00007352                crand
-                0x000073f6                intersectrect
-                0x0000744a                add_month
-                0x000074bc                check_timeout
-                0x0000752a                PRINT_MENU_LINE
-                0x0000756e                PRINT_MENU
-                0x000075be                PRINT_MENU_OPTS
-                0x000075d2                print_menu_change
-                0x000075e0                print_menu_exit
-                0x000075f6                print_menu_advance
-                0x0000760c                drawbigdigit
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
- .text          0x000076da        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-                0x000076da                . = ALIGN (0x2)
+ .text          0x00003b84        0x0 anim_sev.o
+ .text          0x00003b84        0x0 anim_ts.o
+ .text          0x00003b84        0x0 anim_xda.o
+ .text          0x00003b84      0x19e buttons.o
+                0x00003bda                __vector_3
+                0x00003bb2                readADC
+                0x00003c24                __vector_21
+                0x00003b84                initbuttons
+ .text          0x00003d22      0xa1e config.o
+                0x00004006                print_alarmline
+                0x00003d22                print_style_setting
+                0x00003eb0                print_date
+                0x0000440a                set_date
+                0x00003f4e                print_backlight
+                0x00004658                set_style
+                0x00004272                set_alarm
+                0x0000410e                init_set_menu
+                0x00003d64                print_region_setting
+                0x0000411e                set_time
+                0x00003e38                print_timehour
+                0x00003ea2                print_number_slash
+                0x00004364                set_backlight
+                0x00004048                print_monthday_help
+                0x0000457e                set_region
+                0x00003f78                print_time
+                0x00003dae                print_alarmhour
+                0x0000407c                display_menu
+ .text          0x00004740      0x988 deathclock.o
+                0x00004cda                load_raw_etd
+                0x00004a1e                random_days
+                0x00004740                is_leap_year
+                0x00004ee0                load_etd
+                0x00004a78                ETD
+                0x000049ac                BodyMassIndex
+                0x00004de4                calc_death_date
+                0x00004772                date_diff
+ .text          0x000050c8      0x124 dispatch.o
+                0x000050e2                initdisplay
+                0x00005160                drawdisplay
+                0x000050c8                step
+                0x000050fc                initanim
+ .text          0x000051ec        0x0 eeprom.o
+ .text          0x000051ec      0x464 glcd.o
+                0x00005256                glcdWriteChar
+                0x000052ac                glcdPutStr_rom
+                0x000055fe                glcdSetDot
+                0x000052da                glcdPutStr_ram
+                0x000051f6                glcdWriteCharGr
+                0x000054dc                glcdFillCircle
+                0x000051ec                get_font
+                0x000052fc                glcdFillRectangle
+ .text          0x00005650      0x1ce i2c.o
+                0x00005650                i2cInit
+                0x00005690                i2cSendStart
+                0x000056ac                i2cWaitForComplete
+                0x000056e4                i2cGetReceivedByte
+                0x000056f0                i2cMasterSendNI
+                0x000056ea                i2cGetStatus
+                0x000056b6                i2cSendByte
+                0x0000577e                i2cMasterReceiveNI
+                0x000056c8                i2cReceiveByte
+                0x00005688                i2cSetBitrate
+                0x0000569e                i2cSendStop
+ .text          0x0000581e      0x310 ks0108.o
+                0x00005954                glcdDataRead
+                0x00005a86                glcdStartLine
+                0x000059d0                glcdSetYAddress
+                0x00005adc                glcdHome
+                0x00005862                glcdBusyWait
+                0x00005b1a                glcdGotoChar
+                0x0000599a                glcdReset
+                0x00005b2c                glcdDelay
+                0x0000584c                glcdControllerSelect
+                0x0000581e                glcdInitHW
+                0x00005aa0                glcdSetAddress
+                0x00005ab4                glcdClearScreen
+                0x0000599c                glcdSetXAddress
+                0x000058bc                glcdControlWrite
+                0x00005afc                glcdInit
+                0x0000590e                glcdControlRead
+                0x000059ee                glcdDataWrite
+ .text          0x00005b2e     0x109e ratt.o
+                0x00005e08                printnumber
+                0x00005dba                i2bcd
+                0x000063ea                init_eeprom
+                0x00005d86                leapyear
+                0x0000638c                GPSCheck
+                0x00006436                readi2ctime
+                0x00005bca                char_read
+                0x00005ba8                char_available
+                0x00005cee                __vector_11
+                0x00005c08                __vector_13
+                0x00006610                clock_init
+                0x00005e36                GPSRead
+                0x00005df4                DecodeGPSBuffer
+                0x00005db8                tick
+                0x000068ce                main
+                0x00005ddc                setsnooze
+                0x00006676                __vector_9
+                0x0000627a                beep
+                0x0000687e                drawArrow
+                0x000062c6                writei2ctime
+                0x00005d12                setalarmstate
+                0x00005c2c                __vector_14
+                0x00005b2e                __vector_18
+ .text          0x00006bcc        0x0 rle.o
+ .text          0x00006bcc      0x9e4 util.o
+                0x00006e3c                uart_putdw_dec
+                0x000074e2                drawbigdigit
+                0x00007400                PRINT_MENU_LINE
+                0x000074cc                print_menu_advance
+                0x00006dc0                uart_put_dec
+                0x00006cbe                uart_putc_hex
+                0x00006be6                delay_10us
+                0x00006ca4                uart_puts
+                0x00006c4c                uart_getchar
+                0x00006fc2                encipher
+                0x00006bcc                uart_init
+                0x00007392                check_timeout
+                0x00007444                PRINT_MENU
+                0x00006f1a                dotw
+                0x00007216                init_crand
+                0x00006d4a                uart_putw_dec
+                0x00006d24                uart_putdw_hex
+                0x00006bfa                delay_ms
+                0x0000714c                init_crand_consistent
+                0x000074b6                print_menu_exit
+                0x00007494                PRINT_MENU_OPTS
+                0x00006c5a                uart_getch
+                0x00007320                add_month
+                0x00006c62                ROM_putstring
+                0x000072cc                intersectrect
+                0x00006c14                delay_s
+                0x00006fa2                hours
+                0x000074a8                print_menu_change
+                0x00006d10                uart_putw_hex
+                0x00006c38                uart_putchar
+                0x00007228                crand
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                0x000075b0                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x000076da       0x3e /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
-                0x000076da                __mulsi3
- .text.libgcc   0x00007718       0x18 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
-                0x00007718                __udivmodqi4
- .text.libgcc   0x00007730       0x28 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
-                0x00007730                __udivmodhi4
- .text.libgcc   0x00007758       0x26 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
-                0x00007758                __divmodhi4
-                0x00007758                _div
- .text.libgcc   0x0000777e       0x44 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
-                0x0000777e                __udivmodsi4
- .text.libgcc   0x000077c2       0x36 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
-                0x000077c2                __divmodsi4
- .text.libgcc   0x000077f8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
- .text.libgcc   0x000077f8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
- .text.libgcc   0x000077f8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
+ .text.libgcc   0x000075b0       0x3e c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+                0x000075b0                __mulsi3
+ .text.libgcc   0x000075ee       0x18 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+                0x000075ee                __udivmodqi4
+ .text.libgcc   0x00007606       0x28 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+                0x00007606                __udivmodhi4
+ .text.libgcc   0x0000762e       0x26 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+                0x0000762e                __divmodhi4
+                0x0000762e                _div
+ .text.libgcc   0x00007654       0x44 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+                0x00007654                __udivmodsi4
+ .text.libgcc   0x00007698       0x36 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+                0x00007698                __divmodsi4
+ .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
  .text.avr-libc
-                0x000077f8       0x12 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
-                0x000077f8                strcmp
+                0x000076ce       0x12 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+                0x000076ce                strcmp
  .text.avr-libc
-                0x0000780a       0x10 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
-                0x0000780a                __eerd_byte_m328p
+                0x000076e0       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+                0x000076e0                __eerd_byte_m328p
  .text.avr-libc
-                0x0000781a        0xc /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
-                0x0000781a                __eerd_word_m328p
+                0x000076f0        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+                0x000076f0                __eerd_word_m328p
  .text.avr-libc
-                0x00007826       0x1c /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
-                0x00007826                __eewr_byte_m328p
-                0x00007828                __eewr_r18_m328p
+                0x000076fc       0x1c c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+                0x000076fc                __eewr_byte_m328p
+                0x000076fe                __eewr_r18_m328p
  .text.avr-libc
-                0x00007842        0xa /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
-                0x00007842                __eewr_word_m328p
+                0x00007718        0xa c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+                0x00007718                __eewr_word_m328p
  .text.avr-libc
-                0x0000784c       0x20 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-                0x0000784c                __eerd_block_m328p
-                0x00007850                __eerd_blraw_m328p
-                0x0000786c                . = ALIGN (0x2)
+                0x00007722       0x20 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                0x00007722                __eerd_block_m328p
+                0x00007726                __eerd_blraw_m328p
+                0x00007742                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x0000786c        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
-                0x0000786c                exit
-                0x0000786c                _exit
+ .fini9         0x00007742        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+                0x00007742                exit
+                0x00007742                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -588,14 +588,14 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x0000786c        0x4 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
+ .fini0         0x00007742        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x00007870                _etext = .
+                0x00007746                _etext = .
 
-.data           0x00800100       0xf2 load address 0x00007870
+.data           0x00800100       0xf2 load address 0x00007746
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
- .data          0x00800100        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .data          0x00800100        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  .data          0x00800100        0x0 anim_abo.o
  .data          0x00800100        0x2 anim_death.o
  .data          0x00800102        0x8 anim_deathcfg.o
@@ -608,15 +608,15 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  .data          0x0080018a        0x0 anim_xda.o
  .data          0x0080018a        0x0 buttons.o
  .data          0x0080018a        0x6 config.o
-                0x0080018a                next_mode_setdate
                 0x0080018c                next_mode_setmonth
                 0x0080018e                next_mode_setday
+                0x0080018a                next_mode_setdate
  .data          0x00800190       0x40 deathclock.o
-                0x00800190                bmi_table_offset
                 0x00800198                bmi_table_count
+                0x008001b0                days_table
                 0x008001a0                smoking_table_offset
                 0x008001a8                smoking_table_count
-                0x008001b0                days_table
+                0x00800190                bmi_table_offset
  .data          0x008001d0        0x0 dispatch.o
  .data          0x008001d0        0x0 eeprom.o
  .data          0x008001d0        0x0 glcd.o
@@ -626,21 +626,21 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
                 0x008001e4                timeunknown
  .data          0x008001f1        0x0 rle.o
  .data          0x008001f1        0x0 util.o
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
- .data          0x008001f1        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
  *(.data*)
  *(.rodata)
  *(.rodata*)
@@ -653,30 +653,30 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
 .bss            0x008001f2      0x160
                 0x008001f2                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x008001f2        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+ .bss           0x008001f2        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  .bss           0x008001f2        0x0 anim_abo.o
  .bss           0x008001f2        0x9 anim_death.o
+                0x008001f4                last_score_mode
                 0x008001f2                border_tick
                 0x008001f3                redraw_time
-                0x008001f4                last_score_mode
  .bss           0x008001fb        0x0 anim_deathcfg.o
  .bss           0x008001fb        0x0 anim_gps.o
  .bss           0x008001fb        0x0 anim_int.o
  .bss           0x008001fb       0x12 anim_rat.o
-                0x008001fb                redraw_time_rat
                 0x008001fc                last_score_mode_rat
+                0x008001fb                redraw_time_rat
  .bss           0x0080020d        0x0 anim_sev.o
  .bss           0x0080020d        0x0 anim_ts.o
  .bss           0x0080020d        0x0 anim_xda.o
  .bss           0x0080020d        0x5 buttons.o
-                0x0080020d                last_buttonstate
                 0x0080020e                debounce
-                0x0080020f                just_pressed
-                0x00800210                pressed
                 0x00800211                buttonholdcounter
+                0x00800210                pressed
+                0x0080020d                last_buttonstate
+                0x0080020f                just_pressed
  .bss           0x00800212        0x2 config.o
-                0x00800212                timeoutcounter
                 0x00800213                screenmutex
+                0x00800212                timeoutcounter
  .bss           0x00800214        0x4 deathclock.o
                 0x00800214                minutes_left
  .bss           0x00800218        0x0 dispatch.o
@@ -686,38 +686,38 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  .bss           0x0080021d        0x0 ks0108.o
  .bss           0x0080021d       0xa3 ratt.o
                 0x0080021d                sleepmode
-                0x0080021e                minute_changed
                 0x0080021f                hour_changed
                 0x00800220                second_changed
-                0x00800221                score_mode_timeout
-                0x00800222                score_mode
-                0x00800223                gpsenable
-                0x00800224                timezone
-                0x00800225                timezonehour
-                0x00800226                timezonemin
+                0x008002b0                t2divider2
                 0x00800227                rx_buffer
+                0x00800222                score_mode
+                0x00800224                timezone
+                0x00800223                gpsenable
+                0x00800226                timezonemin
+                0x0080021e                minute_changed
                 0x008002ab                snoozetimer
+                0x00800221                score_mode_timeout
+                0x00800225                timezonehour
                 0x008002ad                millis
                 0x008002af                t2divider1
-                0x008002b0                t2divider2
  .bss           0x008002c0        0x0 rle.o
  .bss           0x008002c0        0x8 util.o
                 0x008002c0                rval
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
- .bss           0x008002c8        0x0 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
  *(.bss*)
  *(COMMON)
  COMMON         0x008002c8       0x16 anim_death.o
@@ -785,8 +785,8 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
  COMMON         0x00800342       0x10 util.o
                 0x00800342                key
                 0x00800352                PROVIDE (__bss_end, .)
-                0x00007870                __data_load_start = LOADADDR (.data)
-                0x00007962                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x00007746                __data_load_start = LOADADDR (.data)
+                0x00007838                __data_load_end = (__data_load_start + SIZEOF (.data))
 
 .noinit         0x00800352        0x0
                 0x00800352                PROVIDE (__noinit_start, .)
@@ -798,33 +798,33 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
 .eeprom         0x00810000      0x3a0
  *(.eeprom*)
  .eeprom        0x00810000      0x3a0 eeprom.o
-                0x00810000                EE_INIT
-                0x00810001                EE_ALARM_HOUR
-                0x00810002                EE_ALARM_MIN
-                0x00810003                EE_BRIGHT
+                0x00810019                EE_TIMEZONE
+                0x00810008                EE_DOB_MONTH
+                0x0081000a                EE_DOB_YEAR
+                0x0081000f                EE_DC_MODE
+                0x00810011                EE_BMI_WEIGHT
+                0x0081000d                EE_SET_YEAR
+                0x00810018                EE_SET_SEC
                 0x00810004                EE_REGION
+                0x00810015                EE_SMOKER
+                0x0081000c                EE_SET_DAY
                 0x00810005                EE_TIME_FORMAT
                 0x00810006                EE_SNOOZE
-                0x00810007                EE_STYLE
-                0x00810008                EE_DOB_MONTH
-                0x00810009                EE_DOB_DAY
-                0x0081000a                EE_DOB_YEAR
-                0x0081000b                EE_SET_MONTH
-                0x0081000c                EE_SET_DAY
-                0x0081000d                EE_SET_YEAR
-                0x0081000e                EE_GENDER
-                0x0081000f                EE_DC_MODE
+                0x00810002                EE_ALARM_MIN
+                0x00810001                EE_ALARM_HOUR
                 0x00810010                EE_BMI_UNIT
-                0x00810011                EE_BMI_WEIGHT
-                0x00810013                EE_BMI_HEIGHT
-                0x00810015                EE_SMOKER
-                0x00810016                EE_SET_HOUR
-                0x00810017                EE_SET_MIN
-                0x00810018                EE_SET_SEC
-                0x00810019                EE_TIMEZONE
                 0x0081001a                BigFont
+                0x0081000e                EE_GENDER
                 0x00810062                Font5x7
+                0x00810017                EE_SET_MIN
                 0x00810242                about
+                0x00810009                EE_DOB_DAY
+                0x0081000b                EE_SET_MONTH
+                0x00810007                EE_STYLE
+                0x00810016                EE_SET_HOUR
+                0x00810003                EE_BRIGHT
+                0x00810013                EE_BMI_HEIGHT
+                0x00810000                EE_INIT
                 0x008103a0                __eeprom_end = .
 
 .fuse
@@ -839,65 +839,11 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
 .signature
  *(.signature*)
 
-.stab           0x00000000     0xdfd4
+.stab
  *(.stab)
- .stab          0x00000000      0x6b4 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
- .stab          0x000006b4      0x738 anim_abo.o
-                                0x744 (size before relaxing)
- .stab          0x00000dec     0x1464 anim_death.o
-                               0x18b4 (size before relaxing)
- .stab          0x00002250     0x1608 anim_deathcfg.o
-                               0x1a28 (size before relaxing)
- .stab          0x00003858      0x384 anim_gps.o
-                                0x7d4 (size before relaxing)
- .stab          0x00003bdc      0x18c anim_int.o
-                                0x5dc (size before relaxing)
- .stab          0x00003d68     0x117c anim_rat.o
-                               0x15cc (size before relaxing)
- .stab          0x00004ee4      0x18c anim_sev.o
-                                0x5dc (size before relaxing)
- .stab          0x00005070      0x18c anim_ts.o
-                                0x5dc (size before relaxing)
- .stab          0x000051fc      0x18c anim_xda.o
-                                0x5dc (size before relaxing)
- .stab          0x00005388      0x57c buttons.o
-                                0x99c (size before relaxing)
- .stab          0x00005904     0x168c config.o
-                               0x1aac (size before relaxing)
- .stab          0x00006f90      0xd68 deathclock.o
-                               0x1050 (size before relaxing)
- .stab          0x00007cf8      0x3cc dispatch.o
-                                0x6e4 (size before relaxing)
- .stab          0x000080c4      0x2b8 eeprom.o
-                                0x5a0 (size before relaxing)
- .stab          0x0000837c      0xabc glcd.o
-                                0xe88 (size before relaxing)
- .stab          0x00008e38      0x840 i2c.o
-                                0xba0 (size before relaxing)
- .stab          0x00009678      0xde0 ks0108.o
-                               0x1188 (size before relaxing)
- .stab          0x0000a458     0x1f20 ratt.o
-                               0x2274 (size before relaxing)
- .stab          0x0000c378      0x168 rle.o
-                                0x414 (size before relaxing)
- .stab          0x0000c4e0     0x1734 util.o
-                               0x1b84 (size before relaxing)
- .stab          0x0000dc14       0x84 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
-                                 0x90 (size before relaxing)
- .stab          0x0000dc98       0x90 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
-                                 0x9c (size before relaxing)
- .stab          0x0000dd28       0x6c /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
-                                 0x78 (size before relaxing)
- .stab          0x0000dd94       0xe4 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
-                                 0xf0 (size before relaxing)
- .stab          0x0000de78       0x54 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
-                                 0x60 (size before relaxing)
- .stab          0x0000decc      0x108 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-                                0x114 (size before relaxing)
 
-.stabstr        0x00000000     0x437e
+.stabstr
  *(.stabstr)
- .stabstr       0x00000000     0x437e /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
 
 .stab.excl
  *(.stab.excl)
@@ -926,35 +872,229 @@ LOAD /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges
+.debug_aranges  0x00000000      0x1c0
  *(.debug_aranges)
+ .debug_aranges
+                0x00000000       0x20 anim_abo.o
+ .debug_aranges
+                0x00000020       0x20 anim_death.o
+ .debug_aranges
+                0x00000040       0x20 anim_deathcfg.o
+ .debug_aranges
+                0x00000060       0x20 anim_gps.o
+ .debug_aranges
+                0x00000080       0x20 anim_rat.o
+ .debug_aranges
+                0x000000a0       0x20 buttons.o
+ .debug_aranges
+                0x000000c0       0x20 config.o
+ .debug_aranges
+                0x000000e0       0x20 deathclock.o
+ .debug_aranges
+                0x00000100       0x20 dispatch.o
+ .debug_aranges
+                0x00000120       0x20 glcd.o
+ .debug_aranges
+                0x00000140       0x20 i2c.o
+ .debug_aranges
+                0x00000160       0x20 ks0108.o
+ .debug_aranges
+                0x00000180       0x20 ratt.o
+ .debug_aranges
+                0x000001a0       0x20 util.o
 
 .debug_pubnames
+                0x00000000     0x158e
  *(.debug_pubnames)
+ .debug_pubnames
+                0x00000000       0x2e anim_abo.o
+ .debug_pubnames
+                0x0000002e      0x176 anim_death.o
+ .debug_pubnames
+                0x000001a4      0x1e8 anim_deathcfg.o
+ .debug_pubnames
+                0x0000038c       0x30 anim_gps.o
+ .debug_pubnames
+                0x000003bc      0x235 anim_rat.o
+ .debug_pubnames
+                0x000005f1       0xa2 buttons.o
+ .debug_pubnames
+                0x00000693      0x1ed config.o
+ .debug_pubnames
+                0x00000880      0x230 deathclock.o
+ .debug_pubnames
+                0x00000ab0       0x48 dispatch.o
+ .debug_pubnames
+                0x00000af8      0x1c1 eeprom.o
+ .debug_pubnames
+                0x00000cb9       0xa3 glcd.o
+ .debug_pubnames
+                0x00000d5c       0xde i2c.o
+ .debug_pubnames
+                0x00000e3a      0x14e ks0108.o
+ .debug_pubnames
+                0x00000f88      0x38a ratt.o
+ .debug_pubnames
+                0x00001312       0x57 rle.o
+ .debug_pubnames
+                0x00001369      0x225 util.o
 
-.debug_info
+.debug_info     0x00000000     0x6077
  *(.debug_info)
+ .debug_info    0x00000000      0x18a anim_abo.o
+ .debug_info    0x0000018a      0x7df anim_death.o
+ .debug_info    0x00000969      0x9f2 anim_deathcfg.o
+ .debug_info    0x0000135b      0x2bb anim_gps.o
+ .debug_info    0x00001616       0x79 anim_int.o
+ .debug_info    0x0000168f      0x79c anim_rat.o
+ .debug_info    0x00001e2b       0x79 anim_sev.o
+ .debug_info    0x00001ea4       0x79 anim_ts.o
+ .debug_info    0x00001f1d       0x79 anim_xda.o
+ .debug_info    0x00001f96      0x161 buttons.o
+ .debug_info    0x000020f7      0xa5d config.o
+ .debug_info    0x00002b54      0x8e1 deathclock.o
+ .debug_info    0x00003435      0x15f dispatch.o
+ .debug_info    0x00003594      0x2e4 eeprom.o
+ .debug_info    0x00003878      0x481 glcd.o
+ .debug_info    0x00003cf9      0x464 i2c.o
+ .debug_info    0x0000415d      0x461 ks0108.o
+ .debug_info    0x000045be      0xbe1 ratt.o
+ .debug_info    0x0000519f      0x112 rle.o
+ .debug_info    0x000052b1      0xdc6 util.o
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev
+.debug_abbrev   0x00000000     0x1901
  *(.debug_abbrev)
+ .debug_abbrev  0x00000000       0xda anim_abo.o
+ .debug_abbrev  0x000000da      0x1d4 anim_death.o
+ .debug_abbrev  0x000002ae      0x173 anim_deathcfg.o
+ .debug_abbrev  0x00000421      0x105 anim_gps.o
+ .debug_abbrev  0x00000526       0x33 anim_int.o
+ .debug_abbrev  0x00000559      0x1d3 anim_rat.o
+ .debug_abbrev  0x0000072c       0x33 anim_sev.o
+ .debug_abbrev  0x0000075f       0x33 anim_ts.o
+ .debug_abbrev  0x00000792       0x33 anim_xda.o
+ .debug_abbrev  0x000007c5       0xb7 buttons.o
+ .debug_abbrev  0x0000087c      0x1ab config.o
+ .debug_abbrev  0x00000a27      0x18a deathclock.o
+ .debug_abbrev  0x00000bb1       0xa9 dispatch.o
+ .debug_abbrev  0x00000c5a       0x8d eeprom.o
+ .debug_abbrev  0x00000ce7      0x1af glcd.o
+ .debug_abbrev  0x00000e96      0x1ed i2c.o
+ .debug_abbrev  0x00001083      0x1cb ks0108.o
+ .debug_abbrev  0x0000124e      0x308 ratt.o
+ .debug_abbrev  0x00001556       0x73 rle.o
+ .debug_abbrev  0x000015c9      0x338 util.o
 
-.debug_line
+.debug_line     0x00000000     0x5446
  *(.debug_line)
+ .debug_line    0x00000000      0x15e anim_abo.o
+ .debug_line    0x0000015e      0x9be anim_death.o
+ .debug_line    0x00000b1c      0xa65 anim_deathcfg.o
+ .debug_line    0x00001581      0x161 anim_gps.o
+ .debug_line    0x000016e2       0x3e anim_int.o
+ .debug_line    0x00001720      0x6ea anim_rat.o
+ .debug_line    0x00001e0a       0x3e anim_sev.o
+ .debug_line    0x00001e48       0x3e anim_ts.o
+ .debug_line    0x00001e86       0x3e anim_xda.o
+ .debug_line    0x00001ec4      0x21f buttons.o
+ .debug_line    0x000020e3      0x9f1 config.o
+ .debug_line    0x00002ad4      0x44f deathclock.o
+ .debug_line    0x00002f23      0x19e dispatch.o
+ .debug_line    0x000030c1       0x83 eeprom.o
+ .debug_line    0x00003144      0x411 glcd.o
+ .debug_line    0x00003555      0x2fe i2c.o
+ .debug_line    0x00003853      0x5e8 ks0108.o
+ .debug_line    0x00003e3b      0xdc5 ratt.o
+ .debug_line    0x00004c00       0x80 rle.o
+ .debug_line    0x00004c80      0x7c6 util.o
 
-.debug_frame
+.debug_frame    0x00000000      0xb30
  *(.debug_frame)
+ .debug_frame   0x00000000       0x20 anim_abo.o
+ .debug_frame   0x00000020       0xb0 anim_death.o
+ .debug_frame   0x000000d0      0x100 anim_deathcfg.o
+ .debug_frame   0x000001d0       0x20 anim_gps.o
+ .debug_frame   0x000001f0       0xf0 anim_rat.o
+ .debug_frame   0x000002e0       0x50 buttons.o
+ .debug_frame   0x00000330      0x130 config.o
+ .debug_frame   0x00000460       0x90 deathclock.o
+ .debug_frame   0x000004f0       0x50 dispatch.o
+ .debug_frame   0x00000540       0x90 glcd.o
+ .debug_frame   0x000005d0       0xc0 i2c.o
+ .debug_frame   0x00000690      0x120 ks0108.o
+ .debug_frame   0x000007b0      0x180 ratt.o
+ .debug_frame   0x00000930      0x200 util.o
 
-.debug_str
+.debug_str      0x00000000     0x17e2
  *(.debug_str)
+ .debug_str     0x00000000       0xee anim_abo.o
+                                0x12c (size before relaxing)
+ .debug_str     0x000000ee      0x39a anim_death.o
+                                0x4e5 (size before relaxing)
+ .debug_str     0x00000488      0x410 anim_deathcfg.o
+                                0x5b7 (size before relaxing)
+ .debug_str     0x00000898       0x3f anim_gps.o
+                                0x2db (size before relaxing)
+ .debug_str     0x000008d7        0xb anim_int.o
+                                 0xc5 (size before relaxing)
+ .debug_str     0x000008e2      0x25b anim_rat.o
+                                0x529 (size before relaxing)
+ .debug_str     0x00000b3d        0xb anim_sev.o
+                                 0xc5 (size before relaxing)
+ .debug_str     0x00000b48        0xa anim_ts.o
+                                 0xc4 (size before relaxing)
+ .debug_str     0x00000b52        0xb anim_xda.o
+                                 0xc5 (size before relaxing)
+ .debug_str     0x00000b5d       0x72 buttons.o
+                                0x152 (size before relaxing)
+ .debug_str     0x00000bcf      0x1d8 config.o
+                                0x595 (size before relaxing)
+ .debug_str     0x00000da7      0x1d7 deathclock.o
+                                0x3f8 (size before relaxing)
+ .debug_str     0x00000f7e       0x31 dispatch.o
+                                0x16e (size before relaxing)
+ .debug_str     0x00000faf       0x3a eeprom.o
+                                0x1ed (size before relaxing)
+ .debug_str     0x00000fe9       0xbb glcd.o
+                                0x1c4 (size before relaxing)
+ .debug_str     0x000010a4      0x15b i2c.o
+                                0x21a (size before relaxing)
+ .debug_str     0x000011ff      0x177 ks0108.o
+                                0x264 (size before relaxing)
+ .debug_str     0x00001376      0x262 ratt.o
+                                0x742 (size before relaxing)
+ .debug_str     0x000015d8        0x6 rle.o
+                                 0xdb (size before relaxing)
+ .debug_str     0x000015de      0x204 util.o
+                                0x58b (size before relaxing)
 
-.debug_loc
+.debug_loc      0x00000000     0x32b0
  *(.debug_loc)
+ .debug_loc     0x00000000       0xee anim_abo.o
+ .debug_loc     0x000000ee      0x53e anim_death.o
+ .debug_loc     0x0000062c      0x177 anim_deathcfg.o
+ .debug_loc     0x000007a3       0x6d anim_gps.o
+ .debug_loc     0x00000810      0x4a8 anim_rat.o
+ .debug_loc     0x00000cb8       0x48 buttons.o
+ .debug_loc     0x00000d00      0x553 config.o
+ .debug_loc     0x00001253      0xa91 deathclock.o
+ .debug_loc     0x00001ce4       0x47 dispatch.o
+ .debug_loc     0x00001d2b      0x62d glcd.o
+ .debug_loc     0x00002358      0x16b i2c.o
+ .debug_loc     0x000024c3      0x149 ks0108.o
+ .debug_loc     0x0000260c      0x381 ratt.o
+ .debug_loc     0x0000298d      0x923 util.o
 
 .debug_macinfo
  *(.debug_macinfo)
 OUTPUT(MultiChronB.elf elf32-avr)
 LOAD linker stubs
+
+.debug_ranges   0x00000000      0x198
+ .debug_ranges  0x00000000       0x18 anim_death.o
+ .debug_ranges  0x00000018       0x30 ratt.o
+ .debug_ranges  0x00000048      0x150 util.o
 
 Cross Reference Table
 
@@ -1055,69 +1195,45 @@ ROM_putstring                                     util.o
 RotateFlag                                        ratt.o
                                                   dispatch.o
                                                   config.o
-__bad_interrupt                                   /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__bss_end                                         /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
-__bss_start                                       /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
-__data_end                                        /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
-__data_load_start                                 /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
-__data_start                                      /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
-__divmodhi4                                       /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
+__bad_interrupt                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__bss_end                                         c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+__bss_start                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+__data_end                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+__data_load_start                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+__data_start                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+__divmodhi4                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
                                                   util.o
                                                   ratt.o
                                                   config.o
                                                   anim_deathcfg.o
                                                   anim_death.o
                                                   anim_abo.o
-__divmodsi4                                       /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
+__divmodsi4                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
                                                   ratt.o
                                                   anim_rat.o
                                                   anim_death.o
-__do_clear_bss                                    /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_clear_bss.o)
+__do_clear_bss                                    c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
                                                   util.o
-                                                  rle.o
                                                   ratt.o
                                                   ks0108.o
                                                   i2c.o
-                                                  glcd.o
-                                                  eeprom.o
-                                                  dispatch.o
                                                   deathclock.o
                                                   config.o
                                                   buttons.o
-                                                  anim_xda.o
-                                                  anim_ts.o
-                                                  anim_sev.o
                                                   anim_rat.o
-                                                  anim_int.o
-                                                  anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_death.o
-                                                  anim_abo.o
-__do_copy_data                                    /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_copy_data.o)
-                                                  util.o
-                                                  rle.o
+__do_copy_data                                    c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
                                                   ratt.o
-                                                  ks0108.o
-                                                  i2c.o
-                                                  glcd.o
-                                                  eeprom.o
-                                                  dispatch.o
                                                   deathclock.o
                                                   config.o
-                                                  buttons.o
-                                                  anim_xda.o
-                                                  anim_ts.o
-                                                  anim_sev.o
                                                   anim_rat.o
-                                                  anim_int.o
-                                                  anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_death.o
-                                                  anim_abo.o
-__eerd_block_m328p                                /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-__eerd_blraw_m328p                                /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_block_atmega328p.o)
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
-__eerd_byte_m328p                                 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_byte_atmega328p.o)
+__eerd_block_m328p                                c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+__eerd_blraw_m328p                                c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+__eerd_byte_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
                                                   util.o
                                                   ratt.o
                                                   glcd.o
@@ -1126,79 +1242,79 @@ __eerd_byte_m328p                                 /usr/lib/gcc/avr/4.3.4/../../.
                                                   anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_abo.o
-__eerd_word_m328p                                 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eerd_word_atmega328p.o)
+__eerd_word_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
                                                   deathclock.o
                                                   anim_deathcfg.o
-__eewr_byte_m328p                                 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
+__eewr_byte_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
                                                   ratt.o
                                                   config.o
                                                   anim_gps.o
                                                   anim_deathcfg.o
-__eewr_r18_m328p                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_byte_atmega328p.o)
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
-__eewr_word_m328p                                 /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(eewr_word_atmega328p.o)
+__eewr_r18_m328p                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+__eewr_word_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
                                                   anim_deathcfg.o
-__heap_end                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__init                                            /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__mulsi3                                          /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_mulsi3.o)
+__heap_end                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__init                                            c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__mulsi3                                          c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
                                                   util.o
                                                   deathclock.o
                                                   anim_rat.o
-__stack                                           /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__udivmodhi4                                      /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodhi4.o)
-                                                  /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
+__stack                                           c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__udivmodhi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
                                                   util.o
                                                   ratt.o
                                                   deathclock.o
                                                   anim_deathcfg.o
                                                   anim_death.o
-__udivmodqi4                                      /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodqi4.o)
+__udivmodqi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
                                                   ratt.o
                                                   anim_rat.o
                                                   anim_death.o
-__udivmodsi4                                      /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_udivmodsi4.o)
-                                                  /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodsi4.o)
+__udivmodsi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
                                                   util.o
                                                   deathclock.o
                                                   anim_rat.o
                                                   anim_death.o
-__vector_1                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_10                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+__vector_1                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_10                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_11                                       ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_12                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_12                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_13                                       ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_14                                       ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_15                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_16                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_17                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_15                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_16                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_17                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_18                                       ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_19                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_2                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_20                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_19                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_2                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_20                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_21                                       buttons.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_22                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_23                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_24                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_25                                       /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_22                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_23                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_24                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_25                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_3                                        buttons.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_4                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_5                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_6                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_7                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_8                                        /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_4                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_5                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_6                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_7                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_8                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_9                                        ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vector_default                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-__vectors                                         /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
-_div                                              /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_divmodhi4.o)
-_exit                                             /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vector_default                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__vectors                                         c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+_div                                              c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+_exit                                             c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
 about                                             eeprom.o
                                                   anim_abo.o
 adafruit                                          rle.o
@@ -1336,8 +1452,8 @@ drawdisplay_rat                                   anim_rat.o
                                                   dispatch.o
 drawmidline                                       anim_rat.o
 encipher                                          util.o
-exit                                              /usr/lib/gcc/avr/4.3.4/avr5/libgcc.a(_exit.o)
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+exit                                              c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 get_font                                          glcd.o
 glcdBusyWait                                      ks0108.o
 glcdClearScreen                                   ks0108.o
@@ -1479,7 +1595,7 @@ load_etd                                          deathclock.o
 load_raw_etd                                      deathclock.o
 logo_p                                            anim_abo.o
 main                                              ratt.o
-                                                  /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/crtm328p.o
+                                                  c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 millis                                            ratt.o
 minute_changed                                    ratt.o
                                                   dispatch.o
@@ -1620,7 +1736,7 @@ step_death                                        anim_death.o
                                                   dispatch.o
 step_rat                                          anim_rat.o
                                                   dispatch.o
-strcmp                                            /usr/lib/gcc/avr/4.3.4/../../../avr/lib/avr5/libc.a(strcmp.o)
+strcmp                                            c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
                                                   ratt.o
 style_setting_str                                 config.o
 t2divider1                                        ratt.o
