@@ -1,7 +1,7 @@
 /* ***************************************************************************
 // anim.c - the main animation and drawing code for MONOCHRON
 // This code is distributed under the GNU Public License
-//		which can be found at http://www.gnu.org/licenses/gpl.txt
+//                which can be found at http://www.gnu.org/licenses/gpl.txt
 //
 **************************************************************************** */
 
@@ -58,8 +58,8 @@ void drawdots_xda(uint8_t inverted);
 void drawdigit_xda(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted);
 void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inverted);
 void bitblit_ram(uint8_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t size, uint8_t inverted);
-void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
-void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t size, uint8_t inverted);
+//void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted);
+//void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t size, uint8_t inverted);
 
 uint8_t steps = 0;
 
@@ -77,7 +77,7 @@ void initanim_xda(void) {
 }
 
 uint8_t time_loc[4] = {
-	DISPLAY_H10_X_XDA, DISPLAY_H1_X_XDA, DISPLAY_M10_X_XDA, DISPLAY_M1_X_XDA
+        DISPLAY_H10_X_XDA, DISPLAY_H1_X_XDA, DISPLAY_M10_X_XDA, DISPLAY_M1_X_XDA
 };
 
 void initdisplay_xda(uint8_t inverted) {
@@ -90,22 +90,22 @@ void initdisplay_xda(uint8_t inverted) {
   newright = time_m;
   
   old_digits[0] = old_digits[1] = old_digits[2] = old_digits[3] = 255;
-  new_digits[3] = newright % 10;	
+  new_digits[3] = newright % 10;        
   new_digits[2] = newright / 10;
   new_digits[1] = newleft%10;
   new_digits[0] = newleft/10;
   
   while (steps++ <= MAX_STEPS) {
-  	for(uint8_t i=0;i<4;i++)
-  		transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, old_digits[i], new_digits[i], inverted);
+          for(uint8_t i=0;i<4;i++)
+                  transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, old_digits[i], new_digits[i], inverted);
     /*transitiondigit_xda(DISPLAY_M1_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[3], new_digits[3], inverted);
+                    old_digits[3], new_digits[3], inverted);
     transitiondigit_xda(DISPLAY_M10_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[2], new_digits[2], inverted);
+                    old_digits[2], new_digits[2], inverted);
     transitiondigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[1], new_digits[1], inverted);
+                    old_digits[1], new_digits[1], inverted);
     transitiondigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[0], new_digits[0], inverted);*/
+                    old_digits[0], new_digits[0], inverted);*/
   }
   putstring("done init");
   for (uint8_t i=0; i<4; i++) {
@@ -149,50 +149,50 @@ void drawdisplay_xda(uint8_t inverted) {
     // putstring_nl("time");
     if (last_mode != score_mode) {
       if (! digitsmutex_xda) {
-	for (uint8_t i=0; i<4; i++) {
-	  old_digits[i] = new_digits[i];
-	}
-	uint8_t newleft, newright;
-	if (score_mode == SCORE_MODE_TIME) {
-	  newleft = hours(time_h);
-	  newright = time_m;
-	} else {
-	  newleft = hours(alarm_h);
-	  newright = alarm_m;
-	}
-	new_digits[3] = newright % 10;	
-	new_digits[2] = newright / 10;
-	new_digits[0] = newleft/10;
-	new_digits[1] = newleft%10;
+        for (uint8_t i=0; i<4; i++) {
+          old_digits[i] = new_digits[i];
+        }
+        uint8_t newleft, newright;
+        if (score_mode == SCORE_MODE_TIME) {
+          newleft = hours(time_h);
+          newright = time_m;
+        } else {
+          newleft = hours(alarm_h);
+          newright = alarm_m;
+        }
+        new_digits[3] = newright % 10;        
+        new_digits[2] = newright / 10;
+        new_digits[0] = newleft/10;
+        new_digits[1] = newleft%10;
 
-	drawdots_xda(inverted);
-	glcdFillRectangle(60, 35, 7, 5, inverted);
+        drawdots_xda(inverted);
+        glcdFillRectangle(60, 35, 7, 5, inverted);
 
-	last_mode = score_mode;
-	digitsmutex_xda++;
+        last_mode = score_mode;
+        digitsmutex_xda++;
       }
     }
 
-    if (score_mode == SCORE_MODE_TIME) {	//Prevent the minute/hour transistion if time changes, while alarm time is still being shown.
+    if (score_mode == SCORE_MODE_TIME) {        //Prevent the minute/hour transistion if time changes, while alarm time is still being shown.
       if (minute_changed || hour_changed) {
         //putstring_nl("changed");
         if (! digitsmutex_xda) {
-	  digitsmutex_xda++;
-	  
-	  old_digits[3] = new_digits[3];
-	  new_digits[3] = time_m % 10;
-	  old_digits[2] = new_digits[2];
-	  new_digits[2] = time_m / 10;
-	    
-	  if (hour_changed) {
-	    uint8_t newleft = hours(time_h);
-	    old_digits[0] = new_digits[0];
-	    old_digits[1] = new_digits[1];
-	    new_digits[0] = newleft/10;
-	    new_digits[1] = newleft%10;
-	    }
-	    minute_changed = hour_changed = 0;
-	  }
+          digitsmutex_xda++;
+          
+          old_digits[3] = new_digits[3];
+          new_digits[3] = time_m % 10;
+          old_digits[2] = new_digits[2];
+          new_digits[2] = time_m / 10;
+            
+          if (hour_changed) {
+            uint8_t newleft = hours(time_h);
+            old_digits[0] = new_digits[0];
+            old_digits[1] = new_digits[1];
+            new_digits[0] = newleft/10;
+            new_digits[1] = newleft%10;
+            }
+            minute_changed = hour_changed = 0;
+          }
       }
     }
 
@@ -206,54 +206,54 @@ void drawdisplay_xda(uint8_t inverted) {
       drawdigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[1], inverted);
       drawdigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA, new_digits[0], inverted);*/
       for(i=0;i<4;i++)
-      	  drawdigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, new_digits[i], inverted);
+                drawdigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA, new_digits[i], inverted);
     }
    
   } else if (score_mode == SCORE_MODE_DATE) {
     if (last_mode != score_mode) {
       putstring_nl("date!");
       if (! digitsmutex_xda) {
-	digitsmutex_xda++;
-	last_mode = score_mode;
+        digitsmutex_xda++;
+        last_mode = score_mode;
 
-	for (uint8_t i=0; i<4; i++) {
-	  old_digits[i] = new_digits[i];
-	}
-	uint8_t left, right;
-	if (region == REGION_US) {
-	  left = date_m;
-	  right = date_d;
-	} else {
-	  left = date_d;
-	  right = date_m;
-	}
-	new_digits[0] = left / 10;
-	new_digits[1] = left % 10;
-	new_digits[2] = right / 10;
-	new_digits[3] = right % 10;
+        for (uint8_t i=0; i<4; i++) {
+          old_digits[i] = new_digits[i];
+        }
+        uint8_t left, right;
+        if (region == REGION_US) {
+          left = date_m;
+          right = date_d;
+        } else {
+          left = date_d;
+          right = date_m;
+        }
+        new_digits[0] = left / 10;
+        new_digits[1] = left % 10;
+        new_digits[2] = right / 10;
+        new_digits[3] = right % 10;
 
-	drawdots_xda(!inverted);
+        drawdots_xda(!inverted);
       }
     }
   } else if (score_mode == SCORE_MODE_YEAR) {
     if (last_mode != score_mode) {
       putstring_nl("year!");
       if (! digitsmutex_xda) {
-	digitsmutex_xda++;
-	putstring_nl("draw");
-	last_mode = score_mode;
+        digitsmutex_xda++;
+        putstring_nl("draw");
+        last_mode = score_mode;
 
-	for (uint8_t i=0; i<4; i++) {
-	  old_digits[i] = new_digits[i];
-	}
+        for (uint8_t i=0; i<4; i++) {
+          old_digits[i] = new_digits[i];
+        }
 
-	new_digits[0] = 2;
-	new_digits[1] = 0;
-	new_digits[2] = date_y / 10;
-	new_digits[3] = date_y % 10;
+        new_digits[0] = 2;
+        new_digits[1] = 0;
+        new_digits[2] = date_y / 10;
+        new_digits[3] = date_y % 10;
 
-	drawdots_xda(!inverted);
-	glcdFillRectangle(60, 35, 7, 5, inverted);
+        drawdots_xda(!inverted);
+        glcdFillRectangle(60, 35, 7, 5, inverted);
       }
     }
   }
@@ -278,48 +278,28 @@ void drawdisplay_xda(uint8_t inverted) {
   }
   */
 
-  /*
-  if (old_digits[3] != new_digits[3]) {
-    transitiondigit_xda(DISPLAY_M1_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[3], new_digits[3], inverted);
-  }
-  if (old_digits[2] != new_digits[2]) {
-    transitiondigit_xda(DISPLAY_M10_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[2], new_digits[2], inverted);
-  }
-  if (old_digits[1] != new_digits[1]) {
-    transitiondigit_xda(DISPLAY_H1_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[1], new_digits[1], inverted);
-  }
-  if (old_digits[0] != new_digits[0]) {
-    transitiondigit_xda(DISPLAY_H10_X_XDA, DISPLAY_TIME_Y_XDA,
-		    old_digits[0], new_digits[0], inverted);
-  }*/
   for(i=0;i<4;i++)
     if (old_digits[i] != new_digits[i]) {
-  	  transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA,
-  	  	  old_digits[i], new_digits[i], inverted);
+            transitiondigit_xda(time_loc[i], DISPLAY_TIME_Y_XDA,
+                      old_digits[i], new_digits[i], inverted);
     }
 
   if (digitsmutex_xda) {
     steps++;
     if (steps > MAX_STEPS) {
       steps = 0;
-      /*
-      old_digits[3] = new_digits[3];
-      old_digits[2] = new_digits[2];
-      old_digits[1] = new_digits[1];
-      old_digits[0] = new_digits[0];*/
-      for(i=0;i<4;i++)
-      	  old_digits[i] = new_digits[i];
+
+      for(i=0;i<4;i++) {
+        old_digits[i] = new_digits[i];
+      }
       digitsmutex_xda--;
 
       if (score_mode == SCORE_MODE_DATE) {
-	glcdFillRectangle(60, 35, 7, 5, !inverted);
+        glcdFillRectangle(60, 35, 7, 5, !inverted);
       } else if (score_mode == SCORE_MODE_YEAR) {
 
       } else if (score_mode == SCORE_MODE_TIME) {
-	//drawdots(inverted);
+        //drawdots(inverted);
       }
     }
   }
@@ -331,22 +311,87 @@ void drawdisplay_xda(uint8_t inverted) {
 
 
 void step_xda(void) {
- if(score_mode == SCORE_MODE_TIME)
- {
- 	if (second_changed)
-	{
-	  second_changed = 0;
-      drawdots_xda((time_s%2));
+  if(score_mode == SCORE_MODE_TIME)
+  {
+    if (second_changed)
+    {
+       second_changed = 0;
+       drawdots_xda((time_s%2));
     }
- }
+  }
 }
 
 
 void drawdigit_xda(uint8_t x, uint8_t y, uint8_t d, uint8_t inverted) {
-  blitsegs_rom(x, y, zero_p+d*DIGIT_HEIGHT*4, 64, inverted);
+//  blitsegs_rom(x, y, zero_p+d*DIGIT_HEIGHT*4, 64, inverted);
+
+  steps = MAX_STEPS;   // draw fully transitioned instead of specialized routine (blitsegs_rom)
+  transitiondigit_xda(x, y, d, d, inverted);
 }
+
+// Uncompressed is 32 bits per line, but we only need 20 bits/line (4 * 5 bits).
+//
+// Pack four 5-bit numbers in to bytes:
+//
+// aaaaa bbbbb ccccc ddddd   phase 0
+// eeeee fffff ggggg hhhhh   phase 1
+//
+// 765 43210
+// ---------
+// ccc aaaaa  d0
+// ccd bbbbb  d1
+// ddd eeeee  d2
+// dhh fffff  d3
+// hhh ggggg  d4
+//
+void read_line(uint8_t d, uint8_t line, uint8_t *lineinfo, uint8_t *segs)
+{
+#if 0 // no compression
+#define SEG_TERM 255
+    for(uint8_t i=0;i<4;i++) {
+        lineinfo[i] = pgm_read_byte(zero_p+d*DIGIT_HEIGHT*4+4*line+i);
+    }
+#else // read compressed
+#define SEG_TERM 31
+
+    uint16_t x = zero_p + 
+                 ((uint16_t) d) * ((DIGIT_HEIGHT/2)*5)  // 5 bytes per 2 lines
+                 +(line/2)*5;          // x is same for odd & even lines
+    if(line & 1) {   // phase 1
+        uint8_t d2 = pgm_read_byte(x+2);
+        uint8_t d3 = pgm_read_byte(x+3);
+        uint8_t d4 = pgm_read_byte(x+4);
+        lineinfo[0] = d2 & 0x1f;
+        lineinfo[1] = d3 & 0x1f;
+        lineinfo[2] = d4 & 0x1f;
+        lineinfo[3] = (d4>>5) | ((d3&0x60)>>2); 
+        
+    } else {         // phase 0
+        uint8_t d0 = pgm_read_byte(x+0);
+        uint8_t d1 = pgm_read_byte(x+1);
+        uint8_t d2 = pgm_read_byte(x+2);
+        uint8_t d3 = pgm_read_byte(x+3);
+        lineinfo[0] = d0 & 0x1f;
+        lineinfo[1] = d1 & 0x1f;
+        lineinfo[2] = ((d0>>3) & 0x1c) | ((d1>>6) & 3);
+        lineinfo[3] = ((d1>>1) & 0x10) | ((d2>>4) & 0x0e) | ((d3>>7) & 1);
+
+    }
+//        if(lineinfo[0] == 31) lineinfo[0]=255;
+//        if(lineinfo[1] == 31) lineinfo[1]=255;
+ //       if(lineinfo[2] == 31) lineinfo[2]=255;
+  //      if(lineinfo[3] == 31) lineinfo[3]=255;
+#endif
+    *segs = 0;
+    if (lineinfo[0] != SEG_TERM)
+      *segs= *segs+1;
+    if (lineinfo[2] != SEG_TERM)
+      *segs= *segs+1;
+}
+
 void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inverted) {
   uint8_t oline[4], tline[4], i;
+  uint8_t osegs, tsegs;
   uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
 
   for (uint8_t line=0; line<64; line++) {
@@ -357,23 +402,11 @@ void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inv
     */
     if (o == 255) {
       oline[0] = oline[1] = oline[2] = oline[3] = 0;
+      osegs = 2;
     } else {
-      for(i=0;i<4;i++)
-        oline[i] = pgm_read_byte(zero_p+o*DIGIT_HEIGHT*4+4*line+i);
+      read_line(o, line, oline, &osegs);
     }
-    uint8_t osegs = 0;
-    if (oline[0] != 255)
-      osegs++;
-    if (oline[2] != 255)
-      osegs++;
-
-    for(i=0;i<4;i++)
-      tline[i] = pgm_read_byte(zero_p+t*DIGIT_HEIGHT*4+line*4+i);
-    uint8_t tsegs = 0;
-    if (tline[0] != 255)
-      tsegs++;
-    if (tline[2] != 255)
-      tsegs++;
+    read_line(t, line, tline, &tsegs);
 
     uint8_t segs = (osegs > tsegs ? osegs : tsegs);
     uint8_t oseg[2], tseg[2];
@@ -381,30 +414,30 @@ void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inv
 
     for (uint8_t j=0; j<segs; j++) {
     
-      if (oline[j*2] != 255) {
-	oseg[0] = oline[j*2];
-	oseg[1] = oline[j*2+1];
+      if (oline[j*2] != SEG_TERM) {
+        oseg[0] = oline[j*2];
+        oseg[1] = oline[j*2+1];
       } else {
-	oseg[0] = oline[0];
-	oseg[1] = oline[1];
+        oseg[0] = oline[0];
+        oseg[1] = oline[1];
       }
 
-      if (tline[j*2] != 255) {
-	tseg[0] = tline[j*2];
-	tseg[1] = tline[j*2+1];
+      if (tline[j*2] != SEG_TERM) {
+        tseg[0] = tline[j*2];
+        tseg[1] = tline[j*2+1];
       } else {
-	tseg[0] = tline[0];
-	tseg[1] = tline[1];
+        tseg[0] = tline[0];
+        tseg[1] = tline[1];
       }
-	for(i=0;i<2;i++)
-	{
-      cseg[i] = tseg[i] - oseg[i];
-      cseg[i] *= steps;
-      cseg[i] += MAX_STEPS/2;
-      cseg[i] /= MAX_STEPS;
-      cseg[i] += oseg[i];
-      cseg[i] &= 0xff;
-	}
+      
+      for(i=0;i<2;i++) {
+        cseg[i] = tseg[i] - oseg[i];
+        cseg[i] *= steps;
+        cseg[i] += MAX_STEPS/2;
+        cseg[i] /= MAX_STEPS;
+        cseg[i] += oseg[i];
+        cseg[i] &= 0xff;
+      }
 
       /*
       putstring("orig seg = (");
@@ -429,17 +462,17 @@ void transitiondigit_xda(uint8_t x, uint8_t y, uint8_t o, uint8_t t, uint8_t inv
       //     uart_getchar();
 
       while (cseg[0] < cseg[1]) {
-	//bitmap[cseg[0] + (i*DIGIT_WIDTH)/8 ] |= _BV(i%8);
-	/*
-	  putstring("byte #");
-	  uart_putw_dec(cseg[0] + ( (line/8) *DIGIT_WIDTH));
-	  putstring_nl("");
-	*/
+        //bitmap[cseg[0] + (i*DIGIT_WIDTH)/8 ] |= _BV(i%8);
+        /*
+          putstring("byte #");
+          uart_putw_dec(cseg[0] + ( (line/8) *DIGIT_WIDTH));
+          putstring_nl("");
+        */
 
-	bitmap[cseg[0] + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
+        bitmap[cseg[0] + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
 
-	//glcdSetDot(x+cseg[0], y+i);
-	cseg[0]++;
+        //glcdSetDot(x+cseg[0], y+i);
+        cseg[0]++;
       }
     }
   }
@@ -469,6 +502,9 @@ void bitblit_ram(uint8_t x_origin, uint8_t y_origin, uint8_t *bitmap_p, uint8_t 
 // number of segments to expect
 #define SEGMENTS 2
 
+
+#if 0
+// not used... we just draw the transitioned state @ 100%
 void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t height, uint8_t inverted) {
   uint8_t bitmap[DIGIT_WIDTH * DIGIT_HEIGHT / 8] = {0};
   uint8_t i;
@@ -479,8 +515,8 @@ void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t he
     uint8_t stop = pgm_read_byte(bitmap_p+4*line+(i*2)+1);
     
      while (start < stop) {
-	bitmap[start + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
-	start++;
+        bitmap[start + (line/8)*DIGIT_WIDTH ] |= _BV(line%8);
+        start++;
       }
     }
   }
@@ -491,32 +527,34 @@ void blitsegs_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t he
   for (uint8_t i = 0; i<height; i++) {
     uint8_t start = pgm_read_byte(bitmap_p+4*i);
     uint8_t stop = pgm_read_byte(bitmap_p+4*i+1);
-    if (start == 255)
+    if (start == SEG_TERM)
       continue;
     while (start < stop) {
       if (inverted)
-	glcdClearDot(x_origin+start, y_origin+i);
+        glcdClearDot(x_origin+start, y_origin+i);
       else
-	glcdSetDot(x_origin+start, y_origin+i);
+        glcdSetDot(x_origin+start, y_origin+i);
       start++;
     }
     start = pgm_read_byte(bitmap_p+4*i+2);
     stop = pgm_read_byte(bitmap_p+4*i+3);
-    if (start == 255)
+    if (start == SEG_TERM)
       continue;
     while (start < stop) {
       if (inverted)
-	glcdClearDot(x_origin+start, y_origin+i);
+        glcdClearDot(x_origin+start, y_origin+i);
       else
-	glcdSetDot(x_origin+start, y_origin+i);
+        glcdSetDot(x_origin+start, y_origin+i);
 
       start++;
     }
   }
  */
 }
+#endif
 
-
+#if 0
+// Not used:
 void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t size, uint8_t inverted) {
   uint8_t x, y;
 
@@ -530,6 +568,7 @@ void bitblit_rom(uint8_t x_origin, uint8_t y_origin, PGM_P bitmap_p, uint8_t siz
     glcdDataWrite(p);  
   }
 }
+#endif
 
 //#ifdef XDALICHRON
 #endif
