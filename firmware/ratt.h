@@ -75,8 +75,8 @@
 
 // This is a tradeoff between sluggish and too fast to see
 //#define MAX_BALL_SPEED 5 // note this is in vector arith.
-#define MAX_BALL_SPEED 500 // fixed point math rewrite. We are keeping 2 significant places, so real speed is 5.00.
-#define ball_radius 2 // in pixels
+#define MAX_BALL_SPEED (5*FIXED_MATH) //fixed point math rewrite. We are keeping 2 significant places, so real speed is 5.00.
+#define BALL_RADIUS 2 // in pixels
 
 // If the angle is too shallow or too narrow, the game is boring
 //#define MIN_BALL_ANGLE 20
@@ -422,12 +422,16 @@ void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
 
 // RATT SPECIFIC
 
-#define FIXED_MATH 100
+#define FIXED_MATH 256
+// Used to be 100, but optimizations using MSB function force this to be 256.
 
 // How big our screen is in pixels
 #define SCREEN_W 128
 #define SCREEN_H 64
 
+// don't use these... SCREEN_H will overflow an int16 if FIXED_MATH==256
+// but that's ok... usually we used the middle of the screen or subtract something off of
+// it before doing the actual comparison.
 #define SCREEN_W_FIXED (SCREEN_W * FIXED_MATH)
 #define SCREEN_H_FIXED (SCREEN_H * FIXED_MATH)
 
@@ -456,7 +460,7 @@ void drawdot(uint8_t x, uint8_t y, uint8_t inverted);
 #define MIDLINE_H (SCREEN_H / 16) // how many 'stipples'
 
 // Max speed for AI
-#define MAX_PADDLE_SPEED 500
+#define MAX_PADDLE_SPEED (5*FIXED_MATH)
 
 #define DISPLAY_DOW1_X 35
 #define DISPLAY_DOW2_X 50

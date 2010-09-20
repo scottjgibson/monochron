@@ -31,17 +31,20 @@ extern volatile uint8_t region;
 extern volatile uint8_t score_mode;
 
 
+// This is an optimized version of intx/256
+// which is used in place of xxx/FIXED_MATH
+#define INT_MSB(x)  (*(   ((int8_t *) &(x))  +1) )
+//#define INT_MSB(x)  ((x)/FIXED_MATH)   // if you're curious about this optimization
 
 
 uint8_t left_score, right_score;
 
-int32_t ball_x, ball_y;
-int32_t oldball_x, oldball_y;
-int32_t ball_dx, ball_dy;
+int16_t ball_x, ball_y;
+int16_t oldball_x, oldball_y;
+int16_t ball_dx, ball_dy;
 
-int32_t rightpaddle_y, leftpaddle_y;
-int32_t oldleftpaddle_y, oldrightpaddle_y;
-int32_t rightpaddle_dy, leftpaddle_dy;
+int16_t rightpaddle_y, leftpaddle_y;
+int16_t oldleftpaddle_y, oldrightpaddle_y;
 
 extern volatile uint8_t minute_changed, hour_changed;
 
@@ -65,8 +68,8 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted);
 void drawbigfont(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 void drawbigdigit(uint8_t x, uint8_t y, uint8_t n, uint8_t inverted);
 int8_t random_angle(void);
-uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_dx, int32_t theball_dy, uint32_t *keepout1, uint32_t *keepout2);
-uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir);
+uint8_t calculate_keepout(int16_t theball_x, int16_t theball_y, int16_t theball_dx, int16_t theball_dy, uint16_t *keepout1, uint16_t *keepout2);
+uint8_t calculate_dest_pos(uint16_t *left, uint16_t *right, uint16_t *dest, uint8_t dir);
 
 
 uint8_t dotw(uint8_t mon, uint8_t day, uint8_t yr);
@@ -84,6 +87,8 @@ int16_t sine_table[64] = {
 	 0x7d8a,  0x7e1d,  0x7e9d,  0x7f09,  0x7f62,  0x7fa7,  0x7fd8,  0x7ff6,
 };
 
+// Input:  angle in fixed point notation - -128 to +127 = -180 to +~179 degrees.
+// output: 16-bit -7fff to +7fff
 int16_t sine(int8_t angle)
 {
 	if(angle == -128) return 0;
@@ -149,7 +154,7 @@ void setscore_rat(void)
   }
 }
 
-int16_t ticksremaining;
+int16_t ticksremaining;  //JMM !! FIX THIS !!  It's a global and it's passed as an arg
 void initanim_rat(void) {
   DEBUG(putstring("screen width: "));
   DEBUG(uart_putw_dec(GLCD_XPIXELS));
@@ -157,10 +162,10 @@ void initanim_rat(void) {
   DEBUG(uart_putw_dec(GLCD_YPIXELS));
   DEBUG(putstring_nl(""));
 
-  oldball_x = ball_x = 2500;
-  oldball_y = ball_y = 2500;	//Somewhere away from 0,0.
-  oldleftpaddle_y = leftpaddle_y = 2500;
-  oldrightpaddle_y = rightpaddle_y = 2500;
+  oldball_x = ball_x = 25*FIXED_MATH;
+  oldball_y = ball_y = 25*FIXED_MATH;	//Somewhere away from 0,0.
+  oldleftpaddle_y = leftpaddle_y = 25*FIXED_MATH;
+  oldrightpaddle_y = rightpaddle_y = 25*FIXED_MATH;
   init_crand();
 
   ball_dx = ball_dy = 0;
@@ -178,9 +183,10 @@ void initdisplay_rat(uint8_t inverted) {
   glcdFillRectangle(0, GLCD_YPIXELS - 2, GLCD_XPIXELS, 2, ! inverted);
 
   // left paddle
-  glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+  glcdFillRectangle(LEFTPADDLE_X, INT_MSB(leftpaddle_y), PADDLE_W, PADDLE_H, ! inverted);
+//!!  glcdFillRectangle(LEFTPADDLE_X, *((uint8_t *) (&leftpaddle_y)+1), PADDLE_W, PADDLE_H, ! inverted);
   // right paddle
-  glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, ! inverted);
+  glcdFillRectangle(RIGHTPADDLE_X, INT_MSB(rightpaddle_y), PADDLE_W, PADDLE_H, ! inverted);
       
 	//left_score = time_h;
 	//right_score = time_m;
@@ -196,8 +202,9 @@ void initdisplay_rat(uint8_t inverted) {
   drawmidline(inverted);
 }
 
-void move_paddle(int32_t *paddle, uint32_t dest) {
+void move_paddle(int16_t *paddle, int16_t dest) {
 	if(abs(*paddle - dest) < MAX_PADDLE_SPEED) {
+//if(1) {
         *paddle = dest;
       } else {
         if(*paddle > dest)
@@ -207,7 +214,7 @@ void move_paddle(int32_t *paddle, uint32_t dest) {
       }
 }
 
-uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint8_t dir) {
+uint8_t calculate_dest_pos(uint16_t *left, uint16_t *right, uint16_t *dest, uint8_t dir) {
   uint8_t miss=0;
   if(dir) //Ball moving to the left
   {
@@ -224,10 +231,11 @@ uint8_t calculate_dest_pos(uint32_t *left, uint32_t *right, uint32_t *dest, uint
   *dest -= (PADDLE_H_FIXED / 3);
     if(miss)
     {
-      if(*dest < (SCREEN_H_FIXED/3)) {
+      if(*dest < SCREEN_H*(FIXED_MATH/3)) {
       	*dest += (PADDLE_H_FIXED*2);
       }
-      else if (*dest > ((SCREEN_H_FIXED/3)*2)) {
+//      else if (*dest > ((SCREEN_H_FIXED/3)*2)) {
+      else if (*dest > SCREEN_H*(FIXED_MATH/3*2)) {
       	*dest -= (PADDLE_H_FIXED*2);
       }
       else {
@@ -242,10 +250,10 @@ void step_rat(void) {
   // The keepout is used to know where to -not- put the paddle
   // the 'bouncepos' is where we expect the ball's y-coord to be when
   // it intersects with the paddle area
-  static uint8_t right_keepout_top, right_keepout_bot, right_bouncepos, right_endpos;
-  static uint8_t left_keepout_top, left_keepout_bot, left_bouncepos, left_endpos;
-  static uint32_t dest_paddle_pos;
-  static uint32_t right_dest, left_dest;
+  static uint8_t right_keepout_top, right_keepout_bot;
+  static uint8_t left_keepout_top, left_keepout_bot;
+  static uint16_t dest_paddle_pos;
+  static uint16_t right_dest, left_dest;
 
   // Save old ball location so we can do some vector stuff 
   oldball_x = ball_x;
@@ -259,26 +267,29 @@ void step_rat(void) {
   
   /************************************* TOP & BOTTOM WALLS */
   // bouncing off bottom wall, reverse direction
-  if (ball_y  > (SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED)) {
+//  if (ball_y  > (SCREEN_H_FIXED - BALL_RADIUS*2*FIXED_MATH - BOTBAR_H_FIXED)) {
+  if (ball_y  > (SCREEN_H - BOTBAR_H - BALL_RADIUS*2)*FIXED_MATH) {
     //DEBUG(putstring_nl("bottom wall bounce"));
-    ball_y = SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED;
-    ball_dy *= -1;
+    ball_y = (SCREEN_H - BOTBAR_H - BALL_RADIUS*2)*FIXED_MATH;
+    ball_dy = -ball_dy;
   }
   
   // bouncing off top wall, reverse direction
   if (ball_y < TOPBAR_H_FIXED) {
     //DEBUG(putstring_nl("top wall bounce"));
     ball_y = TOPBAR_H_FIXED;
-    ball_dy *= -1;
+    ball_dy = -ball_dy;
   }
   
   
   
   /************************************* LEFT & RIGHT WALLS */
   // the ball hits either wall, the ball resets location & angle
-  if (((ball_x/FIXED_MATH)  > (SCREEN_W - ball_radius*2)) || ((int8_t)(ball_x/FIXED_MATH) <= 0) || (!ball_dx && !ball_dy)) {
+  if (   ((INT_MSB(ball_x))  > (SCREEN_W - BALL_RADIUS*2)) 
+      || ((int8_t)(INT_MSB(ball_x)) <= 0)
+      || ((ball_dx ==0) && (ball_dy==0))   ) {
   if(DEBUGGING) {
-    if ((int8_t)(ball_x/FIXED_MATH) <= 0) {
+    if ((int8_t)(INT_MSB(ball_x)) <= 0) {
         putstring("Left wall collide");
         if (! minute_changed) {
 	  putstring_nl("...on accident");
@@ -296,17 +307,13 @@ void step_rat(void) {
     }
 
     // place ball in the middle of the screen
-    ball_x = (SCREEN_W_FIXED / 2) - FIXED_MATH;
-    ball_y = (SCREEN_H_FIXED / 2) - FIXED_MATH;
+    ball_x = (SCREEN_W/2 - BALL_RADIUS)*FIXED_MATH;
+    ball_y = (SCREEN_H/2 - BALL_RADIUS)*FIXED_MATH;
 
+// TODO JMM:  don't use cosine/sine... pick one randomly and calc the other one.
     int8_t angle = random_angle();
-    ball_dx = MAX_BALL_SPEED;
-    ball_dy = MAX_BALL_SPEED;
-    ball_dx *= cosine(angle);
-    ball_dy *= sine(angle);
-    ball_dx /= 0x7FFF;
-    ball_dy /= 0x7FFF;
-    
+    ball_dx = (int16_t)  (((int32_t) MAX_BALL_SPEED * cosine(angle)) / 0x7FFF);
+    ball_dy = (int16_t)  (((int32_t) MAX_BALL_SPEED * sine(angle)) / 0x7FFF);
 
     glcdFillRectangle(LEFTPADDLE_X, left_keepout_top, PADDLE_W, left_keepout_bot - left_keepout_top, 0);
     glcdFillRectangle(RIGHTPADDLE_X, right_keepout_top, PADDLE_W, right_keepout_bot - right_keepout_top, 0);
@@ -349,21 +356,21 @@ void step_rat(void) {
   }*/
 
   /*if(!minute_changed) {
-    if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+    if((ball_dx < 0) && (ball_x < (SCREEN_W/2)*FIXED_MATH)) {
     	move_paddle(&leftpaddle_y, ball_y);
     }
   } else {
     //Minute changed.  We now have to miss the ball on purpose, if at all possible.
     //If we don't succeed this time around, we will try again next time around.
-    if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+    if((ball_dx < 0) && (ball_x < (SCREEN_W/2)*FIXED_MATH) ) {
     	move_paddle(&leftpaddle_y, dest_paddle_pos);
     }
   }*/
   
   //ticksremaining--;
-  if((ball_dx < 0) && (ball_x < (SCREEN_W_FIXED/2))) {
+  if((ball_dx < 0) && (ball_x < (SCREEN_W/2)*FIXED_MATH) ) {
     move_paddle(&leftpaddle_y, minute_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
-  } else if((ball_dx > 0) && (ball_x > (SCREEN_W_FIXED/2))) {
+  } else if((ball_dx > 0) && (ball_x > (SCREEN_W/2)*FIXED_MATH) ) {
   	move_paddle(&rightpaddle_y, hour_changed?dest_paddle_pos:(ball_y-(PADDLE_H_FIXED/3)));
   } else {
   	if(ball_dx < 0)
@@ -378,19 +385,19 @@ void step_rat(void) {
   if (rightpaddle_y < TOPBAR_H_FIXED + 1)
     rightpaddle_y = TOPBAR_H_FIXED + 1;
   
-  if (leftpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
-    leftpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
-  if (rightpaddle_y > (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1))
-    rightpaddle_y = (SCREEN_H_FIXED - PADDLE_H_FIXED - BOTBAR_H_FIXED - 1);
-  
-  if ((ball_dx > 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H)) {
-    ball_dx *= -1;
-    ball_x = RIGHTPADDLE_X_FIXED - (ball_radius*2*FIXED_MATH);
+  if (leftpaddle_y > ((SCREEN_H - PADDLE_H - BOTBAR_H)*FIXED_MATH - 1))
+    leftpaddle_y =   ((SCREEN_H - PADDLE_H - BOTBAR_H)*FIXED_MATH - 1);
+  if (rightpaddle_y> ((SCREEN_H - PADDLE_H - BOTBAR_H)*FIXED_MATH - 1))
+    rightpaddle_y =  ((SCREEN_H - PADDLE_H - BOTBAR_H)*FIXED_MATH - 1);
+    
+  if ((ball_dx > 0) && intersectrect(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, RIGHTPADDLE_X, INT_MSB(rightpaddle_y), PADDLE_W, PADDLE_H)) {
+    ball_dx = -ball_dx;
+    ball_x = RIGHTPADDLE_X_FIXED - (BALL_RADIUS*2*FIXED_MATH);
     //ball_y = right_dest;
     //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 1);
   }
-  if ((ball_dx < 0) && intersectrect(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H)) {
-    ball_dx *= -1;
+  if ((ball_dx < 0) && intersectrect(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, LEFTPADDLE_X, INT_MSB(leftpaddle_y), PADDLE_W, PADDLE_H)) {
+    ball_dx = -ball_dx;
     ball_x = LEFTPADDLE_X_FIXED + PADDLE_W_FIXED;
     //ball_y = left_dest;
     //ticksremaining = calculate_dest_pos(&left_dest, &right_dest, &dest_paddle_pos, 0);
@@ -420,12 +427,13 @@ void drawdisplay_rat(uint8_t inverted) {
 
 	setscore_rat();
     // erase old ball
-    glcdFillRectangle(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, inverted);
+//    *** THIS DOESN'T WORK WITH FIXED=256
+    glcdFillRectangle(INT_MSB(oldball_x), INT_MSB(oldball_y), BALL_RADIUS*2, BALL_RADIUS*2, inverted);
     // draw new ball
-    glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted);
+    glcdFillRectangle(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, ! inverted);
 
     // draw middle lines around where the ball may have intersected it?
-    if  (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2,
+    if  (intersectrect(INT_MSB(oldball_x), INT_MSB(oldball_y), BALL_RADIUS*2, BALL_RADIUS*2,
 		       SCREEN_W/2-MIDLINE_W, 0, MIDLINE_W, SCREEN_H)) {
       // redraw it since we had an intersection
       drawmidline(inverted);
@@ -436,25 +444,25 @@ void drawdisplay_rat(uint8_t inverted) {
     
     if (oldleftpaddle_y != leftpaddle_y) {
       // clear left paddle
-      glcdFillRectangle(LEFTPADDLE_X, oldleftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+      glcdFillRectangle(LEFTPADDLE_X, INT_MSB(oldleftpaddle_y), PADDLE_W, PADDLE_H, inverted);
     }
       // draw left paddle
-      glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+      glcdFillRectangle(LEFTPADDLE_X, INT_MSB(leftpaddle_y), PADDLE_W, PADDLE_H, !inverted);
     
 
     if (oldrightpaddle_y != rightpaddle_y) {
       // clear right paddle
-      glcdFillRectangle(RIGHTPADDLE_X, oldrightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, inverted);
+      glcdFillRectangle(RIGHTPADDLE_X, INT_MSB(oldrightpaddle_y), PADDLE_W, PADDLE_H, inverted);
     }
       // draw right paddle
-      glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+      glcdFillRectangle(RIGHTPADDLE_X, INT_MSB(rightpaddle_y), PADDLE_W, PADDLE_H, !inverted);
     
 
-    if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H)) {
-      glcdFillRectangle(RIGHTPADDLE_X, rightpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+    if (intersectrect(INT_MSB(oldball_x), INT_MSB(oldball_y), BALL_RADIUS*2, BALL_RADIUS*2, RIGHTPADDLE_X, INT_MSB(rightpaddle_y), PADDLE_W, PADDLE_H)) {
+      glcdFillRectangle(RIGHTPADDLE_X, INT_MSB(rightpaddle_y), PADDLE_W, PADDLE_H, !inverted);
     }
-    if (intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2, LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H)) {
-      glcdFillRectangle(LEFTPADDLE_X, leftpaddle_y/FIXED_MATH, PADDLE_W, PADDLE_H, !inverted);
+    if (intersectrect(INT_MSB(oldball_x), INT_MSB(oldball_y), BALL_RADIUS*2, BALL_RADIUS*2, LEFTPADDLE_X, INT_MSB(leftpaddle_y), PADDLE_W, PADDLE_H)) {
+      glcdFillRectangle(LEFTPADDLE_X, INT_MSB(leftpaddle_y), PADDLE_W, PADDLE_H, !inverted);
     }
    // draw time
    uint8_t redraw_digits;
@@ -487,7 +495,7 @@ uint8_t rat_time_loc[8] = {
 
 void check_ball_digit_collision(uint8_t redraw_digits, uint8_t digit_x, uint8_t digit, uint8_t inverted)
 {
-	if (redraw_digits || intersectrect(oldball_x/FIXED_MATH, oldball_y/FIXED_MATH, ball_radius*2, ball_radius*2,
+	if (redraw_digits || intersectrect(INT_MSB(oldball_x), INT_MSB(oldball_y), BALL_RADIUS*2, BALL_RADIUS*2,
 					digit_x, DISPLAY_TIME_Y_RAT, DISPLAY_DIGITW, DISPLAY_DIGITH)) {
 #ifdef OPTION_DOW_DATELONG
         if(digit > 10)
@@ -507,7 +515,7 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 		{
 			for(i=0;i<4;i++)
 				drawbigdigit(rat_time_loc[i],DISPLAY_TIME_Y_RAT, 10, inverted);
-			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted);
+			glcdFillRectangle(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, ! inverted);
 			prev_mode = SCORE_MODE_DOW;
 		}
 		
@@ -525,11 +533,12 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 		    for(i=0;i<4;i++)
 		      drawbigdigit(rat_time_loc[i], DISPLAY_TIME_Y_RAT, 10, inverted);
 		    }
-			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted);
+			glcdFillRectangle(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, ! inverted);
 			prev_mode = SCORE_MODE_DATELONG;
 		}
-		for(i=0;i<3;i++)
+		for(i=0;i<3;i++) {
 			check_ball_digit_collision(redraw_digits, rat_time_loc[i+4], smon(date_m,i), inverted); 
+		}
 		check_ball_digit_collision(redraw_digits, DISPLAY_DAY10_X, right_score/10, inverted);
 		check_ball_digit_collision(redraw_digits, DISPLAY_DAY10_X, right_score%10, inverted);
 	}
@@ -550,7 +559,7 @@ void draw_score_rat(uint8_t redraw_digits, uint8_t inverted) {
 		      for(i=0;i<4;i++)
 			    drawbigdigit(rat_time_loc[i], DISPLAY_TIME_Y_RAT, 10, inverted);
 		    }
-			glcdFillRectangle(ball_x/FIXED_MATH, ball_y/FIXED_MATH, ball_radius*2, ball_radius*2, ! inverted);
+			glcdFillRectangle(INT_MSB(ball_x), INT_MSB(ball_y), BALL_RADIUS*2, BALL_RADIUS*2, ! inverted);
 			prev_mode = SCORE_MODE_TIME;
 	    }
 #endif
@@ -592,41 +601,43 @@ int8_t random_angle(void) {
 }
 
 
-uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_dx, int32_t theball_dy, uint32_t *keepout1, uint32_t *keepout2)
+// JMM This seems broken... the simulation is just the paddle position! hmm...
+uint8_t calculate_keepout(int16_t theball_x, int16_t theball_y, int16_t theball_dx, int16_t theball_dy, uint16_t *keepout1, uint16_t *keepout2)
 {
   // "simulate" the ball bounce...its not optimized (yet)
-  int32_t sim_ball_y = theball_y;
-  int32_t sim_ball_x = theball_x;
-  int32_t sim_ball_dy = theball_dy;
-  int32_t sim_ball_dx = theball_dx;
+  int16_t sim_ball_y = theball_y;
+  int16_t sim_ball_x = theball_x;
+  int16_t sim_ball_dy = theball_dy;
+  int16_t sim_ball_dx = theball_dx;
   
   uint8_t tix = 0, collided = 0;
 
-  while ((sim_ball_x < (RIGHTPADDLE_X_FIXED + PADDLE_W_FIXED)) && ((sim_ball_x + (ball_radius*2*FIXED_MATH)) > LEFTPADDLE_X_FIXED)) {
-    int32_t old_sim_ball_x = sim_ball_x;
-    int32_t old_sim_ball_y = sim_ball_y;
+  while (    (sim_ball_x < (RIGHTPADDLE_X_FIXED + PADDLE_W_FIXED)) 
+         && ((sim_ball_x + (BALL_RADIUS*2*FIXED_MATH)) > LEFTPADDLE_X_FIXED)) {
+    int16_t old_sim_ball_x = sim_ball_x;
+    int16_t old_sim_ball_y = sim_ball_y;
     sim_ball_y += sim_ball_dy;
     sim_ball_x += sim_ball_dx;
 	
-    if (sim_ball_y  > (SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED)) {
-      sim_ball_y = SCREEN_H_FIXED - ball_radius*2*FIXED_MATH - BOTBAR_H_FIXED;
-      sim_ball_dy *= -1;
+    if (sim_ball_y  > (SCREEN_H - BALL_RADIUS*2 - BOTBAR_H)*FIXED_MATH) {
+      sim_ball_y = (SCREEN_H - BALL_RADIUS*2 - BOTBAR_H)*FIXED_MATH;
+      sim_ball_dy = -sim_ball_dy;
     }
 	
     if (sim_ball_y <  TOPBAR_H_FIXED) {
       sim_ball_y = TOPBAR_H_FIXED;
-      sim_ball_dy *= -1;
+      sim_ball_dy = -sim_ball_dy;
     }
     
-    if (((sim_ball_x + ball_radius*2*FIXED_MATH) >= RIGHTPADDLE_X_FIXED) && 
-	((old_sim_ball_x + ball_radius*2*FIXED_MATH) < RIGHTPADDLE_X_FIXED)) {
+    if (((sim_ball_x + BALL_RADIUS*2*FIXED_MATH) >= RIGHTPADDLE_X_FIXED) && 
+	((old_sim_ball_x + BALL_RADIUS*2*FIXED_MATH) < RIGHTPADDLE_X_FIXED)) {
       // check if we collided with the right paddle
       
       // first determine the exact position at which it would collide
-      int32_t dx = RIGHTPADDLE_X_FIXED - (old_sim_ball_x + ball_radius*2*FIXED_MATH);
+      // JMM!!! we should be able to get rid of the 32-bit math
+      int32_t dx = RIGHTPADDLE_X_FIXED - (old_sim_ball_x + BALL_RADIUS*2*FIXED_MATH);
       // now figure out what fraction that is of the motion and multiply that by the dy
-      int32_t dy = (dx / sim_ball_dx) * sim_ball_dy;
-	  
+      int32_t dy = (dx / (int32_t)sim_ball_dx) * (int32_t) sim_ball_dy;
       //if(DEBUGGING){putstring("RCOLL@ ("); uart_putw_dec(old_sim_ball_x + dx); putstring(", "); uart_putw_dec(old_sim_ball_y + dy);}
       
       *keepout1 = (old_sim_ball_y + dy); 
@@ -636,10 +647,10 @@ uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_
       // check if we collided with the left paddle
 
       // first determine the exact position at which it would collide
+      // JMM!!! we should be able to get rid of the 32-bit math
       int32_t dx = (LEFTPADDLE_X_FIXED + PADDLE_W_FIXED) - old_sim_ball_x;
       // now figure out what fraction that is of the motion and multiply that by the dy
-      int32_t dy = (dx / sim_ball_dx) * sim_ball_dy;
-	  
+      int32_t dy = (dx / (int32_t)sim_ball_dx) * (int32_t) sim_ball_dy;
       //if(DEBUGGING){putstring("LCOLL@ ("); uart_putw_dec(old_sim_ball_x + dx); putstring(", "); uart_putw_dec(old_sim_ball_y + dy);}
       
       *keepout1 = (old_sim_ball_y + dy); 
@@ -651,7 +662,7 @@ uint8_t calculate_keepout(int32_t theball_x, int32_t theball_y, int32_t theball_
     
     //if(DEBUGGING){putstring("\tSIMball @ ["); uart_putw_dec(sim_ball_x); putstring(", "); uart_putw_dec(sim_ball_y); putstring_nl("]");}
   }
-  *keepout2 = sim_ball_y / FIXED_MATH;
+  *keepout2 = sim_ball_y; // Used to include this -- error?: / FIXED_MATH;
 
   return tix;
 }
