@@ -9,11 +9,17 @@ c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
                               anim_abo.o (__divmodhi4)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
-                              anim_death.o (__udivmodsi4)
+                              anim_rat.o (__udivmodsi4)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
                               anim_death.o (__divmodsi4)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+                              anim_abo.o (__prologue_saves__)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+                              anim_abo.o (__epilogue_restores__)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
                               c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o (exit)
+c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+                              anim_death.o (__tablejump2__)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
                               anim_death.o (__do_copy_data)
 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
@@ -36,61 +42,62 @@ Common symbol       size              file
 
 cfg_gender          0x1               anim_deathcfg.o
 cfg_dob_y           0x1               anim_deathcfg.o
-oldleftpaddle_y     0x4               anim_rat.o
+oldleftpaddle_y     0x2               anim_rat.o
+right_score2        0x1               anim_int.o
 death_d             0x1               deathclock.o
 cfg_dc_mode         0x1               anim_deathcfg.o
-leftpaddle_y        0x4               anim_rat.o
+leftpaddle_y        0x2               anim_rat.o
 time_h              0x1               ratt.o
 cfg_dob_d           0x1               anim_deathcfg.o
 cfg_bmi_weight      0x2               anim_deathcfg.o
 old_m               0x1               ratt.o
 time_format         0x1               ratt.o
-leftpaddle_dy       0x4               anim_rat.o
-ball_dy             0x4               anim_rat.o
+ball_dy             0x2               anim_rat.o
 date_y              0x1               ratt.o
 alarm_m             0x1               ratt.o
-ball_y              0x4               anim_rat.o
+ball_y              0x2               anim_rat.o
 alarmticker         0x2               ratt.o
 displaystyle        0x1               ratt.o
 ticksremaining      0x2               anim_rat.o
 volume              0x1               ratt.o
 reaper_tow_rip      0x1               deathclock.o
 cfg_dob_m           0x1               anim_deathcfg.o
-ball_dx             0x4               anim_rat.o
+ball_dx             0x2               anim_rat.o
 date_d              0x1               ratt.o
-rightpaddle_dy      0x4               anim_rat.o
 reaper_x            0x2               anim_death.o
 time_m              0x1               ratt.o
 results             0x4               anim_death.o
 old_h               0x1               ratt.o
 alarm_on            0x1               ratt.o
 region              0x1               ratt.o
+left_score2         0x1               anim_int.o
 alarm_h             0x1               ratt.o
-oldball_x           0x4               anim_rat.o
+oldball_x           0x2               anim_rat.o
+eeprom_data         0x11              deathclock.o
 death_y             0x1               deathclock.o
 alarming            0x1               ratt.o
 cfg_bmi_unit        0x1               anim_deathcfg.o
-ball_x              0x4               anim_rat.o
+ball_x              0x2               anim_rat.o
 key                 0x10              util.o
 displaymode         0x1               ratt.o
 cfg_smoker          0x1               anim_deathcfg.o
-rightpaddle_y       0x4               anim_rat.o
+rightpaddle_y       0x2               anim_rat.o
 animticker          0x2               ratt.o
 RotateFlag          0x1               ratt.o
 date_m              0x1               ratt.o
 death_m             0x1               deathclock.o
 time_s              0x1               ratt.o
 alarm_tripped       0x1               ratt.o
-oldrightpaddle_y    0x4               anim_rat.o
+oldrightpaddle_y    0x2               anim_rat.o
 old_minutes_left    0x4               deathclock.o
 old_s               0x1               ratt.o
 GrLcdState          0x6               ks0108.o
 display_digits      0x8               anim_death.o
-oldball_y           0x4               anim_rat.o
+oldball_y           0x2               anim_rat.o
 cfg_bmi_height      0x2               anim_deathcfg.o
-left_score          0x4               anim_death.o
+left_score          0x2               anim_death.o
 dc_mode             0x1               deathclock.o
-right_score         0x4               anim_death.o
+right_score         0x2               anim_death.o
 
 Memory Configuration
 
@@ -221,79 +228,83 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00000000     0x7746
+.text           0x00000000     0x758e
  *(.vectors)
  .vectors       0x00000000       0x68 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
                 0x00000000                __vectors
                 0x00000000                __vector_default
  *(.vectors)
  *(.progmem.gcc*)
+ .progmem.gcc_sw_table
+                0x00000068       0x10 anim_death.o
+ .progmem.gcc_sw_table
+                0x00000078       0x14 dispatch.o
  *(.progmem*)
- .progmem.data  0x00000068        0x2 anim_abo.o
-                0x00000068                logo_p
- .progmem.data  0x0000006a        0x6 anim_death.o
-                0x0000006a                skull0_p
-                0x0000006c                reaper0_p
-                0x0000006e                rip0_p
- .progmem.data  0x00000070      0x10d anim_deathcfg.o
- .progmem.data  0x0000017d       0x6a anim_gps.o
-                0x0000017d                GPS_Text
- .progmem.data  0x000001e7      0x166 config.o
-                0x000001e7                region_setting_table
-                0x0000021b                style_setting_str
- .progmem.data  0x0000034d      0x102 deathclock.o
-                0x000003c6                sadistic_bmi_male
-                0x00000384                normal_bmi_female
-                0x000003e7                normal_smoking_male
-                0x00000433                sadistic_smoking_male
-                0x0000043b                sadistic_smoking_female
-                0x0000040f                normal_smoking_female
-                0x00000443                day_in_month
-                0x000003d1                sadistic_bmi_female
-                0x0000034d                normal_bmi_male
- .progmem.data  0x0000044f        0x1 eeprom.o
-                0x00000450                FontGr
-                0x0000044f                EE_DATA
- .progmem.data  0x00000450      0x4f0 rle.o
-                0x00000450                skull_on_white
-                0x000005b2                reaper_on_white
-                0x0000081e                adafruit
-                0x00000690                rip_on_white
- .progmem.data  0x00000940       0x46 util.o
-                0x00000986                . = ALIGN (0x2)
-                0x00000986                __trampolines_start = .
+ .progmem.data  0x0000008c        0x2 anim_abo.o
+                0x0000008c                logo_p
+ .progmem.data  0x0000008e        0x6 anim_death.o
+                0x0000008e                skull0_p
+                0x00000090                reaper0_p
+                0x00000092                rip0_p
+ .progmem.data  0x00000094      0x10d anim_deathcfg.o
+ .progmem.data  0x000001a1       0x6a anim_gps.o
+                0x000001a1                GPS_Text
+ .progmem.data  0x0000020b      0x18f config.o
+                0x0000020b                region_setting_table
+                0x0000023f                style_setting_str
+ .progmem.data  0x0000039a       0xd4 deathclock.o
+                0x00000413                sadistic_bmi_male
+                0x000003d1                normal_bmi_female
+                0x00000434                normal_smoking_male
+                0x0000045a                sadistic_smoking_male
+                0x0000045e                sadistic_smoking_female
+                0x00000448                normal_smoking_female
+                0x00000462                day_in_month
+                0x0000041e                sadistic_bmi_female
+                0x0000039a                normal_bmi_male
+ .progmem.data  0x0000046e       0x74 eeprom.o
+                0x0000046f                FontGr
+                0x0000046e                EE_DATA
+ .progmem.data  0x000004e2      0x4f0 rle.o
+                0x000004e2                skull_on_white
+                0x00000644                reaper_on_white
+                0x000008b0                adafruit
+                0x00000722                rip_on_white
+ .progmem.data  0x000009d2       0x46 util.o
+                0x00000a18                . = ALIGN (0x2)
+                0x00000a18                __trampolines_start = .
  *(.trampolines)
- .trampolines   0x00000986        0x0 linker stubs
+ .trampolines   0x00000a18        0x0 linker stubs
  *(.trampolines*)
-                0x00000986                __trampolines_end = .
+                0x00000a18                __trampolines_end = .
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00000986                __ctors_start = .
+                0x00000a18                __ctors_start = .
  *(.ctors)
-                0x00000986                __ctors_end = .
-                0x00000986                __dtors_start = .
+                0x00000a18                __ctors_end = .
+                0x00000a18                __dtors_start = .
  *(.dtors)
-                0x00000986                __dtors_end = .
+                0x00000a18                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00000986        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
-                0x00000986                __init
+ .init0         0x00000a18        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+                0x00000a18                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00000986        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+ .init2         0x00000a18        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  *(.init2)
  *(.init3)
  *(.init3)
  *(.init4)
- .init4         0x00000992       0x16 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
-                0x00000992                __do_copy_data
- .init4         0x000009a8       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
-                0x000009a8                __do_clear_bss
+ .init4         0x00000a24       0x16 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+                0x00000a24                __do_copy_data
+ .init4         0x00000a3a       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+                0x00000a3a                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -304,272 +315,311 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000009b8        0x8 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+ .init9         0x00000a4a        0x8 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
  *(.init9)
  *(.text)
- .text          0x000009c0        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
-                0x000009c0                __vector_22
-                0x000009c0                __vector_1
-                0x000009c0                __vector_24
-                0x000009c0                __vector_12
-                0x000009c0                __bad_interrupt
-                0x000009c0                __vector_6
-                0x000009c0                __vector_23
-                0x000009c0                __vector_25
-                0x000009c0                __vector_17
-                0x000009c0                __vector_19
-                0x000009c0                __vector_7
-                0x000009c0                __vector_5
-                0x000009c0                __vector_4
-                0x000009c0                __vector_2
-                0x000009c0                __vector_15
-                0x000009c0                __vector_8
-                0x000009c0                __vector_10
-                0x000009c0                __vector_16
-                0x000009c0                __vector_20
- .text          0x000009c4      0x108 anim_abo.o
-                0x000009c4                initanim_abo
- .text          0x00000acc     0x1142 anim_death.o
-                0x00001822                drawdisplay_death
-                0x00001310                death_blitsegs_rom
-                0x000016ba                initdisplay_death
-                0x00001482                next_border
-                0x00001240                death_bitblit_ram
-                0x00000f90                prep_digits
-                0x00001b88                initanim_death
-                0x000019ae                step_death
-                0x00000acc                death_setscore
-                0x0000153c                render_image
- .text          0x00001c0e      0xb28 anim_deathcfg.o
-                0x00001da4                display_dob
-                0x00001e58                printnumber_3d
-                0x00002076                init_set_death_menu
-                0x00002212                set_deathclock_gender
-                0x000022bc                set_deathclock_dob
-                0x000023ea                set_deathclock_bmi
-                0x00001d72                display_gender
-                0x0000267c                initanim_deathcfg
-                0x00001d24                display_dc_mode
-                0x00001e8c                display_bmi_set
-                0x00001cf2                display_smoker
-                0x00001f8e                display_death_menu
-                0x00002168                set_deathclock_mode
-                0x00001c0e                deathclock_changed
-                0x000020be                set_deathclock_smoker
- .text          0x00002736      0x14c anim_gps.o
-                0x00002736                initanim_GPS
- .text          0x00002882        0x0 anim_int.o
- .text          0x00002882     0x1302 anim_rat.o
-                0x00002fb4                drawdisplay_rat
-                0x00003ad0                initanim_rat
-                0x00002ef2                setscore_rat
-                0x00002eb2                drawmidline
-                0x00002c0a                calculate_dest_pos
-                0x00002882                sine
-                0x000039de                initdisplay_rat
-                0x000028de                cosine
-                0x00002dbc                check_ball_digit_collision
-                0x00002bae                random_angle
-                0x000028e6                move_paddle
-                0x00002938                calculate_keepout
-                0x00002e4c                draw_score_rat
-                0x0000330a                step_rat
- .text          0x00003b84        0x0 anim_sev.o
- .text          0x00003b84        0x0 anim_ts.o
- .text          0x00003b84        0x0 anim_xda.o
- .text          0x00003b84      0x19e buttons.o
-                0x00003bda                __vector_3
-                0x00003bb2                readADC
-                0x00003c24                __vector_21
-                0x00003b84                initbuttons
- .text          0x00003d22      0xa1e config.o
-                0x00004006                print_alarmline
-                0x00003d22                print_style_setting
-                0x00003eb0                print_date
-                0x0000440a                set_date
-                0x00003f4e                print_backlight
-                0x00004658                set_style
-                0x00004272                set_alarm
-                0x0000410e                init_set_menu
-                0x00003d64                print_region_setting
-                0x0000411e                set_time
-                0x00003e38                print_timehour
-                0x00003ea2                print_number_slash
-                0x00004364                set_backlight
-                0x00004048                print_monthday_help
-                0x0000457e                set_region
-                0x00003f78                print_time
-                0x00003dae                print_alarmhour
-                0x0000407c                display_menu
- .text          0x00004740      0x988 deathclock.o
-                0x00004cda                load_raw_etd
-                0x00004a1e                random_days
-                0x00004740                is_leap_year
-                0x00004ee0                load_etd
-                0x00004a78                ETD
-                0x000049ac                BodyMassIndex
-                0x00004de4                calc_death_date
-                0x00004772                date_diff
- .text          0x000050c8      0x124 dispatch.o
-                0x000050e2                initdisplay
-                0x00005160                drawdisplay
-                0x000050c8                step
-                0x000050fc                initanim
- .text          0x000051ec        0x0 eeprom.o
- .text          0x000051ec      0x464 glcd.o
-                0x00005256                glcdWriteChar
-                0x000052ac                glcdPutStr_rom
-                0x000055fe                glcdSetDot
-                0x000052da                glcdPutStr_ram
-                0x000051f6                glcdWriteCharGr
-                0x000054dc                glcdFillCircle
-                0x000051ec                get_font
-                0x000052fc                glcdFillRectangle
- .text          0x00005650      0x1ce i2c.o
-                0x00005650                i2cInit
-                0x00005690                i2cSendStart
-                0x000056ac                i2cWaitForComplete
-                0x000056e4                i2cGetReceivedByte
-                0x000056f0                i2cMasterSendNI
-                0x000056ea                i2cGetStatus
-                0x000056b6                i2cSendByte
-                0x0000577e                i2cMasterReceiveNI
-                0x000056c8                i2cReceiveByte
-                0x00005688                i2cSetBitrate
-                0x0000569e                i2cSendStop
- .text          0x0000581e      0x310 ks0108.o
-                0x00005954                glcdDataRead
-                0x00005a86                glcdStartLine
-                0x000059d0                glcdSetYAddress
-                0x00005adc                glcdHome
-                0x00005862                glcdBusyWait
-                0x00005b1a                glcdGotoChar
-                0x0000599a                glcdReset
-                0x00005b2c                glcdDelay
-                0x0000584c                glcdControllerSelect
-                0x0000581e                glcdInitHW
-                0x00005aa0                glcdSetAddress
-                0x00005ab4                glcdClearScreen
-                0x0000599c                glcdSetXAddress
-                0x000058bc                glcdControlWrite
-                0x00005afc                glcdInit
-                0x0000590e                glcdControlRead
-                0x000059ee                glcdDataWrite
- .text          0x00005b2e     0x109e ratt.o
-                0x00005e08                printnumber
-                0x00005dba                i2bcd
-                0x000063ea                init_eeprom
-                0x00005d86                leapyear
-                0x0000638c                GPSCheck
-                0x00006436                readi2ctime
-                0x00005bca                char_read
-                0x00005ba8                char_available
-                0x00005cee                __vector_11
-                0x00005c08                __vector_13
-                0x00006610                clock_init
-                0x00005e36                GPSRead
-                0x00005df4                DecodeGPSBuffer
-                0x00005db8                tick
-                0x000068ce                main
-                0x00005ddc                setsnooze
-                0x00006676                __vector_9
-                0x0000627a                beep
-                0x0000687e                drawArrow
-                0x000062c6                writei2ctime
-                0x00005d12                setalarmstate
-                0x00005c2c                __vector_14
-                0x00005b2e                __vector_18
- .text          0x00006bcc        0x0 rle.o
- .text          0x00006bcc      0x9e4 util.o
-                0x00006e3c                uart_putdw_dec
-                0x000074e2                drawbigdigit
-                0x00007400                PRINT_MENU_LINE
-                0x000074cc                print_menu_advance
-                0x00006dc0                uart_put_dec
-                0x00006cbe                uart_putc_hex
-                0x00006be6                delay_10us
-                0x00006ca4                uart_puts
-                0x00006c4c                uart_getchar
-                0x00006fc2                encipher
-                0x00006bcc                uart_init
-                0x00007392                check_timeout
-                0x00007444                PRINT_MENU
-                0x00006f1a                dotw
-                0x00007216                init_crand
-                0x00006d4a                uart_putw_dec
-                0x00006d24                uart_putdw_hex
-                0x00006bfa                delay_ms
-                0x0000714c                init_crand_consistent
-                0x000074b6                print_menu_exit
-                0x00007494                PRINT_MENU_OPTS
-                0x00006c5a                uart_getch
-                0x00007320                add_month
-                0x00006c62                ROM_putstring
-                0x000072cc                intersectrect
-                0x00006c14                delay_s
-                0x00006fa2                hours
-                0x000074a8                print_menu_change
-                0x00006d10                uart_putw_hex
-                0x00006c38                uart_putchar
-                0x00007228                crand
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
- .text          0x000075b0        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
-                0x000075b0                . = ALIGN (0x2)
+ .text          0x00000a52        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+                0x00000a52                __vector_22
+                0x00000a52                __vector_1
+                0x00000a52                __vector_24
+                0x00000a52                __vector_12
+                0x00000a52                __bad_interrupt
+                0x00000a52                __vector_6
+                0x00000a52                __vector_23
+                0x00000a52                __vector_25
+                0x00000a52                __vector_17
+                0x00000a52                __vector_19
+                0x00000a52                __vector_7
+                0x00000a52                __vector_5
+                0x00000a52                __vector_4
+                0x00000a52                __vector_2
+                0x00000a52                __vector_15
+                0x00000a52                __vector_8
+                0x00000a52                __vector_10
+                0x00000a52                __vector_16
+                0x00000a52                __vector_20
+ .text          0x00000a56       0xf4 anim_abo.o
+                0x00000a56                initanim_abo
+ .text          0x00000b4a      0xf3c anim_death.o
+                0x0000169a                drawdisplay_death
+                0x000011f4                death_blitsegs_rom
+                0x0000154a                initdisplay_death
+                0x00001312                next_border
+                0x00001148                death_bitblit_ram
+                0x00000f1e                prep_digits
+                0x00001a00                initanim_death
+                0x00001826                step_death
+                0x00000b4a                death_setscore
+                0x000013cc                render_image
+ .text          0x00001a86      0xb12 anim_deathcfg.o
+                0x00001c06                display_dob
+                0x00001cba                printnumber_3d
+                0x00001ed8                init_set_death_menu
+                0x00002074                set_deathclock_gender
+                0x0000211e                set_deathclock_dob
+                0x0000224c                set_deathclock_bmi
+                0x00001bd4                display_gender
+                0x000024de                initanim_deathcfg
+                0x00001b86                display_dc_mode
+                0x00001cee                display_bmi_set
+                0x00001b54                display_smoker
+                0x00001df0                display_death_menu
+                0x00001fca                set_deathclock_mode
+                0x00001a86                deathclock_changed
+                0x00001f20                set_deathclock_smoker
+ .text          0x00002598      0x14c anim_gps.o
+                0x00002598                initanim_GPS
+ .text          0x000026e4      0x264 anim_int.o
+                0x00002936                initanim_int
+                0x0000280c                setscore_int
+                0x00002730                WriteTime_int
+                0x000026e4                step_int
+                0x00002770                WriteBases_int
+                0x00002794                WriteInvaders_int
+                0x000028fe                initdisplay_int
+                0x000028ce                drawdisplay_int
+ .text          0x00002948      0xadc anim_rat.o
+                0x00002e16                drawdisplay_rat
+                0x000033c4                initanim_rat
+                0x00002d54                setscore_rat
+                0x00002d14                drawmidline
+                0x00002b7e                calculate_dest_pos
+                0x00002948                sine
+                0x00003306                initdisplay_rat
+                0x000029a4                cosine
+                0x00002c58                check_ball_digit_collision
+                0x00002b22                random_angle
+                0x000029ac                move_paddle
+                0x000029de                calculate_keepout
+                0x00002cae                draw_score_rat
+                0x00002f74                step_rat
+ .text          0x00003424      0x346 anim_sev.o
+                0x0000344a                drawvseg_sev
+                0x000035e6                drawdot_sev
+                0x000035f6                drawdisplay_sev
+                0x00003544                initanim_sev
+                0x00003592                printnumber_sev
+                0x000034d4                draw7seg_sev
+                0x00003558                drawdigit_sev
+                0x00003424                step_sev
+                0x00003530                initdisplay_sev
+                0x00003496                drawsegment_sev
+ .text          0x0000376a      0x3b0 anim_ts.o
+                0x00003ae0                initdisplay_ts
+                0x00003a10                drawdisplay_ts
+                0x0000376a                setstringdigits_ts
+                0x00003818                drawsegment_ts
+                0x000037bc                drawseg_ts
+                0x0000398c                setstring_ts
+                0x00003858                draw7seg_ts
+                0x00003796                step_ts
+                0x000038a4                drawdot_ts
+                0x00003b0a                initanim_ts
+                0x000038b4                drawdigit_ts
+ .text          0x00003b1a        0x0 anim_xda.o
+ .text          0x00003b1a      0x19e buttons.o
+                0x00003b70                __vector_3
+                0x00003b48                readADC
+                0x00003bba                __vector_21
+                0x00003b1a                initbuttons
+ .text          0x00003cb8      0xa1e config.o
+                0x00003f9c                print_alarmline
+                0x00003cb8                print_style_setting
+                0x00003e46                print_date
+                0x000043a0                set_date
+                0x00003ee4                print_backlight
+                0x000045ee                set_style
+                0x00004208                set_alarm
+                0x000040a4                init_set_menu
+                0x00003cfa                print_region_setting
+                0x000040b4                set_time
+                0x00003dce                print_timehour
+                0x00003e38                print_number_slash
+                0x000042fa                set_backlight
+                0x00003fde                print_monthday_help
+                0x00004514                set_region
+                0x00003f0e                print_time
+                0x00003d44                print_alarmhour
+                0x00004012                display_menu
+ .text          0x000046d6      0x884 deathclock.o
+                0x00004bec                load_raw_etd
+                0x00004988                random_days
+                0x000046d6                is_leap_year
+                0x00004dac                load_etd
+                0x000049e2                ETD
+                0x00004916                BodyMassIndex
+                0x00004cb0                calc_death_date
+                0x00004708                date_diff
+ .text          0x00004f5a      0x1a4 dispatch.o
+                0x00004f98                initdisplay
+                0x00005046                drawdisplay
+                0x00004f5a                step
+                0x00004fd8                initanim
+ .text          0x000050fe        0x0 eeprom.o
+ .text          0x000050fe      0x3ea glcd.o
+                0x00005166                glcdWriteChar
+                0x000051ba                glcdPutStr_rom
+                0x00005496                glcdSetDot
+                0x000051e8                glcdPutStr_ram
+                0x00005108                glcdWriteCharGr
+                0x000053b6                glcdFillCircle
+                0x000050fe                get_font
+                0x0000520a                glcdFillRectangle
+ .text          0x000054e8      0x1ce i2c.o
+                0x000054e8                i2cInit
+                0x00005528                i2cSendStart
+                0x00005544                i2cWaitForComplete
+                0x0000557c                i2cGetReceivedByte
+                0x00005588                i2cMasterSendNI
+                0x00005582                i2cGetStatus
+                0x0000554e                i2cSendByte
+                0x00005616                i2cMasterReceiveNI
+                0x00005560                i2cReceiveByte
+                0x00005520                i2cSetBitrate
+                0x00005536                i2cSendStop
+ .text          0x000056b6      0x310 ks0108.o
+                0x000057ec                glcdDataRead
+                0x0000591e                glcdStartLine
+                0x00005868                glcdSetYAddress
+                0x00005974                glcdHome
+                0x000056fa                glcdBusyWait
+                0x000059b2                glcdGotoChar
+                0x00005832                glcdReset
+                0x000059c4                glcdDelay
+                0x000056e4                glcdControllerSelect
+                0x000056b6                glcdInitHW
+                0x00005938                glcdSetAddress
+                0x0000594c                glcdClearScreen
+                0x00005834                glcdSetXAddress
+                0x00005754                glcdControlWrite
+                0x00005994                glcdInit
+                0x000057a6                glcdControlRead
+                0x00005886                glcdDataWrite
+ .text          0x000059c6     0x1024 ratt.o
+                0x00005ca0                printnumber
+                0x00005c52                i2bcd
+                0x0000622a                init_eeprom
+                0x00005c1e                leapyear
+                0x000061cc                GPSCheck
+                0x00006276                readi2ctime
+                0x00005a62                char_read
+                0x00005a40                char_available
+                0x00005b86                __vector_11
+                0x00005aa0                __vector_13
+                0x0000643e                clock_init
+                0x00005cce                GPSRead
+                0x00005c8c                DecodeGPSBuffer
+                0x00005c50                tick
+                0x000066fc                main
+                0x00005c74                setsnooze
+                0x000064a4                __vector_9
+                0x000060e4                beep
+                0x000066ac                drawArrow
+                0x00006130                writei2ctime
+                0x00005baa                setalarmstate
+                0x00005ac4                __vector_14
+                0x000059c6                __vector_18
+ .text          0x000069ea        0x0 rle.o
+ .text          0x000069ea      0x994 util.o
+                0x00006c5a                uart_putdw_dec
+                0x000072d4                drawbigdigit
+                0x000071f2                PRINT_MENU_LINE
+                0x000072be                print_menu_advance
+                0x00006bde                uart_put_dec
+                0x00006adc                uart_putc_hex
+                0x00006a04                delay_10us
+                0x00006ac2                uart_puts
+                0x00006a6a                uart_getchar
+                0x00006db4                encipher
+                0x000069ea                uart_init
+                0x00007184                check_timeout
+                0x00007236                PRINT_MENU
+                0x00006d0c                dotw
+                0x00007008                init_crand
+                0x00006b68                uart_putw_dec
+                0x00006b42                uart_putdw_hex
+                0x00006a18                delay_ms
+                0x00006f3e                init_crand_consistent
+                0x000072a8                print_menu_exit
+                0x00007286                PRINT_MENU_OPTS
+                0x00006a78                uart_getch
+                0x00007112                add_month
+                0x00006a80                ROM_putstring
+                0x000070be                intersectrect
+                0x00006a32                delay_s
+                0x00006d94                hours
+                0x0000729a                print_menu_change
+                0x00006b2e                uart_putw_hex
+                0x00006a56                uart_putchar
+                0x0000701a                crand
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .text          0x0000737e        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                0x0000737e                . = ALIGN (0x2)
  *(.text.*)
- .text.libgcc   0x000075b0       0x3e c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
-                0x000075b0                __mulsi3
- .text.libgcc   0x000075ee       0x18 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
-                0x000075ee                __udivmodqi4
- .text.libgcc   0x00007606       0x28 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
-                0x00007606                __udivmodhi4
- .text.libgcc   0x0000762e       0x26 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
-                0x0000762e                __divmodhi4
-                0x0000762e                _div
- .text.libgcc   0x00007654       0x44 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
-                0x00007654                __udivmodsi4
- .text.libgcc   0x00007698       0x36 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
-                0x00007698                __divmodsi4
- .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
- .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
- .text.libgcc   0x000076ce        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .text.libgcc   0x0000737e       0x3e c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+                0x0000737e                __mulsi3
+ .text.libgcc   0x000073bc       0x18 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+                0x000073bc                __udivmodqi4
+ .text.libgcc   0x000073d4       0x28 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+                0x000073d4                __udivmodhi4
+ .text.libgcc   0x000073fc       0x26 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+                0x000073fc                __divmodhi4
+                0x000073fc                _div
+ .text.libgcc   0x00007422       0x44 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+                0x00007422                __udivmodsi4
+ .text.libgcc   0x00007466       0x36 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+                0x00007466                __divmodsi4
+ .text.libgcc   0x0000749c       0x38 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+                0x0000749c                __prologue_saves__
+ .text.libgcc   0x000074d4       0x36 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+                0x000074d4                __epilogue_restores__
+ .text.libgcc   0x0000750a        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .text.libgcc   0x0000750a        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+                0x0000750e                __tablejump__
+                0x0000750a                __tablejump2__
+ .text.libgcc   0x00007516        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .text.libgcc   0x00007516        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
  .text.avr-libc
-                0x000076ce       0x12 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
-                0x000076ce                strcmp
+                0x00007516       0x12 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+                0x00007516                strcmp
  .text.avr-libc
-                0x000076e0       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
-                0x000076e0                __eerd_byte_m328p
+                0x00007528       0x10 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+                0x00007528                __eerd_byte_m328p
  .text.avr-libc
-                0x000076f0        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
-                0x000076f0                __eerd_word_m328p
+                0x00007538        0xc c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+                0x00007538                __eerd_word_m328p
  .text.avr-libc
-                0x000076fc       0x1c c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
-                0x000076fc                __eewr_byte_m328p
-                0x000076fe                __eewr_r18_m328p
+                0x00007544       0x1c c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+                0x00007544                __eewr_byte_m328p
+                0x00007546                __eewr_r18_m328p
  .text.avr-libc
-                0x00007718        0xa c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
-                0x00007718                __eewr_word_m328p
+                0x00007560        0xa c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+                0x00007560                __eewr_word_m328p
  .text.avr-libc
-                0x00007722       0x20 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
-                0x00007722                __eerd_block_m328p
-                0x00007726                __eerd_blraw_m328p
-                0x00007742                . = ALIGN (0x2)
+                0x0000756a       0x20 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+                0x0000756a                __eerd_block_m328p
+                0x0000756e                __eerd_blraw_m328p
+                0x0000758a                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00007742        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
-                0x00007742                exit
-                0x00007742                _exit
+ .fini9         0x0000758a        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+                0x0000758a                exit
+                0x0000758a                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -588,11 +638,11 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00007742        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .fini0         0x0000758a        0x4 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
  *(.fini0)
-                0x00007746                _etext = .
+                0x0000758e                _etext = .
 
-.data           0x00800100       0xf2 load address 0x00007746
+.data           0x00800100      0x132 load address 0x0000758e
                 0x00800100                PROVIDE (__data_start, .)
  *(.data)
  .data          0x00800100        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
@@ -600,204 +650,228 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  .data          0x00800100        0x2 anim_death.o
  .data          0x00800102        0x8 anim_deathcfg.o
  .data          0x0080010a        0x0 anim_gps.o
- .data          0x0080010a        0x0 anim_int.o
- .data          0x0080010a       0x80 anim_rat.o
-                0x0080010a                sine_table
- .data          0x0080018a        0x0 anim_sev.o
- .data          0x0080018a        0x0 anim_ts.o
- .data          0x0080018a        0x0 anim_xda.o
- .data          0x0080018a        0x0 buttons.o
- .data          0x0080018a        0x6 config.o
-                0x0080018c                next_mode_setmonth
-                0x0080018e                next_mode_setday
-                0x0080018a                next_mode_setdate
- .data          0x00800190       0x40 deathclock.o
-                0x00800198                bmi_table_count
-                0x008001b0                days_table
-                0x008001a0                smoking_table_offset
-                0x008001a8                smoking_table_count
-                0x00800190                bmi_table_offset
- .data          0x008001d0        0x0 dispatch.o
- .data          0x008001d0        0x0 eeprom.o
- .data          0x008001d0        0x0 glcd.o
- .data          0x008001d0        0x0 i2c.o
- .data          0x008001d0        0x0 ks0108.o
- .data          0x008001d0       0x21 ratt.o
-                0x008001e4                timeunknown
- .data          0x008001f1        0x0 rle.o
- .data          0x008001f1        0x0 util.o
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
- .data          0x008001f1        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+ .data          0x0080010a        0x3 anim_int.o
+                0x0080010b                pInvadersDirection
+                0x0080010c                Timer
+                0x0080010a                pInvaders
+ .data          0x0080010d       0x80 anim_rat.o
+                0x0080010d                sine_table
+ .data          0x0080018d       0x15 anim_sev.o
+                0x0080018d                seg_location_sev
+ .data          0x008001a2       0x28 anim_ts.o
+                0x008001b5                seg_location_ts
+                0x008001a2                dispstring
+ .data          0x008001ca        0x0 anim_xda.o
+ .data          0x008001ca        0x0 buttons.o
+ .data          0x008001ca        0x6 config.o
+                0x008001cc                next_mode_setmonth
+                0x008001ce                next_mode_setday
+                0x008001ca                next_mode_setdate
+ .data          0x008001d0       0x40 deathclock.o
+                0x008001d8                bmi_table_count
+                0x008001f0                days_table
+                0x008001e0                smoking_table_offset
+                0x008001e8                smoking_table_count
+                0x008001d0                bmi_table_offset
+ .data          0x00800210        0x0 dispatch.o
+ .data          0x00800210        0x0 eeprom.o
+ .data          0x00800210        0x0 glcd.o
+ .data          0x00800210        0x0 i2c.o
+ .data          0x00800210        0x0 ks0108.o
+ .data          0x00800210       0x21 ratt.o
+                0x00800224                timeunknown
+ .data          0x00800231        0x0 rle.o
+ .data          0x00800231        0x0 util.o
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .data          0x00800231        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
  *(.data*)
  *(.rodata)
  *(.rodata*)
  *(.gnu.linkonce.d*)
-                0x008001f2                . = ALIGN (0x2)
- *fill*         0x008001f1        0x1 00
-                0x008001f2                _edata = .
-                0x008001f2                PROVIDE (__data_end, .)
+                0x00800232                . = ALIGN (0x2)
+ *fill*         0x00800231        0x1 00
+                0x00800232                _edata = .
+                0x00800232                PROVIDE (__data_end, .)
 
-.bss            0x008001f2      0x160
-                0x008001f2                PROVIDE (__bss_start, .)
+.bss            0x00800232      0x158
+                0x00800232                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x008001f2        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
- .bss           0x008001f2        0x0 anim_abo.o
- .bss           0x008001f2        0x9 anim_death.o
-                0x008001f4                last_score_mode
-                0x008001f2                border_tick
-                0x008001f3                redraw_time
- .bss           0x008001fb        0x0 anim_deathcfg.o
- .bss           0x008001fb        0x0 anim_gps.o
- .bss           0x008001fb        0x0 anim_int.o
- .bss           0x008001fb       0x12 anim_rat.o
-                0x008001fc                last_score_mode_rat
-                0x008001fb                redraw_time_rat
- .bss           0x0080020d        0x0 anim_sev.o
- .bss           0x0080020d        0x0 anim_ts.o
- .bss           0x0080020d        0x0 anim_xda.o
- .bss           0x0080020d        0x5 buttons.o
-                0x0080020e                debounce
-                0x00800211                buttonholdcounter
-                0x00800210                pressed
-                0x0080020d                last_buttonstate
-                0x0080020f                just_pressed
- .bss           0x00800212        0x2 config.o
-                0x00800213                screenmutex
-                0x00800212                timeoutcounter
- .bss           0x00800214        0x4 deathclock.o
-                0x00800214                minutes_left
- .bss           0x00800218        0x0 dispatch.o
- .bss           0x00800218        0x0 eeprom.o
- .bss           0x00800218        0x0 glcd.o
- .bss           0x00800218        0x5 i2c.o
- .bss           0x0080021d        0x0 ks0108.o
- .bss           0x0080021d       0xa3 ratt.o
-                0x0080021d                sleepmode
-                0x0080021f                hour_changed
-                0x00800220                second_changed
-                0x008002b0                t2divider2
-                0x00800227                rx_buffer
-                0x00800222                score_mode
-                0x00800224                timezone
-                0x00800223                gpsenable
-                0x00800226                timezonemin
-                0x0080021e                minute_changed
-                0x008002ab                snoozetimer
-                0x00800221                score_mode_timeout
-                0x00800225                timezonehour
-                0x008002ad                millis
-                0x008002af                t2divider1
- .bss           0x008002c0        0x0 rle.o
- .bss           0x008002c0        0x8 util.o
-                0x008002c0                rval
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
- .bss           0x008002c8        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
+ .bss           0x00800232        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+ .bss           0x00800232        0x0 anim_abo.o
+ .bss           0x00800232        0x9 anim_death.o
+                0x00800234                last_score_mode
+                0x00800232                border_tick
+                0x00800233                redraw_time
+ .bss           0x0080023b        0x0 anim_deathcfg.o
+ .bss           0x0080023b        0x0 anim_gps.o
+ .bss           0x0080023b        0x5 anim_int.o
+                0x0080023c                Frame
+                0x0080023d                digitsmutex_int
+                0x0080023f                wasalarming
+                0x0080023b                pInvadersPrevious
+                0x0080023e                last_score_mode2
+ .bss           0x00800240        0xc anim_rat.o
+                0x00800241                last_score_mode_rat
+                0x00800240                redraw_time_rat
+ .bss           0x0080024c        0x1 anim_sev.o
+                0x0080024c                last_score_mode_sev
+ .bss           0x0080024d        0x5 anim_ts.o
+                0x0080024d                posx
+                0x00800250                charwidth
+                0x0080024e                posstr
+                0x0080024f                scrx
+ .bss           0x00800252        0x0 anim_xda.o
+ .bss           0x00800252        0x5 buttons.o
+                0x00800253                debounce
+                0x00800256                buttonholdcounter
+                0x00800255                pressed
+                0x00800252                last_buttonstate
+                0x00800254                just_pressed
+ .bss           0x00800257        0x2 config.o
+                0x00800258                screenmutex
+                0x00800257                timeoutcounter
+ .bss           0x00800259        0x4 deathclock.o
+                0x00800259                minutes_left
+ .bss           0x0080025d        0x0 dispatch.o
+ .bss           0x0080025d        0x0 eeprom.o
+ .bss           0x0080025d        0x0 glcd.o
+ .bss           0x0080025d        0x5 i2c.o
+ .bss           0x00800262        0x0 ks0108.o
+ .bss           0x00800262       0xa3 ratt.o
+                0x00800262                sleepmode
+                0x00800264                hour_changed
+                0x00800265                second_changed
+                0x008002f5                t2divider2
+                0x0080026c                rx_buffer
+                0x00800267                score_mode
+                0x00800269                timezone
+                0x00800268                gpsenable
+                0x0080026b                timezonemin
+                0x00800263                minute_changed
+                0x008002f0                snoozetimer
+                0x00800266                score_mode_timeout
+                0x0080026a                timezonehour
+                0x008002f2                millis
+                0x008002f4                t2divider1
+ .bss           0x00800305        0x0 rle.o
+ .bss           0x00800305        0x8 util.o
+                0x00800305                rval
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodsi4.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_byte_atmega328p.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
+ .bss           0x0080030d        0x0 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
  *(.bss*)
  *(COMMON)
- COMMON         0x008002c8       0x16 anim_death.o
-                0x008002c8                reaper_x
-                0x008002ca                results
-                0x008002ce                display_digits
-                0x008002d6                left_score
-                0x008002da                right_score
- COMMON         0x008002de        0xb anim_deathcfg.o
-                0x008002de                cfg_gender
-                0x008002df                cfg_dob_y
-                0x008002e0                cfg_dc_mode
-                0x008002e1                cfg_dob_d
-                0x008002e2                cfg_bmi_weight
-                0x008002e4                cfg_dob_m
-                0x008002e5                cfg_bmi_unit
-                0x008002e6                cfg_smoker
-                0x008002e7                cfg_bmi_height
- COMMON         0x008002e9       0x32 anim_rat.o
-                0x008002e9                oldleftpaddle_y
-                0x008002ed                leftpaddle_y
-                0x008002f1                leftpaddle_dy
-                0x008002f5                ball_dy
-                0x008002f9                ball_y
-                0x008002fd                ticksremaining
-                0x008002ff                ball_dx
-                0x00800303                rightpaddle_dy
-                0x00800307                oldball_x
-                0x0080030b                ball_x
-                0x0080030f                rightpaddle_y
-                0x00800313                oldrightpaddle_y
-                0x00800317                oldball_y
- COMMON         0x0080031b        0x9 deathclock.o
-                0x0080031b                death_d
-                0x0080031c                reaper_tow_rip
-                0x0080031d                death_y
-                0x0080031e                death_m
-                0x0080031f                old_minutes_left
-                0x00800323                dc_mode
- COMMON         0x00800324        0x6 ks0108.o
-                0x00800324                GrLcdState
- COMMON         0x0080032a       0x18 ratt.o
-                0x0080032a                time_h
-                0x0080032b                old_m
-                0x0080032c                time_format
-                0x0080032d                date_y
-                0x0080032e                alarm_m
-                0x0080032f                alarmticker
-                0x00800331                displaystyle
-                0x00800332                volume
-                0x00800333                date_d
-                0x00800334                time_m
-                0x00800335                old_h
-                0x00800336                alarm_on
-                0x00800337                region
-                0x00800338                alarm_h
-                0x00800339                alarming
-                0x0080033a                displaymode
-                0x0080033b                animticker
-                0x0080033d                RotateFlag
-                0x0080033e                date_m
-                0x0080033f                time_s
-                0x00800340                alarm_tripped
-                0x00800341                old_s
- COMMON         0x00800342       0x10 util.o
-                0x00800342                key
-                0x00800352                PROVIDE (__bss_end, .)
-                0x00007746                __data_load_start = LOADADDR (.data)
-                0x00007838                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x0080030d       0x12 anim_death.o
+                0x0080030d                reaper_x
+                0x0080030f                results
+                0x00800313                display_digits
+                0x0080031b                left_score
+                0x0080031d                right_score
+ COMMON         0x0080031f        0xb anim_deathcfg.o
+                0x0080031f                cfg_gender
+                0x00800320                cfg_dob_y
+                0x00800321                cfg_dc_mode
+                0x00800322                cfg_dob_d
+                0x00800323                cfg_bmi_weight
+                0x00800325                cfg_dob_m
+                0x00800326                cfg_bmi_unit
+                0x00800327                cfg_smoker
+                0x00800328                cfg_bmi_height
+ COMMON         0x0080032a        0x2 anim_int.o
+                0x0080032a                right_score2
+                0x0080032b                left_score2
+ COMMON         0x0080032c       0x16 anim_rat.o
+                0x0080032c                oldleftpaddle_y
+                0x0080032e                leftpaddle_y
+                0x00800330                ball_dy
+                0x00800332                ball_y
+                0x00800334                ticksremaining
+                0x00800336                ball_dx
+                0x00800338                oldball_x
+                0x0080033a                ball_x
+                0x0080033c                rightpaddle_y
+                0x0080033e                oldrightpaddle_y
+                0x00800340                oldball_y
+ COMMON         0x00800342       0x1a deathclock.o
+                0x00800342                death_d
+                0x00800343                reaper_tow_rip
+                0x00800344                eeprom_data
+                0x00800355                death_y
+                0x00800356                death_m
+                0x00800357                old_minutes_left
+                0x0080035b                dc_mode
+ COMMON         0x0080035c        0x6 ks0108.o
+                0x0080035c                GrLcdState
+ COMMON         0x00800362       0x18 ratt.o
+                0x00800362                time_h
+                0x00800363                old_m
+                0x00800364                time_format
+                0x00800365                date_y
+                0x00800366                alarm_m
+                0x00800367                alarmticker
+                0x00800369                displaystyle
+                0x0080036a                volume
+                0x0080036b                date_d
+                0x0080036c                time_m
+                0x0080036d                old_h
+                0x0080036e                alarm_on
+                0x0080036f                region
+                0x00800370                alarm_h
+                0x00800371                alarming
+                0x00800372                displaymode
+                0x00800373                animticker
+                0x00800375                RotateFlag
+                0x00800376                date_m
+                0x00800377                time_s
+                0x00800378                alarm_tripped
+                0x00800379                old_s
+ COMMON         0x0080037a       0x10 util.o
+                0x0080037a                key
+                0x0080038a                PROVIDE (__bss_end, .)
+                0x0000758e                __data_load_start = LOADADDR (.data)
+                0x000076c0                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x00800352        0x0
-                0x00800352                PROVIDE (__noinit_start, .)
+.noinit         0x0080038a        0x0
+                0x0080038a                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x00800352                PROVIDE (__noinit_end, .)
-                0x00800352                _end = .
-                0x00800352                PROVIDE (__heap_start, .)
+                0x0080038a                PROVIDE (__noinit_end, .)
+                0x0080038a                _end = .
+                0x0080038a                PROVIDE (__heap_start, .)
 
-.eeprom         0x00810000      0x3a0
+.eeprom         0x00810000      0x3ee
  *(.eeprom*)
- .eeprom        0x00810000      0x3a0 eeprom.o
+ .eeprom        0x00810000      0x3ee eeprom.o
                 0x00810019                EE_TIMEZONE
                 0x00810008                EE_DOB_MONTH
                 0x0081000a                EE_DOB_YEAR
@@ -806,6 +880,7 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
                 0x0081000d                EE_SET_YEAR
                 0x00810018                EE_SET_SEC
                 0x00810004                EE_REGION
+                0x00810242                alphatable
                 0x00810015                EE_SMOKER
                 0x0081000c                EE_SET_DAY
                 0x00810005                EE_TIME_FORMAT
@@ -817,7 +892,8 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
                 0x0081000e                EE_GENDER
                 0x00810062                Font5x7
                 0x00810017                EE_SET_MIN
-                0x00810242                about
+                0x0081025c                numbertable
+                0x00810266                about
                 0x00810009                EE_DOB_DAY
                 0x0081000b                EE_SET_MONTH
                 0x00810007                EE_STYLE
@@ -825,7 +901,7 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
                 0x00810003                EE_BRIGHT
                 0x00810013                EE_BMI_HEIGHT
                 0x00810000                EE_INIT
-                0x008103a0                __eeprom_end = .
+                0x008103ee                __eeprom_end = .
 
 .fuse
  *(.fuse)
@@ -872,7 +948,7 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
 .debug_sfnames
  *(.debug_sfnames)
 
-.debug_aranges  0x00000000      0x1c0
+.debug_aranges  0x00000000      0x220
  *(.debug_aranges)
  .debug_aranges
                 0x00000000       0x20 anim_abo.o
@@ -883,28 +959,34 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  .debug_aranges
                 0x00000060       0x20 anim_gps.o
  .debug_aranges
-                0x00000080       0x20 anim_rat.o
+                0x00000080       0x20 anim_int.o
  .debug_aranges
-                0x000000a0       0x20 buttons.o
+                0x000000a0       0x20 anim_rat.o
  .debug_aranges
-                0x000000c0       0x20 config.o
+                0x000000c0       0x20 anim_sev.o
  .debug_aranges
-                0x000000e0       0x20 deathclock.o
+                0x000000e0       0x20 anim_ts.o
  .debug_aranges
-                0x00000100       0x20 dispatch.o
+                0x00000100       0x20 buttons.o
  .debug_aranges
-                0x00000120       0x20 glcd.o
+                0x00000120       0x20 config.o
  .debug_aranges
-                0x00000140       0x20 i2c.o
+                0x00000140       0x20 deathclock.o
  .debug_aranges
-                0x00000160       0x20 ks0108.o
+                0x00000160       0x20 dispatch.o
  .debug_aranges
-                0x00000180       0x20 ratt.o
+                0x00000180       0x20 glcd.o
  .debug_aranges
-                0x000001a0       0x20 util.o
+                0x000001a0       0x20 i2c.o
+ .debug_aranges
+                0x000001c0       0x20 ks0108.o
+ .debug_aranges
+                0x000001e0       0x20 ratt.o
+ .debug_aranges
+                0x00000200       0x20 util.o
 
 .debug_pubnames
-                0x00000000     0x158e
+                0x00000000     0x1911
  *(.debug_pubnames)
  .debug_pubnames
                 0x00000000       0x2e anim_abo.o
@@ -915,186 +997,199 @@ LOAD c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a
  .debug_pubnames
                 0x0000038c       0x30 anim_gps.o
  .debug_pubnames
-                0x000003bc      0x235 anim_rat.o
+                0x000003bc      0x16c anim_int.o
  .debug_pubnames
-                0x000005f1       0xa2 buttons.o
+                0x00000528      0x210 anim_rat.o
  .debug_pubnames
-                0x00000693      0x1ed config.o
+                0x00000738       0xf1 anim_sev.o
  .debug_pubnames
-                0x00000880      0x230 deathclock.o
+                0x00000829      0x11c anim_ts.o
  .debug_pubnames
-                0x00000ab0       0x48 dispatch.o
+                0x00000945       0xa2 buttons.o
  .debug_pubnames
-                0x00000af8      0x1c1 eeprom.o
+                0x000009e7      0x1ed config.o
  .debug_pubnames
-                0x00000cb9       0xa3 glcd.o
+                0x00000bd4      0x240 deathclock.o
  .debug_pubnames
-                0x00000d5c       0xde i2c.o
+                0x00000e14       0x48 dispatch.o
  .debug_pubnames
-                0x00000e3a      0x14e ks0108.o
+                0x00000e5c      0x1e0 eeprom.o
  .debug_pubnames
-                0x00000f88      0x38a ratt.o
+                0x0000103c       0xa3 glcd.o
  .debug_pubnames
-                0x00001312       0x57 rle.o
+                0x000010df       0xde i2c.o
  .debug_pubnames
-                0x00001369      0x225 util.o
+                0x000011bd      0x14e ks0108.o
+ .debug_pubnames
+                0x0000130b      0x38a ratt.o
+ .debug_pubnames
+                0x00001695       0x57 rle.o
+ .debug_pubnames
+                0x000016ec      0x225 util.o
 
-.debug_info     0x00000000     0x6077
+.debug_info     0x00000000     0x6e97
  *(.debug_info)
- .debug_info    0x00000000      0x18a anim_abo.o
- .debug_info    0x0000018a      0x7df anim_death.o
- .debug_info    0x00000969      0x9f2 anim_deathcfg.o
- .debug_info    0x0000135b      0x2bb anim_gps.o
- .debug_info    0x00001616       0x79 anim_int.o
- .debug_info    0x0000168f      0x79c anim_rat.o
- .debug_info    0x00001e2b       0x79 anim_sev.o
- .debug_info    0x00001ea4       0x79 anim_ts.o
- .debug_info    0x00001f1d       0x79 anim_xda.o
- .debug_info    0x00001f96      0x161 buttons.o
- .debug_info    0x000020f7      0xa5d config.o
- .debug_info    0x00002b54      0x8e1 deathclock.o
- .debug_info    0x00003435      0x15f dispatch.o
- .debug_info    0x00003594      0x2e4 eeprom.o
- .debug_info    0x00003878      0x481 glcd.o
- .debug_info    0x00003cf9      0x464 i2c.o
- .debug_info    0x0000415d      0x461 ks0108.o
- .debug_info    0x000045be      0xbe1 ratt.o
- .debug_info    0x0000519f      0x112 rle.o
- .debug_info    0x000052b1      0xdc6 util.o
+ .debug_info    0x00000000      0x18c anim_abo.o
+ .debug_info    0x0000018c      0x7d5 anim_death.o
+ .debug_info    0x00000961      0x9f2 anim_deathcfg.o
+ .debug_info    0x00001353      0x2bb anim_gps.o
+ .debug_info    0x0000160e      0x3e9 anim_int.o
+ .debug_info    0x000019f7      0x77b anim_rat.o
+ .debug_info    0x00002172      0x652 anim_sev.o
+ .debug_info    0x000027c4      0x555 anim_ts.o
+ .debug_info    0x00002d19       0x79 anim_xda.o
+ .debug_info    0x00002d92      0x161 buttons.o
+ .debug_info    0x00002ef3      0xa72 config.o
+ .debug_info    0x00003965      0x87b deathclock.o
+ .debug_info    0x000041e0      0x174 dispatch.o
+ .debug_info    0x00004354      0x325 eeprom.o
+ .debug_info    0x00004679      0x47d glcd.o
+ .debug_info    0x00004af6      0x464 i2c.o
+ .debug_info    0x00004f5a      0x461 ks0108.o
+ .debug_info    0x000053bb      0xbf0 ratt.o
+ .debug_info    0x00005fab      0x112 rle.o
+ .debug_info    0x000060bd      0xdda util.o
  *(.gnu.linkonce.wi.*)
 
-.debug_abbrev   0x00000000     0x1901
+.debug_abbrev   0x00000000     0x1ca4
  *(.debug_abbrev)
- .debug_abbrev  0x00000000       0xda anim_abo.o
- .debug_abbrev  0x000000da      0x1d4 anim_death.o
- .debug_abbrev  0x000002ae      0x173 anim_deathcfg.o
- .debug_abbrev  0x00000421      0x105 anim_gps.o
- .debug_abbrev  0x00000526       0x33 anim_int.o
- .debug_abbrev  0x00000559      0x1d3 anim_rat.o
- .debug_abbrev  0x0000072c       0x33 anim_sev.o
- .debug_abbrev  0x0000075f       0x33 anim_ts.o
- .debug_abbrev  0x00000792       0x33 anim_xda.o
- .debug_abbrev  0x000007c5       0xb7 buttons.o
- .debug_abbrev  0x0000087c      0x1ab config.o
- .debug_abbrev  0x00000a27      0x18a deathclock.o
- .debug_abbrev  0x00000bb1       0xa9 dispatch.o
- .debug_abbrev  0x00000c5a       0x8d eeprom.o
- .debug_abbrev  0x00000ce7      0x1af glcd.o
- .debug_abbrev  0x00000e96      0x1ed i2c.o
- .debug_abbrev  0x00001083      0x1cb ks0108.o
- .debug_abbrev  0x0000124e      0x308 ratt.o
- .debug_abbrev  0x00001556       0x73 rle.o
- .debug_abbrev  0x000015c9      0x338 util.o
+ .debug_abbrev  0x00000000       0xe9 anim_abo.o
+ .debug_abbrev  0x000000e9      0x1e3 anim_death.o
+ .debug_abbrev  0x000002cc      0x173 anim_deathcfg.o
+ .debug_abbrev  0x0000043f      0x105 anim_gps.o
+ .debug_abbrev  0x00000544       0xec anim_int.o
+ .debug_abbrev  0x00000630      0x1dc anim_rat.o
+ .debug_abbrev  0x0000080c      0x18b anim_sev.o
+ .debug_abbrev  0x00000997      0x14b anim_ts.o
+ .debug_abbrev  0x00000ae2       0x33 anim_xda.o
+ .debug_abbrev  0x00000b15       0xb7 buttons.o
+ .debug_abbrev  0x00000bcc      0x1ab config.o
+ .debug_abbrev  0x00000d77      0x1c8 deathclock.o
+ .debug_abbrev  0x00000f3f       0xa9 dispatch.o
+ .debug_abbrev  0x00000fe8       0x84 eeprom.o
+ .debug_abbrev  0x0000106c      0x1be glcd.o
+ .debug_abbrev  0x0000122a      0x1ed i2c.o
+ .debug_abbrev  0x00001417      0x1cb ks0108.o
+ .debug_abbrev  0x000015e2      0x326 ratt.o
+ .debug_abbrev  0x00001908       0x73 rle.o
+ .debug_abbrev  0x0000197b      0x329 util.o
 
-.debug_line     0x00000000     0x5446
+.debug_line     0x00000000     0x5d78
  *(.debug_line)
  .debug_line    0x00000000      0x15e anim_abo.o
  .debug_line    0x0000015e      0x9be anim_death.o
  .debug_line    0x00000b1c      0xa65 anim_deathcfg.o
  .debug_line    0x00001581      0x161 anim_gps.o
- .debug_line    0x000016e2       0x3e anim_int.o
- .debug_line    0x00001720      0x6ea anim_rat.o
- .debug_line    0x00001e0a       0x3e anim_sev.o
- .debug_line    0x00001e48       0x3e anim_ts.o
- .debug_line    0x00001e86       0x3e anim_xda.o
- .debug_line    0x00001ec4      0x21f buttons.o
- .debug_line    0x000020e3      0x9f1 config.o
- .debug_line    0x00002ad4      0x44f deathclock.o
- .debug_line    0x00002f23      0x19e dispatch.o
- .debug_line    0x000030c1       0x83 eeprom.o
- .debug_line    0x00003144      0x411 glcd.o
- .debug_line    0x00003555      0x2fe i2c.o
- .debug_line    0x00003853      0x5e8 ks0108.o
- .debug_line    0x00003e3b      0xdc5 ratt.o
- .debug_line    0x00004c00       0x80 rle.o
- .debug_line    0x00004c80      0x7c6 util.o
+ .debug_line    0x000016e2      0x2fb anim_int.o
+ .debug_line    0x000019dd      0x6b0 anim_rat.o
+ .debug_line    0x0000208d      0x316 anim_sev.o
+ .debug_line    0x000023a3      0x39d anim_ts.o
+ .debug_line    0x00002740       0x3e anim_xda.o
+ .debug_line    0x0000277e      0x21f buttons.o
+ .debug_line    0x0000299d      0x9f1 config.o
+ .debug_line    0x0000338e      0x467 deathclock.o
+ .debug_line    0x000037f5      0x1fe dispatch.o
+ .debug_line    0x000039f3       0x83 eeprom.o
+ .debug_line    0x00003a76      0x411 glcd.o
+ .debug_line    0x00003e87      0x2fe i2c.o
+ .debug_line    0x00004185      0x5e8 ks0108.o
+ .debug_line    0x0000476d      0xdc5 ratt.o
+ .debug_line    0x00005532       0x80 rle.o
+ .debug_line    0x000055b2      0x7c6 util.o
 
-.debug_frame    0x00000000      0xb30
+.debug_frame    0x00000000      0xd30
  *(.debug_frame)
  .debug_frame   0x00000000       0x20 anim_abo.o
  .debug_frame   0x00000020       0xb0 anim_death.o
  .debug_frame   0x000000d0      0x100 anim_deathcfg.o
  .debug_frame   0x000001d0       0x20 anim_gps.o
- .debug_frame   0x000001f0       0xf0 anim_rat.o
- .debug_frame   0x000002e0       0x50 buttons.o
- .debug_frame   0x00000330      0x130 config.o
- .debug_frame   0x00000460       0x90 deathclock.o
- .debug_frame   0x000004f0       0x50 dispatch.o
- .debug_frame   0x00000540       0x90 glcd.o
- .debug_frame   0x000005d0       0xc0 i2c.o
- .debug_frame   0x00000690      0x120 ks0108.o
- .debug_frame   0x000007b0      0x180 ratt.o
- .debug_frame   0x00000930      0x200 util.o
+ .debug_frame   0x000001f0       0x90 anim_int.o
+ .debug_frame   0x00000280       0xf0 anim_rat.o
+ .debug_frame   0x00000370       0xb0 anim_sev.o
+ .debug_frame   0x00000420       0xc0 anim_ts.o
+ .debug_frame   0x000004e0       0x50 buttons.o
+ .debug_frame   0x00000530      0x130 config.o
+ .debug_frame   0x00000660       0x90 deathclock.o
+ .debug_frame   0x000006f0       0x50 dispatch.o
+ .debug_frame   0x00000740       0x90 glcd.o
+ .debug_frame   0x000007d0       0xc0 i2c.o
+ .debug_frame   0x00000890      0x120 ks0108.o
+ .debug_frame   0x000009b0      0x180 ratt.o
+ .debug_frame   0x00000b30      0x200 util.o
 
-.debug_str      0x00000000     0x17e2
+.debug_str      0x00000000     0x1b3b
  *(.debug_str)
  .debug_str     0x00000000       0xee anim_abo.o
                                 0x12c (size before relaxing)
- .debug_str     0x000000ee      0x39a anim_death.o
-                                0x4e5 (size before relaxing)
- .debug_str     0x00000488      0x410 anim_deathcfg.o
+ .debug_str     0x000000ee      0x38b anim_death.o
+                                0x4dc (size before relaxing)
+ .debug_str     0x00000479      0x410 anim_deathcfg.o
                                 0x5b7 (size before relaxing)
- .debug_str     0x00000898       0x3f anim_gps.o
+ .debug_str     0x00000889       0x3f anim_gps.o
                                 0x2db (size before relaxing)
- .debug_str     0x000008d7        0xb anim_int.o
+ .debug_str     0x000008c8      0x1c7 anim_int.o
+                                0x3fa (size before relaxing)
+ .debug_str     0x00000a8f      0x247 anim_rat.o
+                                0x515 (size before relaxing)
+ .debug_str     0x00000cd6       0xf5 anim_sev.o
+                                0x331 (size before relaxing)
+ .debug_str     0x00000dcb       0xf7 anim_ts.o
+                                0x34b (size before relaxing)
+ .debug_str     0x00000ec2        0xb anim_xda.o
                                  0xc5 (size before relaxing)
- .debug_str     0x000008e2      0x25b anim_rat.o
-                                0x529 (size before relaxing)
- .debug_str     0x00000b3d        0xb anim_sev.o
-                                 0xc5 (size before relaxing)
- .debug_str     0x00000b48        0xa anim_ts.o
-                                 0xc4 (size before relaxing)
- .debug_str     0x00000b52        0xb anim_xda.o
-                                 0xc5 (size before relaxing)
- .debug_str     0x00000b5d       0x72 buttons.o
+ .debug_str     0x00000ecd       0x72 buttons.o
                                 0x152 (size before relaxing)
- .debug_str     0x00000bcf      0x1d8 config.o
-                                0x595 (size before relaxing)
- .debug_str     0x00000da7      0x1d7 deathclock.o
-                                0x3f8 (size before relaxing)
- .debug_str     0x00000f7e       0x31 dispatch.o
-                                0x16e (size before relaxing)
- .debug_str     0x00000faf       0x3a eeprom.o
-                                0x1ed (size before relaxing)
- .debug_str     0x00000fe9       0xbb glcd.o
+ .debug_str     0x00000f3f      0x1ea config.o
+                                0x5b2 (size before relaxing)
+ .debug_str     0x00001129      0x1de deathclock.o
+                                0x384 (size before relaxing)
+ .debug_str     0x00001307       0x31 dispatch.o
+                                0x18b (size before relaxing)
+ .debug_str     0x00001338       0x3a eeprom.o
+                                0x204 (size before relaxing)
+ .debug_str     0x00001372       0xbb glcd.o
                                 0x1c4 (size before relaxing)
- .debug_str     0x000010a4      0x15b i2c.o
+ .debug_str     0x0000142d      0x15b i2c.o
                                 0x21a (size before relaxing)
- .debug_str     0x000011ff      0x177 ks0108.o
+ .debug_str     0x00001588      0x177 ks0108.o
                                 0x264 (size before relaxing)
- .debug_str     0x00001376      0x262 ratt.o
-                                0x742 (size before relaxing)
- .debug_str     0x000015d8        0x6 rle.o
+ .debug_str     0x000016ff      0x237 ratt.o
+                                0x75f (size before relaxing)
+ .debug_str     0x00001936        0x6 rle.o
                                  0xdb (size before relaxing)
- .debug_str     0x000015de      0x204 util.o
-                                0x58b (size before relaxing)
+ .debug_str     0x0000193c      0x1ff util.o
+                                0x5a8 (size before relaxing)
 
-.debug_loc      0x00000000     0x32b0
+.debug_loc      0x00000000     0x391f
  *(.debug_loc)
- .debug_loc     0x00000000       0xee anim_abo.o
- .debug_loc     0x000000ee      0x53e anim_death.o
- .debug_loc     0x0000062c      0x177 anim_deathcfg.o
- .debug_loc     0x000007a3       0x6d anim_gps.o
- .debug_loc     0x00000810      0x4a8 anim_rat.o
- .debug_loc     0x00000cb8       0x48 buttons.o
- .debug_loc     0x00000d00      0x553 config.o
- .debug_loc     0x00001253      0xa91 deathclock.o
- .debug_loc     0x00001ce4       0x47 dispatch.o
- .debug_loc     0x00001d2b      0x62d glcd.o
- .debug_loc     0x00002358      0x16b i2c.o
- .debug_loc     0x000024c3      0x149 ks0108.o
- .debug_loc     0x0000260c      0x381 ratt.o
- .debug_loc     0x0000298d      0x923 util.o
+ .debug_loc     0x00000000       0x57 anim_abo.o
+ .debug_loc     0x00000057      0x49c anim_death.o
+ .debug_loc     0x000004f3      0x177 anim_deathcfg.o
+ .debug_loc     0x0000066a       0x6d anim_gps.o
+ .debug_loc     0x000006d7       0xfe anim_int.o
+ .debug_loc     0x000007d5      0x55c anim_rat.o
+ .debug_loc     0x00000d31      0x3a9 anim_sev.o
+ .debug_loc     0x000010da      0x3f4 anim_ts.o
+ .debug_loc     0x000014ce       0x48 buttons.o
+ .debug_loc     0x00001516      0x553 config.o
+ .debug_loc     0x00001a69      0x9be deathclock.o
+ .debug_loc     0x00002427       0x68 dispatch.o
+ .debug_loc     0x0000248f      0x5db glcd.o
+ .debug_loc     0x00002a6a      0x16b i2c.o
+ .debug_loc     0x00002bd5      0x149 ks0108.o
+ .debug_loc     0x00002d1e      0x327 ratt.o
+ .debug_loc     0x00003045      0x8da util.o
 
 .debug_macinfo
  *(.debug_macinfo)
 OUTPUT(MultiChronB.elf elf32-avr)
 LOAD linker stubs
 
-.debug_ranges   0x00000000      0x198
+.debug_ranges   0x00000000      0x1b0
  .debug_ranges  0x00000000       0x18 anim_death.o
- .debug_ranges  0x00000018       0x30 ratt.o
- .debug_ranges  0x00000048      0x150 util.o
+ .debug_ranges  0x00000018       0x18 anim_rat.o
+ .debug_ranges  0x00000030       0x30 ratt.o
+ .debug_ranges  0x00000060      0x150 util.o
 
 Cross Reference Table
 
@@ -1110,13 +1205,10 @@ EE_ALARM_MIN                                      eeprom.o
                                                   ratt.o
                                                   config.o
 EE_BMI_HEIGHT                                     eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_BMI_UNIT                                       eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_BMI_WEIGHT                                     eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_BRIGHT                                         eeprom.o
                                                   ratt.o
@@ -1124,19 +1216,15 @@ EE_BRIGHT                                         eeprom.o
 EE_DATA                                           eeprom.o
                                                   ratt.o
 EE_DC_MODE                                        eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_DOB_DAY                                        eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_DOB_MONTH                                      eeprom.o
                                                   deathclock.o
                                                   anim_deathcfg.o
 EE_DOB_YEAR                                       eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_GENDER                                         eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_INIT                                           eeprom.o
                                                   ratt.o
@@ -1147,22 +1235,18 @@ EE_SET_DAY                                        eeprom.o
                                                   deathclock.o
                                                   anim_deathcfg.o
 EE_SET_HOUR                                       eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_SET_MIN                                        eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_SET_MONTH                                      eeprom.o
                                                   deathclock.o
                                                   anim_deathcfg.o
 EE_SET_SEC                                        eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_SET_YEAR                                       eeprom.o
                                                   deathclock.o
                                                   anim_deathcfg.o
 EE_SMOKER                                         eeprom.o
-                                                  deathclock.o
                                                   anim_deathcfg.o
 EE_SNOOZE                                         eeprom.o
 EE_STYLE                                          eeprom.o
@@ -1182,6 +1266,7 @@ Font5x7                                           eeprom.o
                                                   glcd.o
 FontGr                                            eeprom.o
                                                   glcd.o
+Frame                                             anim_int.o
 GPSCheck                                          ratt.o
 GPSRead                                           ratt.o
 GPS_Text                                          anim_gps.o
@@ -1195,6 +1280,12 @@ ROM_putstring                                     util.o
 RotateFlag                                        ratt.o
                                                   dispatch.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
+Timer                                             anim_int.o
+WriteBases_int                                    anim_int.o
+WriteInvaders_int                                 anim_int.o
+WriteTime_int                                     anim_int.o
 __bad_interrupt                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __bss_end                                         c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
 __bss_start                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_clear_bss.o)
@@ -1220,14 +1311,21 @@ __do_clear_bss                                    c:/winavr-20100110/bin/../lib/
                                                   deathclock.o
                                                   config.o
                                                   buttons.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 __do_copy_data                                    c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_copy_data.o)
                                                   ratt.o
+                                                  dispatch.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 __eerd_block_m328p                                c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_block_atmega328p.o)
@@ -1239,11 +1337,12 @@ __eerd_byte_m328p                                 c:/winavr-20100110/bin/../lib/
                                                   glcd.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_abo.o
 __eerd_word_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eerd_word_atmega328p.o)
-                                                  deathclock.o
                                                   anim_deathcfg.o
 __eewr_byte_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_byte_atmega328p.o)
                                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
@@ -1255,22 +1354,51 @@ __eewr_r18_m328p                                  c:/winavr-20100110/bin/../lib/
                                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
 __eewr_word_m328p                                 c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(eewr_word_atmega328p.o)
                                                   anim_deathcfg.o
+__epilogue_restores__                             c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_epilogue.o)
+                                                  util.o
+                                                  ratt.o
+                                                  glcd.o
+                                                  deathclock.o
+                                                  anim_ts.o
+                                                  anim_sev.o
+                                                  anim_rat.o
+                                                  anim_deathcfg.o
+                                                  anim_death.o
+                                                  anim_abo.o
 __heap_end                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __init                                            c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __mulsi3                                          c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_mulsi3.o)
                                                   util.o
                                                   deathclock.o
                                                   anim_rat.o
+__prologue_saves__                                c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_prologue.o)
+                                                  util.o
+                                                  ratt.o
+                                                  glcd.o
+                                                  deathclock.o
+                                                  anim_ts.o
+                                                  anim_sev.o
+                                                  anim_rat.o
+                                                  anim_deathcfg.o
+                                                  anim_death.o
+                                                  anim_abo.o
 __stack                                           c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
+__tablejump2__                                    c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
+                                                  dispatch.o
+                                                  anim_death.o
+__tablejump__                                     c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_tablejump.o)
 __udivmodhi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodhi4.o)
                                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_divmodhi4.o)
                                                   util.o
                                                   ratt.o
+                                                  dispatch.o
                                                   deathclock.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 __udivmodqi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodqi4.o)
                                                   ratt.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
                                                   anim_death.o
 __udivmodsi4                                      c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_udivmodsi4.o)
@@ -1278,7 +1406,6 @@ __udivmodsi4                                      c:/winavr-20100110/bin/../lib/
                                                   util.o
                                                   deathclock.o
                                                   anim_rat.o
-                                                  anim_death.o
 __vector_1                                        c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_10                                       c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
 __vector_11                                       ratt.o
@@ -1324,16 +1451,26 @@ add_month                                         util.o
                                                   anim_deathcfg.o
 alarm_h                                           ratt.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
 alarm_m                                           ratt.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
 alarm_on                                          ratt.o
 alarm_tripped                                     ratt.o
 alarming                                          ratt.o
+                                                  anim_ts.o
+                                                  anim_int.o
 alarmticker                                       ratt.o
+alphatable                                        eeprom.o
+                                                  anim_sev.o
 animticker                                        ratt.o
 ball_dx                                           anim_rat.o
 ball_dy                                           anim_rat.o
@@ -1361,6 +1498,7 @@ cfg_gender                                        anim_deathcfg.o
 cfg_smoker                                        anim_deathcfg.o
 char_available                                    ratt.o
 char_read                                         ratt.o
+charwidth                                         anim_ts.o
 check_ball_digit_collision                        anim_rat.o
 check_timeout                                     util.o
                                                   config.o
@@ -1374,20 +1512,29 @@ crand                                             util.o
 date_d                                            ratt.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 date_diff                                         deathclock.o
 date_m                                            ratt.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 date_y                                            ratt.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 day_in_month                                      deathclock.o
@@ -1415,6 +1562,7 @@ delay_ms                                          util.o
                                                   anim_death.o
                                                   anim_abo.o
 delay_s                                           util.o
+digitsmutex_int                                   anim_int.o
 display_bmi_set                                   anim_deathcfg.o
 display_dc_mode                                   anim_deathcfg.o
 display_death_menu                                anim_deathcfg.o
@@ -1435,8 +1583,11 @@ displaystyle                                      util.o
                                                   anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_abo.o
+dispstring                                        anim_ts.o
 dotw                                              util.o
                                                   ratt.o
+draw7seg_sev                                      anim_sev.o
+draw7seg_ts                                       anim_ts.o
 drawArrow                                         ratt.o
                                                   config.o
                                                   anim_deathcfg.o
@@ -1444,13 +1595,28 @@ draw_score_rat                                    anim_rat.o
 drawbigdigit                                      util.o
                                                   anim_rat.o
                                                   anim_death.o
+drawdigit_sev                                     anim_sev.o
+drawdigit_ts                                      anim_ts.o
 drawdisplay                                       dispatch.o
                                                   ratt.o
 drawdisplay_death                                 anim_death.o
                                                   dispatch.o
+drawdisplay_int                                   anim_int.o
+                                                  dispatch.o
 drawdisplay_rat                                   anim_rat.o
                                                   dispatch.o
+drawdisplay_sev                                   anim_sev.o
+                                                  dispatch.o
+drawdisplay_ts                                    anim_ts.o
+                                                  dispatch.o
+drawdot_sev                                       anim_sev.o
+drawdot_ts                                        anim_ts.o
 drawmidline                                       anim_rat.o
+drawseg_ts                                        anim_ts.o
+drawsegment_sev                                   anim_sev.o
+drawsegment_ts                                    anim_ts.o
+drawvseg_sev                                      anim_sev.o
+eeprom_data                                       deathclock.o
 encipher                                          util.o
 exit                                              c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/avr5\libgcc.a(_exit.o)
                                                   c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5/crtm328p.o
@@ -1473,10 +1639,14 @@ glcdDataWrite                                     ks0108.o
                                                   anim_death.o
 glcdDelay                                         ks0108.o
 glcdFillCircle                                    glcd.o
+                                                  anim_sev.o
 glcdFillRectangle                                 glcd.o
                                                   util.o
                                                   ratt.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
                                                   anim_abo.o
 glcdGotoChar                                      ks0108.o
@@ -1498,6 +1668,7 @@ glcdSetAddress                                    ks0108.o
                                                   glcd.o
                                                   config.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_gps.o
                                                   anim_deathcfg.o
                                                   anim_death.o
@@ -1515,13 +1686,20 @@ glcdWriteChar                                     glcd.o
                                                   anim_death.o
                                                   anim_abo.o
 glcdWriteCharGr                                   glcd.o
+                                                  anim_int.o
 gpsenable                                         ratt.o
 hour_changed                                      ratt.o
                                                   dispatch.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
 hours                                             util.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
 i2bcd                                             ratt.o
 i2cGetReceivedByte                                i2c.o
 i2cGetStatus                                      i2c.o
@@ -1556,7 +1734,13 @@ initanim_death                                    anim_death.o
                                                   dispatch.o
 initanim_deathcfg                                 anim_deathcfg.o
                                                   dispatch.o
+initanim_int                                      anim_int.o
+                                                  dispatch.o
 initanim_rat                                      anim_rat.o
+                                                  dispatch.o
+initanim_sev                                      anim_sev.o
+                                                  dispatch.o
+initanim_ts                                       anim_ts.o
                                                   dispatch.o
 initbuttons                                       buttons.o
                                                   ratt.o
@@ -1565,7 +1749,13 @@ initdisplay                                       dispatch.o
                                                   anim_death.o
 initdisplay_death                                 anim_death.o
                                                   dispatch.o
+initdisplay_int                                   anim_int.o
+                                                  dispatch.o
 initdisplay_rat                                   anim_rat.o
+                                                  dispatch.o
+initdisplay_sev                                   anim_sev.o
+                                                  dispatch.o
+initdisplay_ts                                    anim_ts.o
                                                   dispatch.o
 intersectrect                                     util.o
                                                   anim_rat.o
@@ -1581,13 +1771,16 @@ key                                               util.o
 last_buttonstate                                  buttons.o
 last_score_mode                                   anim_death.o
                                                   ratt.o
+last_score_mode2                                  anim_int.o
 last_score_mode_rat                               anim_rat.o
+last_score_mode_sev                               anim_sev.o
 leapyear                                          ratt.o
                                                   util.o
                                                   deathclock.o
 left_score                                        anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
-leftpaddle_dy                                     anim_rat.o
+left_score2                                       anim_int.o
 leftpaddle_y                                      anim_rat.o
 load_etd                                          deathclock.o
                                                   anim_deathcfg.o
@@ -1599,7 +1792,10 @@ main                                              ratt.o
 millis                                            ratt.o
 minute_changed                                    ratt.o
                                                   dispatch.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
 minutes_left                                      deathclock.o
                                                   anim_death.o
@@ -1615,6 +1811,9 @@ normal_bmi_female                                 deathclock.o
 normal_bmi_male                                   deathclock.o
 normal_smoking_female                             deathclock.o
 normal_smoking_male                               deathclock.o
+numbertable                                       eeprom.o
+                                                  anim_ts.o
+                                                  anim_sev.o
 old_h                                             ratt.o
                                                   anim_rat.o
                                                   anim_death.o
@@ -1628,6 +1827,11 @@ oldball_x                                         anim_rat.o
 oldball_y                                         anim_rat.o
 oldleftpaddle_y                                   anim_rat.o
 oldrightpaddle_y                                  anim_rat.o
+pInvaders                                         anim_int.o
+pInvadersDirection                                anim_int.o
+pInvadersPrevious                                 anim_int.o
+posstr                                            anim_ts.o
+posx                                              anim_ts.o
 prep_digits                                       anim_death.o
 pressed                                           buttons.o
                                                   util.o
@@ -1656,9 +1860,11 @@ print_time                                        config.o
 print_timehour                                    config.o
 printnumber                                       ratt.o
                                                   config.o
+                                                  anim_int.o
                                                   anim_gps.o
                                                   anim_deathcfg.o
 printnumber_3d                                    anim_deathcfg.o
+printnumber_sev                                   anim_sev.o
 random_angle                                      anim_rat.o
 random_days                                       deathclock.o
 readADC                                           buttons.o
@@ -1673,15 +1879,19 @@ redraw_time                                       anim_death.o
 redraw_time_rat                                   anim_rat.o
 region                                            ratt.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 region_setting_table                              config.o
 render_image                                      anim_death.o
 results                                           anim_death.o
 right_score                                       anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
-rightpaddle_dy                                    anim_rat.o
+right_score2                                      anim_int.o
 rightpaddle_y                                     anim_rat.o
 rip0_p                                            anim_death.o
 rip_on_white                                      rle.o
@@ -1693,13 +1903,21 @@ sadistic_bmi_male                                 deathclock.o
 sadistic_smoking_female                           deathclock.o
 sadistic_smoking_male                             deathclock.o
 score_mode                                        ratt.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_death.o
 score_mode_timeout                                ratt.o
+                                                  anim_ts.o
 screenmutex                                       config.o
                                                   util.o
                                                   anim_deathcfg.o
+scrx                                              anim_ts.o
 second_changed                                    ratt.o
+                                                  anim_sev.o
+seg_location_sev                                  anim_sev.o
+seg_location_ts                                   anim_ts.o
 set_alarm                                         config.o
                                                   ratt.o
 set_backlight                                     config.o
@@ -1719,8 +1937,11 @@ set_time                                          config.o
                                                   ratt.o
 setalarmstate                                     ratt.o
                                                   buttons.o
+setscore_int                                      anim_int.o
 setscore_rat                                      anim_rat.o
 setsnooze                                         ratt.o
+setstring_ts                                      anim_ts.o
+setstringdigits_ts                                anim_ts.o
 sine                                              anim_rat.o
 sine_table                                        anim_rat.o
 skull0_p                                          anim_death.o
@@ -1734,7 +1955,13 @@ step                                              dispatch.o
                                                   ratt.o
 step_death                                        anim_death.o
                                                   dispatch.o
+step_int                                          anim_int.o
+                                                  dispatch.o
 step_rat                                          anim_rat.o
+                                                  dispatch.o
+step_sev                                          anim_sev.o
+                                                  dispatch.o
+step_ts                                           anim_ts.o
                                                   dispatch.o
 strcmp                                            c:/winavr-20100110/bin/../lib/gcc/avr/4.3.3/../../../../avr/lib/avr5\libc.a(strcmp.o)
                                                   ratt.o
@@ -1746,24 +1973,33 @@ ticksremaining                                    anim_rat.o
 time_format                                       util.o
                                                   ratt.o
                                                   config.o
+                                                  anim_sev.o
                                                   anim_death.o
 time_h                                            util.o
                                                   ratt.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 time_m                                            util.o
                                                   ratt.o
                                                   deathclock.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_rat.o
+                                                  anim_int.o
                                                   anim_deathcfg.o
                                                   anim_death.o
 time_s                                            util.o
                                                   ratt.o
                                                   config.o
+                                                  anim_ts.o
+                                                  anim_sev.o
                                                   anim_deathcfg.o
                                                   anim_death.o
                                                   anim_abo.o
@@ -1789,5 +2025,6 @@ uart_puts                                         util.o
 uart_putw_dec                                     util.o
 uart_putw_hex                                     util.o
 volume                                            ratt.o
+wasalarming                                       anim_int.o
 writei2ctime                                      ratt.o
                                                   config.o

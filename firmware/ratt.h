@@ -38,7 +38,10 @@
 #else
 //MultiCronB DeathChron Mix:
 #define GPSENABLE 1
+#define INTRUDERCHRON 1
+#define SEVENCHRON 1
 #define RATTCHRON 1
+#define TSCHRON 1
 #define DEATHCHRON 1
 #endif
 

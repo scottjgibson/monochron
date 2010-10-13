@@ -13,7 +13,6 @@ AutoDim - Audodim click based on added light sensor.
 TimerChron - A Count Up Timer that reads external inputs for start/stop.
 DissolveChron - A Chron that time melts in and out as mosaic panels.
 
-
 Version 1.1
 9/10/2010
 Added TimesSqaureChron, Coding Dataman, Simulates the Scrolling Marquee of Times Square

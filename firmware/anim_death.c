@@ -40,7 +40,7 @@ extern volatile uint8_t reaper_tow_rip;
 
 extern volatile uint8_t last_buttonstate, just_pressed, pressed;
 
-uint32_t left_score, right_score;
+uint16_t left_score, right_score;
 int32_t results;
 
 extern volatile uint8_t minute_changed, hour_changed;

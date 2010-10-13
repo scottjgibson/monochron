@@ -98,39 +98,39 @@ const uint8_t smoking_table_count[] = {
 	2,2,	//Sadistic
 };
 
-const uint16_t normal_smoking_male[10][2] PROGMEM = {
-  { 30,2739 },
-  { 35,2703 },
-  { 40,2557 },
-  { 45,2520 },
-  { 50,2410 },
-  { 55,2265 },
-  { 60,2046 },
-  { 65,1790 },
-  { 70,1607 },
-  { 200,1205 }
+const uint8_t normal_smoking_male[10][2] PROGMEM = {
+  { 30,171 },
+  { 35,169 },
+  { 40,160 },
+  { 45,158 },
+  { 50,151 },
+  { 55,142 },
+  { 60,128 },
+  { 65,112 },
+  { 70,100 },
+  { 200,75 }
 };
 
-const uint16_t normal_smoking_female[9][2] PROGMEM = {
-  { 30, 2367 },
-  { 45, 2331 },
-  { 50, 2294 },
-  { 55, 2257 },
-  { 60, 2192 },
-  { 65, 1782 },
-  { 70, 1826 },
-  { 75, 1381 },
-  { 200, 1096 }
+const uint8_t normal_smoking_female[9][2] PROGMEM = {
+  { 30, 148 },
+  { 45, 146 },
+  { 50, 143 },
+  { 55, 141 },
+  { 60, 137 },
+  { 65, 111 },
+  { 70, 114 },
+  { 75, 86 },
+  { 200, 69 }
 };
 
-const uint16_t sadistic_smoking_male[2][2] PROGMEM = {
-  { 30, 1278 },
-  { 200, 1242 }
+const uint8_t sadistic_smoking_male[2][2] PROGMEM = {
+  { 30, 80 },
+  { 200, 78 }
 };
 
-const uint16_t sadistic_smoking_female[2][2] PROGMEM = {
-  { 30, 1424 },
-  { 200, 1388 }
+const uint8_t sadistic_smoking_female[2][2] PROGMEM = {
+  { 30, 89 },
+  { 200, 87 }
 };
 
 
@@ -293,9 +293,9 @@ uint32_t ETD ( uint8_t DOB_month,
   {
       for(i=0;i<smoking_table_count[(Mode * 2) + Gender];i++)
       {
-        if( y < pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][0]) )
+        if( y < pgm_read_byte(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][0]) )
         {
-          days -= (uint16_t)(pgm_read_word(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][1])*10);
+          days -= (uint16_t)(pgm_read_byte(&normal_smoking_male[smoking_table_offset[(Mode * 2) + Gender]+i][1])*160);
           break;
         }
       }
@@ -305,10 +305,37 @@ uint32_t ETD ( uint8_t DOB_month,
   return days;
 }
 
+
+/*
+	uint8_t EEMEM EE_DOB_MONTH = 11; //Death Clock variables are preserved in the event of an extended power outage.
+  uint8_t EEMEM EE_DOB_DAY = 14;
+  uint8_t EEMEM EE_DOB_YEAR = 80;
+  uint8_t EEMEM EE_SET_MONTH = 7;
+  uint8_t EEMEM EE_SET_DAY = 28;
+  uint8_t EEMEM EE_SET_YEAR = 110;
+  uint8_t EEMEM EE_GENDER = DC_gender_male;
+  uint8_t EEMEM EE_DC_MODE = DC_mode_normal;
+  uint8_t EEMEM EE_BMI_UNIT = BMI_Imperial;
+  uint16_t EEMEM EE_BMI_WEIGHT = 400;
+  uint16_t EEMEM EE_BMI_HEIGHT = 78;
+  uint8_t EEMEM EE_SMOKER = DC_non_smoker;
+  uint8_t EEMEM EE_SET_HOUR = 20;
+  uint8_t EEMEM EE_SET_MIN = 05;
+  uint8_t EEMEM EE_SET_SEC = 25;
+*/
+uint8_t eeprom_data[17];
 uint32_t load_raw_etd(void)
 {
-  dc_mode = eeprom_read_byte(&EE_DC_MODE);
-  return ETD(  eeprom_read_byte(&EE_DOB_MONTH),
+  uint8_t i;
+  for(i=0;i<17;i++)
+  	  eeprom_data[i] = eeprom_read_byte(&EE_DOB_MONTH + i);
+  dc_mode = eeprom_data[7];
+  return ETD(  eeprom_data[0],eeprom_data[1],eeprom_data[2]+1900,
+  	  			eeprom_data[3],eeprom_data[4],eeprom_data[5]+1900,
+  	  			eeprom_data[6],eeprom_data[7],
+  	  			BodyMassIndex ( eeprom_data[8], (eeprom_data[9] << 8) | eeprom_data[10], (eeprom_data[11] << 8) | eeprom_data[12]),
+  	  			eeprom_data[13],eeprom_data[14],eeprom_data[15],eeprom_data[16] );
+  	  /*eeprom_read_byte(&EE_DOB_MONTH),
                               eeprom_read_byte(&EE_DOB_DAY),
                               eeprom_read_byte(&EE_DOB_YEAR)+1900,
                               eeprom_read_byte(&EE_SET_MONTH),
@@ -320,15 +347,16 @@ uint32_t load_raw_etd(void)
                               eeprom_read_byte(&EE_SMOKER),
                               eeprom_read_byte(&EE_SET_HOUR),
                               eeprom_read_byte(&EE_SET_MIN),
-                              eeprom_read_byte(&EE_SET_SEC));
+                              eeprom_read_byte(&EE_SET_SEC));*/
 }
 
 void load_etd(void)
 {
   uint32_t result = load_raw_etd();
-      result -= date_diff( eeprom_read_byte(&EE_SET_MONTH),
+      result -= date_diff( eeprom_data[3],eeprom_data[4],eeprom_data[5]+1900,
+      	  					/*eeprom_read_byte(&EE_SET_MONTH),
                            eeprom_read_byte(&EE_SET_DAY),
-                           eeprom_read_byte(&EE_SET_YEAR)+1900,
+                           eeprom_read_byte(&EE_SET_YEAR)+1900, */
                            date_m,date_d,date_y+2000) * 1440l * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_h * 60) * ((dc_mode == DC_mode_sadistic)?4:1);
   result -= (time_m) * ((dc_mode == DC_mode_sadistic)?4:1);
