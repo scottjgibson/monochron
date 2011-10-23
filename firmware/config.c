@@ -663,6 +663,9 @@ uint8_t style_setting_str[] PROGMEM = {
 #ifdef GPSENABLE
   STYLE_GPS, 'G','P','S',' ','S','e','t','u','p',0,
 #endif
+#ifdef MARIOCHRON
+  STYLE_MARIO, 'M','a','r','i','o','C','h','r','o','n', 0,
+#endif
   STYLE_ABOUT, 'A','b','o','u','t',0,
   0xFF,
 };

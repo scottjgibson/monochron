@@ -431,16 +431,16 @@ int main(void) {
     step();
     if (displaymode == SHOW_TIME) {
       if (! inverted && alarming && (time_s & 0x1)) {
-	inverted = 1;
-	initdisplay(inverted);
+        inverted = 1;
+        initdisplay(inverted);
       }
       else if ((inverted && ! alarming) || (alarming && inverted && !(time_s & 0x1))) {
-	inverted = 0;
-	initdisplay(0);
+        inverted = 0;
+        initdisplay(0);
       } else {
-	PORTB |= _BV(5);
-	drawdisplay(inverted);
-	PORTB &= ~_BV(5);
+        PORTB |= _BV(5);
+        drawdisplay(inverted);
+        PORTB &= ~_BV(5);
       }
     }
   

@@ -35,6 +35,7 @@
 #define RATTCHRON 1
 #define XDALICHRON 1
 #define TSCHRON 1
+#define MARIOCHRON 1
 #else
 //MultiCronB DeathChron Mix:
 #define GPSENABLE 1
@@ -43,6 +44,7 @@
 #define RATTCHRON 1
 #define TSCHRON 1
 #define DEATHCHRON 1
+#define MARIOCHRON 1
 #endif
 
 
@@ -308,6 +310,9 @@ enum {
 #endif
 #ifdef GPSENABLE
 	STYLE_GPS,
+#endif
+#ifdef MARIOCHRON
+  STYLE_MARIO,
 #endif
 	STYLE_ABOUT
 };

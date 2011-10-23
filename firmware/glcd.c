@@ -32,11 +32,12 @@
 #include "ks0108.h"
 // include fonts
 #include "font5x7.h"
+#include "font7x7.h"
 #include "fontgr.h"
 
 #include "util.h"
 
-
+extern volatile uint8_t write_font = 57;
 
 
 // graphic routines
@@ -57,7 +58,7 @@ void glcdSetDot(u08 x, u08 y)
 	glcdDataWrite(temp | (1 << (y % 8)));
 	glcdStartLine(0);
 }
-/*
+
 // clear dot
 void glcdClearDot(u08 x, u08 y)
 {
@@ -94,12 +95,12 @@ void glcdRectangle(u08 x, u08 y, u08 w, u08 h)
   }
 */
   // optimized!
-  /*
+  
   glcdFillRectangle(x, y, 1, h, ON);
   glcdFillRectangle(x+w-1, y, 1, h, ON);
   glcdFillRectangle(x, y, w, 1, ON);
   glcdFillRectangle(x, y+h-1, w, 1, ON);
-}*/
+}
 
 
 // draw filled rectangle
@@ -293,11 +294,22 @@ void glcdFillCircle(u08 xcenter, u08 ycenter, u08 radius, u08 color)
 void glcdWriteChar(unsigned char c, uint8_t inverted)
 {
 	u08 i = 0, j;
+        u08 pix_width = 5;
 
-	for(i=0; i<5; i++)
+        if (write_font == 77){
+          pix_width = 7;
+        }
+
+
+	for(i = 0; i < pix_width; i++)
 	{
-	  j = get_font(((c - 0x20) * 5) + i);
-	  if (inverted)
+    if (write_font == 57){
+      j = eeprom_read_byte(&Font5x7[((c - 0x20) * 5) + i]);
+      //glcdDataWrite(pgm_read_byte(&Font5x7[((c - 0x20) * 5) + i]));
+    }else if (write_font == 77){
+      j = pgm_read_byte(&Font7x7[((c - 0x20) * 7) + i]);
+    }
+    if (inverted)
 	    j = ~j;
 	  glcdDataWrite(j);
 	}

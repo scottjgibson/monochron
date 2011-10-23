@@ -63,6 +63,10 @@ void initanim(void){
  case STYLE_GPS: initanim_GPS();
                break;
 #endif
+#ifdef MARIOCHRON
+ case STYLE_MARIO: initanim_mar();
+               break;
+#endif
  case STYLE_ABOUT: initanim_abo();
                 break;
  }
@@ -93,6 +97,10 @@ void initdisplay(uint8_t inverted) {
 #endif
 #ifdef DEATHCHRON
  case STYLE_DEATH: initdisplay_death(inverted); break;
+#endif
+#ifdef MARIOCHRON
+ case STYLE_MARIO: initdisplay_mar(inverted);
+                break;
 #endif
  }
 }
@@ -133,6 +141,9 @@ void drawdisplay(uint8_t inverted) {
 #ifdef DEATHCHRON
  case STYLE_DEATH: drawdisplay_death(inverted); break;
 #endif
+#ifdef MARIOCHRON
+ case STYLE_MARIO: drawdisplay_mar(inverted); break;
+#endif
  }
 }
 
@@ -161,6 +172,9 @@ void step(void) {
 #endif
 #ifdef DEATHCHRON
  case STYLE_DEATH: step_death(); break;
+#endif
+#ifdef MARIOCHRON
+// case STYLE_MARIO: step_mario(); break;
 #endif
  }
 }
