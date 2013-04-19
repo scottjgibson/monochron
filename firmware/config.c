@@ -652,6 +652,9 @@ uint8_t style_setting_str[] PROGMEM = {
 #ifdef TSCHRON
   STYLE_TS, 'T','i','m','e','s','S','q','C','h','r','o','n',0,
 #endif
+#ifdef MARIOCHRON
+  STYLE_MARIO, 'M','a','r','i','o','C','h','r','o','n', 0,
+#endif
 #ifdef DEATHCHRON
   STYLE_DEATH, 'D','e','a','t','h','C','h','r','o','n',0,
 #endif
@@ -662,9 +665,6 @@ uint8_t style_setting_str[] PROGMEM = {
 #endif
 #ifdef GPSENABLE
   STYLE_GPS, 'G','P','S',' ','S','e','t','u','p',0,
-#endif
-#ifdef MARIOCHRON
-  STYLE_MARIO, 'M','a','r','i','o','C','h','r','o','n', 0,
 #endif
   STYLE_ABOUT, 'A','b','o','u','t',0,
   0xFF,
