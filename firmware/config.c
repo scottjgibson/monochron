@@ -158,6 +158,8 @@ void set_style(void) {
 	print_style_setting(INVERTED);
  	
 	screenmutex--;
+	if (displaystyle<=STYLE_ROTATE) eeprom_write_byte(&EE_STYLE,displaystyle);
+	else eeprom_write_byte(&EE_STYLE,STYLE_ROTATE);
 	if(pressed & 4)
 		delay_ms(200);
 
